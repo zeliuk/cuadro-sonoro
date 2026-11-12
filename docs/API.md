@@ -1,6 +1,6 @@
 # API del prototipo: endpoints y ejemplos
 
-Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el token Bearer del cuadro. La API deriva una clave SHA-256 de ese token para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. El contrato no resuelve el acceso directo del ESP32 a medios.
+Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el token Bearer del cuadro. La API deriva una clave SHA-256 de ese token para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. La lectura directa del ESP32 usa Firebase Auth y las reglas descritas en [Firebase](../firebase/README.md); no añade endpoints a esta API.
 
 ## Arranque y variables para los ejemplos
 
@@ -178,6 +178,6 @@ La generación de enlaces requiere configuración y credenciales capaces de firm
 
 ## Qué no está implementado
 
-El hash se compara con la lista de tokens provisionados y deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. No existen aún búsqueda de Radio Browser, imagen decorativa, limpieza de huérfanos, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial. El acceso directo del ESP32 a configuración y medios sigue pendiente.
+El hash se compara con la lista de tokens provisionados y deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. No existen aún búsqueda de Radio Browser, imagen decorativa, limpieza de huérfanos, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial. El acceso de dispositivo se prueba directamente contra emuladores Firebase, sin esta API; reglas reales e importación real quedan pendientes.
 
 Consultar [PRUEBA_API.md](PRUEBA_API.md) para el orden de prueba, [ESTADO.md](ESTADO.md) para las diferencias con el producto y [VALIDACION.md](VALIDACION.md) para la evidencia ejecutada.

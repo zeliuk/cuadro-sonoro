@@ -9,6 +9,7 @@ El modo demo no necesita configuración de nube. Para el backend local, ejecuta 
 | `ALLOWED_ORIGINS` | Orígenes exactos permitidos por CORS. | `.env`/Render. No sustituye autorización. |
 | `FIREBASE_DATABASE_URL` | URL exacta de RTDB. Vacía: SQLite local. | `.env`/Render. |
 | `FIREBASE_STORAGE_BUCKET` | Nombre del bucket sin `gs://`. Vacío: importación no disponible. | `.env`/Render. |
+| `FIREBASE_WEB_API_KEY` | Identificador público del proyecto para Auth REST del dispositivo; no es una credencial Admin. | `.env` privado de aprovisionamiento. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Ruta al JSON privado de cuenta de servicio. | Nativo: absoluta; Compose: `/run/secrets/firebase.json`. |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Alternativa al archivo: JSON completo como secreto. | Render; dejar vacío si se usa archivo. |
 | `STATE_DB` | SQLite local de desarrollo. El archivo no se versiona. | `.env`; valor inicial en `/tmp`. |
@@ -24,12 +25,12 @@ Añadir ese hash hexadecimal a `FRAME_TOKEN_HASHES`, separado por comas si hay v
 
 Los datos de la antigua colección única no se asignan automáticamente a un cuadro: su identidad no se puede deducir de forma segura. En local, el nuevo código deja la tabla antigua sin uso y escribe en `frame_states`. No rellenar valores Firebase ficticios para saltarse el 503: no configuran recursos reales y provocan fallos del worker. `storage_configured` y `durable_state` en `/health` solo reflejan presencia de variables; no acreditan acceso.
 
-## Firebase cuando se aborde la integración
+## Firebase y acceso directo del dispositivo
 
 Crear/configurar un proyecto dedicado y copiar desde su consola URL RTDB y nombre de bucket. Storage requiere Blaze: decidir facturación y región antes de activarlo. Guardar el JSON en `secrets/firebase.json`, ignorado, o como secreto del servicio. No pegarlo en chat, web, firmware o documentación.
 
 Usar una sola vía de credencial y reiniciar el proceso tras cambiar variables. Compose usa `env_file`; la ejecución nativa usa `--env-file backend/.env`. La web no carga ese archivo ni recibe sus secretos.
 
-Las reglas iniciales deniegan acceso directo de clientes. Admin SDK usa IAM y no está restringido por esas reglas. La API aplica ámbito por token Bearer en su acceso mediado; el acceso directo del ESP32 sigue pendiente y debe resolverse antes de distribuir enlaces reales.
+Admin SDK usa IAM y no está restringido por reglas. La lectura directa está descrita y probada con emuladores en [firebase/README.md](../firebase/README.md): el desarrollador usa el token fijo existente para aprovisionar una cuenta técnica Auth; las reglas exigen UID coincidente para leer solo slots/medios del cuadro. No desplegar reglas en producción hasta probarlas en un proyecto dedicado y autorizado.
 
-El token de enlace del producto estará preparado por cuadro y será visible para quien acceda a él por diseño; no concede administración del proyecto Firebase. Una variable `.env` que termina en JavaScript no queda oculta. `.env.example` debe mantener privados vacíos y ejemplos inequívocos.
+El token de enlace del producto estará preparado por cuadro y será visible para quien acceda a él por diseño; no concede administración del proyecto Firebase. Para el dispositivo es el secreto fijo de aprovisionamiento. ID token y refresh token Firebase son estado técnico renovable; no cambian el token del cuadro. Una variable `.env` que termina en JavaScript no queda oculta. `.env.example` debe mantener privados vacíos y ejemplos inequívocos. No versionar `device-private/`.

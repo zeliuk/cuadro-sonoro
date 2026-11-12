@@ -1,1 +1,13 @@
-{"rules":{".read":false,".write":false}}
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "frames": {
+      "$frame_key": {
+        "slots": {
+          ".read": "auth != null && auth.uid === 'frame-reader-' + $frame_key"
+        }
+      }
+    }
+  }
+}

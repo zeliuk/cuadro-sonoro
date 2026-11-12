@@ -8,6 +8,7 @@
 
 # Credenciales y almacenes de claves
 secrets/
+device-private/
 credentials/
 **/*service-account*.json
 **/*service_account*.json

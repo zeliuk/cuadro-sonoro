@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: base de desarrollo con un prototipo ejecutable.** El backend aísla datos por cuadro y la web acepta el token desde un enlace. La generación QR/NFC, el acceso autónomo del ESP32 y varias integraciones todavía no están implementados. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
+**Estado: base de desarrollo con un prototipo ejecutable.** El backend aísla datos por cuadro y la web acepta el token desde un enlace. Hay reglas Firebase y un cliente de ordenador para probar lectura directa por cuadro; faltan la validación contra Firebase real, firmware y generación física QR/NFC. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
 
 ## Prueba la interfaz sin credenciales
 

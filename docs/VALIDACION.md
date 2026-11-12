@@ -87,6 +87,24 @@ node --check web/app.js
 
 El recorrido HTTP manual está en [PRUEBA_API.md](PRUEBA_API.md). El esquema se puede actualizar desde una API local arrancada con `curl -sS http://127.0.0.1:8000/openapi.json -o docs/openapi.prototype.json`, revisando el diff junto a `API.md` antes de commit.
 
+## Lectura directa del ESP32 — preparación local
+
+Se implementó el acceso directo con el token fijo ya usado por API/web: el aprovisionamiento crea o actualiza un usuario Firebase Auth técnico y el cliente de ordenador renueva su ID token usando el refresh token de Firebase. El token del cuadro no se renueva ni cambia. Reglas RTDB permiten leer solo `frames/{sha256}/slots`; reglas Storage permiten leer solo `private/frames/{sha256}/...`; las escrituras y otros ámbitos quedan cerrados. El cliente no llama a Render.
+
+Verificación ejecutada en macOS desde la raíz, `.venv` con Python 3.12.15, Node 22 y Java 17; Firebase CLI fijado transitoriamente a `firebase-tools@14.22.0` vía `npx` (no instalado globalmente):
+
+```bash
+npx --yes firebase-tools@14.22.0 emulators:exec --only auth,database,storage --project demo-sonoro-device --log-verbosity=QUIET 'source .venv/bin/activate && python scripts/test_device_access.py'
+```
+
+Resultado: `PASS` para lectura propia en RTDB/Storage, rechazo entre cuadros, rechazo sin sesión, rechazo de escritura en RTDB/Storage, descarga de los bytes preparados en el emulador y renovación Firebase forzada mientras no hay API/Render. La prueba fuerza el vencimiento local y llama al refresh endpoint, conservando exactamente el Bearer fijo; no espera el vencimiento real de una hora. La cuenta de prueba se crea por REST dentro de Auth Emulator y los datos/archivos son fixtures aleatorios locales. Los emuladores paran al terminar.
+
+`env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS .venv/bin/python -m pytest backend/tests scripts/tests -q` pasó: 13 tests; queda el aviso conocido de deprecación Starlette/TestClient con HTTPX. `compileall` y `node --check web/app.js` también pasaron. No cambiaron CSS ni layout, por lo que no se repitió revisión móvil.
+
+No se desplegaron reglas, no se creó ni modificó un proyecto Firebase real, no se habilitó facturación y no se ejecutó importación real. La validación emulada no acredita la interoperabilidad de producción, la seguridad del almacenamiento de sesión del hardware elegido, ni streaming de audio en firmware.
+
+Mecanismo contrastado con documentación oficial de Firebase: [Auth REST sign-in y refresh](https://firebase.google.com/docs/reference/rest/auth), [autenticación RTDB REST con ID token](https://firebase.google.com/docs/database/rest/auth), [condiciones de reglas RTDB](https://firebase.google.com/docs/database/security/rules-conditions) y [`request.auth.uid` en reglas de Storage](https://firebase.google.com/docs/storage/security/rules-conditions). La guía operativa y el cliente de prueba están en [firebase/README.md](../firebase/README.md).
+
 ## Ajuste de contexto compartido
 
 Las instrucciones de ChatGPT se trasladaron al archivo versionado `docs/INSTRUCCIONES_CHATGPT.md`. Se actualizaron las referencias, la definición y la regla de mantenimiento en AGENTS.md. Cambio documental; comprobados enlaces y contenido del ZIP, sin modificar lógica ni repetir pruebas de ejecución.

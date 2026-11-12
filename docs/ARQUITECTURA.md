@@ -22,9 +22,9 @@ Una tarea aceptada debe poder sobrevivir a cerrar la web. Persistir su registro 
 
 ## Acceso
 
-El token aleatorio provisionado de cada cuadro se envía en `Authorization: Bearer`. La API exige que su SHA-256 esté en `FRAME_TOKEN_HASHES` y usa ese hash como ámbito en RTDB (`frames/{sha256}`), SQLite local (`frame_states`) y rutas de objetos nuevos en Storage. El token original no se guarda. El familiar no configura una cuenta ni una segunda credencial técnica. Los datos de la antigua colección común no se migran porque no tienen identidad de cuadro.
+El token aleatorio fijo de cada cuadro se envía a la API en `Authorization: Bearer`. La API exige que su SHA-256 esté en `FRAME_TOKEN_HASHES` y usa ese hash como ámbito en RTDB (`frames/{sha256}`), SQLite local (`frame_states`) y rutas de objetos nuevos en Storage. Para lectura directa, el desarrollador aprovisiona ese mismo token como contraseña de una cuenta técnica Firebase Auth con UID determinista `frame-reader-{sha256}`. El ESP32 inicia sesión con el token fijo y usa los ID tokens Firebase de corta duración y su refresh token para leer solo `frames/{sha256}/slots` y `private/frames/{sha256}/...`; renueva la sesión Firebase localmente incluso si Render está detenido. La regla exige UID autenticado y ámbito, no solo conocer el hash/ruta. No se entrega una credencial administrativa ni se pide cuenta al familiar. El token original no se guarda en backend, RTDB, Storage ni Git; en el dispositivo queda como secreto fijo de aprovisionamiento. Los datos de la antigua colección común no se migran porque no tienen identidad de cuadro.
 
-La web todavía no incorpora automáticamente el token al QR/enlace y el firmware no existe. La API de importación sigue necesitando Render; los enlaces de Storage firmados 30 minutos no permiten afirmar que el ESP32 pueda reproducir con Render dormido. Resolver ese acceso antes de integrar el firmware; no abrir reglas globales ni dar por cumplida esa parte.
+La web acepta el token en el fragmento del enlace. El cliente de prueba de ordenador cubre la lectura Firebase y renovación sin Render; el firmware no existe. La API de importación sigue necesitando Render. Los enlaces firmados actuales de la API siguen destinados a escucha web y no se usan como autorización del ESP32.
 
 ## Decisiones aplazadas
 
