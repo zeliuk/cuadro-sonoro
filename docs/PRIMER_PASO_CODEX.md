@@ -1,0 +1,9 @@
+# Primer paso con Codex en VS Code
+
+Abre la carpeta completa `cuadro-sonoro`, que contiene `AGENTS.md`. Copia este encargo:
+
+> Vamos a desarrollar cuadro-sonoro. Lee AGENTS.md y sigue este documento. Después lee docs/DEFINICION.md, docs/ESTADO.md, README, arquitectura, configuración y plan. Revisa Git y respeta cambios existentes. Este paquete conserva un prototipo de colección única; el producto objetivo usa un token por cuadro, tres selecciones y los comportamientos de la definición. Empieza ejecutando la fase 0: prepara el entorno, comprueba la demo y la API local, ejecuta tests/checks y verifica las instrucciones y los ejemplos de endpoints, sin usar servicios reales ni credenciales de producción. Conserva la estética y prioriza móvil. Corrige los problemas locales necesarios y actualiza ESTADO/VALIDACION. Al terminar, implementa en un cambio acotado el primer paso de la fase 1: acceso y datos aislados por cuadro, con pruebas de separación y documentación HTTP actualizada. Resuelve decisiones rutinarias sin volver a preguntarme lo ya acordado; si una decisión de autorización o ejecución cambia materialmente la arquitectura, preséntala antes de continuar con esa parte. No implementes firmware ni cambies el stack. No actives facturación ni despliegues servicios remotos en este encargo. No muestres secretos. Explica qué está comprobado con mocks, con servicios reales o todavía pendiente.
+
+Objetivo de la primera sesión: entorno reproducible y primer avance revisable hacia el modelo por cuadro. El hito de importación real se aborda después de resolver ese acceso; no tratar el token global heredado como solución definitiva.
+
+Para nuevas sesiones usar el estado actual de Git, definición, estado y plan, sin depender de esta conversación. La documentación de endpoints tiene que cambiar junto a su código.

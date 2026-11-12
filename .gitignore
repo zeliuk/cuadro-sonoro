@@ -1,0 +1,64 @@
+# Configuración privada por entorno. Solo se versionan plantillas vacías.
+.env
+.envrc
+.env.*
+*.env
+!.env.example
+.firebaserc
+
+# Credenciales y almacenes de claves
+secrets/
+credentials/
+**/*service-account*.json
+**/*service_account*.json
+**/*[Ss]ervice[Aa]ccount*.json
+**/*firebase-adminsdk*.json
+**/*credentials*.json
+**/google-services.json
+**/GoogleService-Info.plist
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+.netrc
+.npmrc
+.pypirc
+cookies*.txt
+
+# Datos de ejecución, audios e importaciones
+runtime-data/
+downloads/
+*.mp3
+*.wav
+*.flac
+*.aac
+*.m4a
+*.mp4
+*.webm
+*.sqlite3
+*.sqlite3-*
+*.db
+*.log
+.firebase/
+firebase-debug.log*
+
+# Herramientas y archivos locales
+.DS_Store
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+coverage.xml
+.coverage
+htmlcov/
+.pio/
+.vscode/*
+!.vscode/extensions.json
+*.zip
+*.tar.gz
+# Los informes de análisis pueden contener datos de hallazgos.
+*.sarif
+*gitleaks-report*.json

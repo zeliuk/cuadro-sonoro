@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: sonoro-importador
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: IMPORT_API_TOKEN
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

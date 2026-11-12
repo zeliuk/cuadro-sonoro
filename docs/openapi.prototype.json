@@ -1,0 +1,443 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sonoro import service",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/search": {
+      "post": {
+        "summary": "Search",
+        "operationId": "search_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Search"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/imports": {
+      "post": {
+        "summary": "Create Import",
+        "operationId": "create_import_imports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Import"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/state": {
+      "get": {
+        "summary": "State",
+        "operationId": "state_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/jobs/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel",
+        "operationId": "cancel_jobs__job_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stations": {
+      "post": {
+        "summary": "Station",
+        "operationId": "station_stations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Station"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/slots/{slot}": {
+      "delete": {
+        "summary": "Delete Slot",
+        "operationId": "delete_slot_slots__slot__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slot"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/{slot}": {
+      "get": {
+        "summary": "Media",
+        "operationId": "media_media__slot__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "slot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slot"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Import": {
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Slot"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{11}$",
+            "title": "Source Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "artist": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Artist"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slot",
+          "source_id",
+          "title",
+          "artist"
+        ],
+        "title": "Import"
+      },
+      "Search": {
+        "properties": {
+          "artist": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Artist"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "artist",
+          "title"
+        ],
+        "title": "Search"
+      },
+      "Station": {
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Slot"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slot",
+          "title",
+          "url"
+        ],
+        "title": "Station"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

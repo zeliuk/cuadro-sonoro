@@ -1,0 +1,17 @@
+services:
+  api:
+    build: .
+    env_file: backend/.env
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./secrets:/run/secrets:ro
+    init: true
+  web:
+    image: python:3.12-alpine
+    working_dir: /web
+    command: python -m http.server 5173 --bind 0.0.0.0
+    volumes:
+      - ./web:/web:ro
+    ports:
+      - "127.0.0.1:5173:5173"
