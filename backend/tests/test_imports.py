@@ -155,6 +155,34 @@ def test_cancel_before_download_and_station_validation():
     assert 'slot-0' in client.get('/state',headers=AUTH).json()['slots']
 
 
+def test_radio_browser_search_normalizes_results_and_filters_unsafe_urls(monkeypatch):
+    payload = [
+        {'stationuuid':'radio-1','name':'Radio Uno','country':'España','url_resolved':'https://stream.example/radio','favicon':'https://img.example/logo.png','codec':'MP3','bitrate':128},
+        {'stationuuid':'radio-2','name':'No segura','url_resolved':'http://127.0.0.1/admin'},
+        {'stationuuid':'radio-3','name':'Sin URL','url_resolved':''},
+    ]
+    class Response:
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def read(self): return json.dumps(payload).encode()
+    captured = {}
+    def open_request(request, timeout):
+        captured['url'] = request.full_url
+        captured['timeout'] = timeout
+        captured['agent'] = request.get_header('User-agent')
+        return Response()
+    monkeypatch.setattr(m, 'urlopen', open_request)
+    response = client.post('/stations/search', headers=AUTH, json={'name':'Radio Uno','country':'España'})
+    assert response.status_code == 200
+    assert response.json()['results'] == [{
+        'stationuuid':'radio-1','name':'Radio Uno','country':'España','url':'https://stream.example/radio',
+        'favicon':'https://img.example/logo.png','homepage':None,'codec':'MP3','bitrate':128,
+    }]
+    assert 'country=Espa%C3%B1a' in captured['url']
+    assert captured['timeout'] == 12
+    assert captured['agent'].startswith('CuadroSonoro/')
+
+
 def test_frames_cannot_read_cancel_or_change_each_others_data():
     active={'id':'job-a','slot':1,'source_id':'BaW_jenozKc','title':'Test','artist':'Test','status':'queued','created_at':0}
     def seed(state):

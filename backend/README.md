@@ -30,7 +30,9 @@ En otra terminal:
 curl -sS http://127.0.0.1:8000/health
 ```
 
-Sin Firebase se espera `{"ok":true,"storage_configured":false,"durable_state":false}`. Las banderas no prueban conectividad. El identificador Bearer debe tener entre 1 y 128 caracteres ASCII: letras, números, guion o guion bajo; no se compara con ningún registro. Cualquier persona que conozca un identificador puede leer o cambiar los datos de su ámbito mediante la API. Sin Storage configurado, la importación devuelve 503.
+Sin Firebase se espera `{"ok":true,"storage_configured":false,"durable_state":false}`. Las banderas no prueban conectividad. La búsqueda de emisoras usa Radio Browser y requiere salida HTTPS a Internet; si el proveedor no responde, `POST /stations/search` devuelve 502. La API no prueba ni descarga las URL de stream.
+
+El identificador Bearer debe tener entre 1 y 128 caracteres ASCII: letras, números, guion o guion bajo; no se compara con ningún registro. Cualquier persona que conozca un identificador puede leer o cambiar los datos de su ámbito mediante la API. Sin Storage configurado, la importación devuelve 503.
 
 Abre [Swagger UI](http://127.0.0.1:8000/docs), [ReDoc](http://127.0.0.1:8000/redoc) o [OpenAPI JSON](http://127.0.0.1:8000/openapi.json). En Swagger, «Authorize» recibe el identificador, sin el prefijo `Bearer`. Usa el catálogo con ejemplos de [API.md](../docs/API.md) y el recorrido de [PRUEBA_API.md](../docs/PRUEBA_API.md).
 

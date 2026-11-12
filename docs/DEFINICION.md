@@ -287,7 +287,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 
 1. Consolidar esta definición en la documentación y preparar una base coherente de repositorio.
 2. Validar el recorrido real: buscar, elegir, procesar desde Render, subir audio e imagen a Firebase y escuchar el MP3 desde el navegador.
-3. Conectar la web dinámica a tareas reales, incluyendo progreso, reintentos, sustitución y limpieza; integrar Radio Browser.
+3. Completar la web dinámica conectada a tareas reales, incluyendo progreso, reintentos, sustitución y limpieza; validar búsqueda y escucha de Radio Browser en navegador y después en ESP32.
 4. Elegir hardware y validar reproducción de MP3 y radio por Wi-Fi, controles físicos y volumen.
 5. Integrar pantalla, imagen decorativa, luces y asistente Wi-Fi; comprobar recuperación y cambios durante reproducción.
 6. Resolver diseño físico y documentar montaje y despliegue reproducibles.

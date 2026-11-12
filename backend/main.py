@@ -3,7 +3,9 @@ import os
 import re
 import secrets
 import time
-from urllib.parse import quote, urlparse
+import json
+from urllib.parse import quote, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +15,7 @@ from .config import ACTIVE, MAX_DURATION
 from .identity import frame_key_for
 from .lifecycle import lifespan
 from .media import delete_orphaned_media
-from .models import Import, Search, Station
+from .models import Import, Search, Station, StationSearch
 from .state import cancelled, patch_job, store
 
 
@@ -62,6 +64,37 @@ def search(body: Search, _frame_key: str = Depends(identify_frame)):
         raise HTTPException(502, 'No se pudo completar la búsqueda. La fuente puede estar bloqueando al servidor; vuelve a intentarlo.')
 
 
+@app.post('/stations/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 502: {'description': 'Radio Browser no está disponible.'}})
+def search_stations(body: StationSearch, _frame_key: str = Depends(identify_frame)):
+    """Proxy acotado al directorio; no consulta ni descarga las URL devueltas."""
+    params = {'name': body.name.strip(), 'hidebroken': 'true', 'limit': '12', 'order': 'clickcount', 'reverse': 'true'}
+    if body.country and body.country.strip():
+        params['country'] = body.country.strip()
+    request = Request(
+        'https://all.api.radio-browser.info/json/stations/search?' + urlencode(params),
+        headers={'User-Agent': 'CuadroSonoro/0.1 (Radio Browser station search)', 'Accept': 'application/json'},
+    )
+    try:
+        with urlopen(request, timeout=12) as response:
+            rows = json.loads(response.read())
+        results = []
+        for row in rows:
+            stream = row.get('url_resolved') or row.get('url')
+            parsed = urlparse(stream or '')
+            if not row.get('name') or parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password:
+                continue
+            results.append({
+                'stationuuid': row.get('stationuuid'), 'name': row['name'][:100],
+                'country': row.get('country') or '', 'url': stream[:1000],
+                'favicon': row.get('favicon') or None,
+                'homepage': row.get('homepage') or None,
+                'codec': row.get('codec') or '', 'bitrate': row.get('bitrate') or 0,
+            })
+        return {'results': results}
+    except Exception:
+        raise HTTPException(502, 'No se pudo consultar Radio Browser. Vuelve a intentarlo más tarde.') from None
+
+
 @app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
 def create_import(body: Import, frame_key: str = Depends(identify_frame)):
     if not os.getenv('FIREBASE_STORAGE_BUCKET'):
@@ -104,7 +137,11 @@ def station(body: Station, frame_key: str = Depends(identify_frame)):
     def add(state):
         if any(j['status'] in ACTIVE for j in state['jobs'].values()):
             raise HTTPException(409, 'Este cuadro tiene una importación en curso.')
-        state['slots']['slot-' + str(body.slot)] = {'id': secrets.token_hex(12), 'kind': 'station', 'title': body.title, 'artist': 'Radio en directo', 'url': body.url}
+        state['slots']['slot-' + str(body.slot)] = {
+            'id': secrets.token_hex(12), 'kind': 'station', 'title': body.title,
+            'artist': 'Radio en directo', 'url': body.url,
+            **{key: value for key, value in body.model_dump(exclude={'slot', 'title', 'url'}).items() if value},
+        }
     store.mutate(frame_key, add)
     try:
         cleanup = delete_orphaned_media(frame_key, store.read(frame_key))

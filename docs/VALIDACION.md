@@ -317,3 +317,15 @@ Compose sigue activo: `api` en `127.0.0.1:8000` y `web` en `127.0.0.1:5173`. Par
 ### Play/stop en la portada — 12 de noviembre de 2026
 
 Se quitó el panel de reproductor que aparecía debajo de las tarjetas. Ahora el control de play queda superpuesto a la portada y cambia a stop durante la reproducción; se detiene al pulsarlo, al terminar el audio, al cambiar/eliminar la selección o al salir de la página. `node --check web/app.js` y `git diff --check` pasaron y el servidor estático local entrega el HTML/JS actualizado. No se hizo validación visual interactiva en esta edición: no hay Chrome/Chromium en el PATH y el cuadro Firebase quedó vacío tras eliminar su selección. La prueba anterior de reproducción real en Chrome sigue documentada arriba.
+
+
+## Búsqueda e integración de emisoras — 12 de noviembre de 2026
+
+Se añadió `POST /stations/search` como proxy acotado a Radio Browser: nombre obligatorio, país opcional, máximo 12 resultados, timeout de 12 segundos, filtro del proveedor para emisoras marcadas caídas y filtrado local de URL HTTPS. La web permite elegir un resultado, guarda URL resuelta, UUID y metadatos disponibles, y mantiene la entrada manual. La búsqueda no solicita el audio ni verifica que el stream siga activo; la compatibilidad real requiere escucha en navegador y validación posterior en ESP32.
+
+Comprobación aislada ejecutada: `env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS .venv/bin/python -m pytest backend/tests scripts/tests -q` dio **30 passed**; Radio Browser se simuló y se comprobaron parámetros, User-Agent y filtrado de URL insegura. `compileall`, `node --check web/app.js` y `git diff --check` pasaron. La consulta de solo lectura al proveedor y la función de la API devolvieron resultados reales para «Radio Nacional» en España; todos los cinco resultados expuestos por la API tenían URL HTTPS. No se abrió ningún stream ni se hizo prueba visual/móvil o escucha de una emisora.
+
+
+## Logo de emisora en portada — 12 de noviembre de 2026
+
+La tarjeta de emisora muestra centrado el `favicon` HTTPS recibido de Radio Browser. Si no hay URL válida o la imagen falla al cargar, se retira el logo y queda la tarjeta con el nombre. La canción mantiene su imagen actual. Comprobaciones: 30 tests backend/scripts, `compileall`, `node --check web/app.js` y `git diff --check` correctos. No se pudo hacer revisión visual en navegador/móvil porque no hay Chromium disponible en el entorno.

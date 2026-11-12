@@ -1,6 +1,6 @@
 # API del prototipo: endpoints y ejemplos
 
-Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el identificador del cuadro en Bearer como selector de ámbito, no como autenticación. Cualquier identificador válido crea o recupera automáticamente su registro. API y cliente directo calculan el mismo SHA-256 UTF-8 para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. No hay usuarios ni lista de cuadros autorizados: quien use un identificador puede leer y cambiar ese ámbito por API. Por decisión expresa de Carlos, RTDB/Storage permiten además lectura sin sesión a quien conozca las URLs concretas, mientras sus reglas bloquean listados y escrituras públicas. Ver [Firebase](../firebase/README.md).
+Este catálogo describe las nueve operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el identificador del cuadro en Bearer como selector de ámbito, no como autenticación. Cualquier identificador válido crea o recupera automáticamente su registro. API y cliente directo calculan el mismo SHA-256 UTF-8 para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. No hay usuarios ni lista de cuadros autorizados: quien use un identificador puede leer y cambiar ese ámbito por API. Por decisión expresa de Carlos, RTDB/Storage permiten además lectura sin sesión a quien conozca las URLs concretas, mientras sus reglas bloquean listados y escrituras públicas. Ver [Firebase](../firebase/README.md).
 
 ## Arranque y variables para los ejemplos
 
@@ -19,6 +19,7 @@ Las operaciones de cuadro requieren `Authorization: Bearer ...` con un identific
 |---|---|---|---|
 | GET | `/health` | Público | Proceso y presencia de configuración. |
 | POST | `/search` | Bearer del cuadro | Buscar candidatos en YouTube. |
+| POST | `/stations/search` | Bearer del cuadro | Buscar emisoras en Radio Browser. |
 | POST | `/imports` | Bearer del cuadro | Crear una tarea en el ámbito del cuadro. |
 | GET | `/state` | Bearer del cuadro | Consultar sus huecos y tareas. |
 | POST | `/jobs/{job_id}/cancel` | Bearer del cuadro | Solicitar cancelación de una tarea propia. |
@@ -65,6 +66,24 @@ Forma de respuesta 200 (ID y datos sintéticos, no una disponibilidad acreditada
 ```
 
 Puede haber una lista vacía o duración desconocida. 502 significa que la fuente o la búsqueda fallaron; no implica un problema de Firebase. Una búsqueda correcta no prueba la descarga desde Render.
+
+## POST /stations/search
+
+Busca hasta 12 emisoras por nombre y, opcionalmente, país. El backend consulta Radio Browser con timeout de 12 segundos, pide excluir estaciones marcadas como caídas y descarta resultados sin nombre o sin URL HTTPS válida. No abre ni prueba las URL devueltas. Radio Browser es un directorio comunitario sin garantía de disponibilidad; su respuesta no acredita que el stream siga activo o sea compatible con el navegador o el ESP32.
+
+| Campo JSON | Tipo | Restricción |
+|---|---|---|
+| `name` | string | Entre 1 y 100 caracteres. |
+| `country` | string o null | Opcional, máximo 100 caracteres. |
+
+```bash
+curl -sS "$API_BASE/stations/search" \
+  -H "Authorization: Bearer $FRAME_ID" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Radio Nacional","country":"Spain"}'
+```
+
+Respuesta 200: `{"results":[{"stationuuid":"id-radio","name":"Radio Nacional","country":"Spain","url":"https://stream.example/radio","favicon":null,"homepage":null,"codec":"MP3","bitrate":128}]}`. Los valores son ilustrativos. Puede devolver cero resultados. 401 si falta o no es válido el identificador; 422 para cuerpo no válido; 502 si Radio Browser falla o no responde. La búsqueda no modifica el estado del cuadro.
 
 ## POST /imports
 
@@ -129,13 +148,15 @@ Para reintentar, la interfaz vuelve a llamar a `/imports` con los datos original
 
 ## POST /stations
 
-Guarda una emisora en el hueco. Hoy recibe la URL manualmente; no busca ni comprueba el contenido del stream. Puede sustituir el registro anterior y no elimina sus archivos remotos.
+Guarda una emisora en el hueco. Acepta URL manual o los metadatos de la selección de Radio Browser; no comprueba el contenido del stream. Puede sustituir el registro anterior; después intenta eliminar medios sin referencias.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
 | `slot` | integer | 0, 1 o 2. |
 | `title` | string | Entre 1 y 100 caracteres. |
 | `url` | string | Máximo 1000 caracteres; HTTPS con hostname y sin usuario/contraseña. |
+| `stationuuid`, `country`, `homepage`, `favicon`, `codec` | string o null | Metadatos opcionales del directorio; límites definidos en OpenAPI. |
+| `bitrate` | integer o null | Opcional, entre 0 y 100000. |
 
 Ejemplo sintético para comprobar el contrato en **desarrollo local**; el enlace no es una emisora funcional:
 
@@ -146,7 +167,7 @@ curl -sS "$API_BASE/stations" \
   -d '{"slot":2,"title":"Radio de prueba local","url":"https://example.org/stream.mp3"}'
 ```
 
-200: `{"ok":true}`. 409 si el cuadro tiene una importación activa. 422 si no cumple las restricciones. El backend no obtiene esta URL; aceptar su forma no acredita reproducción. Integrar Radio Browser y validación real en la fase prevista.
+200: `{"ok":true}`. 409 si el cuadro tiene una importación activa. 422 si no cumple las restricciones. El backend no obtiene esta URL; aceptar su forma no acredita reproducción. La selección de Radio Browser conserva también los metadatos descritos arriba; la compatibilidad real aún debe validarse.
 
 ## DELETE /slots/{slot}
 
@@ -178,6 +199,6 @@ El endpoint sigue recibiendo el Bearer para seleccionar el registro del cuadro, 
 
 ## Qué no está implementado
 
-El SHA-256 del identificador válido deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. No hay lista de IDs ni usuarios. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. No existen aún búsqueda de Radio Browser, imagen decorativa, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial.
+El SHA-256 del identificador válido deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. No hay lista de IDs ni usuarios. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. La búsqueda de Radio Browser ya está disponible; no existen aún imagen decorativa, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial.
 
 Consultar [PRUEBA_API.md](PRUEBA_API.md) para el orden de prueba, [ESTADO.md](ESTADO.md) para las diferencias con el producto y [VALIDACION.md](VALIDACION.md) para la evidencia ejecutada.

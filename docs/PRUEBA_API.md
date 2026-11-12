@@ -44,7 +44,22 @@ Se espera 200, 200 con la URL sintética, 200 y 404. Esto verifica operaciones d
 
 Al acabar, `unset FRAME_ID` en la segunda terminal y `Ctrl+C` en la primera. El identificador no es un secreto ni se necesita configurarlo en Render. No imprimir `.env` para comprobar credenciales Firebase.
 
-## B. Recorrido real ya validado en Firebase
+## B. Búsqueda de emisoras (Radio Browser)
+
+Con la API local en marcha y sin Firebase, abre un enlace de cuadro de prueba y busca una emisora desde la pestaña «Emisora». La búsqueda real requiere conexión a Radio Browser; selecciona un resultado para guardarlo y usa «Escuchar aquí» para comprobar la escucha en ese navegador. La lista del directorio y el filtro de estaciones marcadas como caídas no garantizan que el stream siga disponible o sea compatible. La prueba del navegador tampoco acredita compatibilidad con ESP32.
+
+También se puede comprobar el endpoint:
+
+```bash
+curl -i "$API_BASE/stations/search" \
+  -H "Authorization: Bearer $FRAME_ID" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Radio Nacional","country":"Spain"}'
+```
+
+Se espera 200 y una lista `results` (que puede estar vacía), o 502 si el servicio no responde. No guarda nada en el cuadro. La prueba automatizada simula la respuesta del proveedor y filtra URLs que no sean HTTPS; no sustituye una búsqueda ni una escucha reales.
+
+## C. Recorrido real ya validado en Firebase
 
 El 12 de noviembre de 2026 se completó una importación real desde Docker local, YouTube, la API y Firebase RTDB/Storage, seguida de reproducción en Chrome Headless. El detalle, versiones, comandos, resultados y límites está en [VALIDACION.md](VALIDACION.md). No repetir el POST de importación: el hueco 0 ya contiene «Carefree» de Kevin MacLeod y volver a importarlo crearía otra tarea y otros objetos.
 

@@ -1,5 +1,6 @@
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeImageUrl = value => { try { const url=new URL(value); return url.protocol==='https:'&&!url.username&&!url.password?url.href:''; } catch { return ''; } };
 const load = (storage, key, fallback) => { try { return JSON.parse(storage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const deploymentApiBase = document.querySelector('meta[name="sonoro-api-base"]')?.content.trim() || '';
 const validFrameIdentifier = identifier => /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(identifier);
@@ -142,9 +143,10 @@ function render() {
       content=`<div class="error-art"><span class="error-symbol">↻</span><p>${esc(job.message)}</p><button class="small-button" data-action="retry" data-slot="${i}">Reintentar</button><button class="cancel-link" data-action="dismiss" data-slot="${i}">${item?'Volver al favorito':'Elegir otra canción'}</button></div>`;
       caption=`<div><h3>${esc(job.title)}</h3><p class="artist-line">Importación pendiente</p></div><span class="caption-mark">${number}</span>`;
     }else if(item){
-      const image=mediaCache.get(item.id)?.image_url;
+      const image=item.kind==='station'?safeImageUrl(item.favicon):mediaCache.get(item.id)?.image_url;
+      const stationLogo=item.kind==='station'&&Boolean(image);
       const isPlaying=playingTrackId===item.id;
-      content=`<div class="art v${i}">${image?`<img src="${esc(image)}" alt="Imagen de ${esc(item.title)}" loading="lazy">`:''}<span class="art-badge">${demoMode?'DEMO · ':''}${item.kind==='station'?'EN DIRECTO':'TU CANCIÓN'}</span><span class="art-title">${esc(item.title)}</span><button class="art-play ${isPlaying?'is-playing':''}" data-action="toggle-playback" data-slot="${i}" aria-label="${isPlaying?'Detener':'Reproducir'} ${esc(item.title)}" aria-pressed="${isPlaying}" title="${isPlaying?'Detener':'Reproducir'}"><span aria-hidden="true">${isPlaying?'■':'▶'}</span></button></div>`;
+      content=`<div class="art v${i} ${stationLogo?'station-art':''}">${image?`<img class="${stationLogo?'station-logo':''}" src="${esc(image)}" alt="Logo de ${esc(item.title)}" loading="lazy">`:''}<span class="art-badge">${demoMode?'DEMO · ':''}${item.kind==='station'?'EN DIRECTO':'TU CANCIÓN'}</span><span class="art-title">${esc(item.title)}</span><button class="art-play ${isPlaying?'is-playing':''}" data-action="toggle-playback" data-slot="${i}" aria-label="${isPlaying?'Detener':'Reproducir'} ${esc(item.title)}" aria-pressed="${isPlaying}" title="${isPlaying?'Detener':'Reproducir'}"><span aria-hidden="true">${isPlaying?'■':'▶'}</span></button></div>`;
       caption=`<div style="min-width:0"><h3>${esc(item.title)}</h3><p class="artist-line">${esc(item.artist)}</p></div><div class="slot-actions"><button data-action="edit" data-slot="${i}" aria-label="Cambiar favorito ${number}">↗</button><button data-action="remove" data-slot="${i}" aria-label="Vaciar espacio ${number}">×</button></div>`;
     }else{
       content=`<button class="empty" data-action="add" data-slot="${i}"><span class="plus" aria-hidden="true">+</span><span class="empty-title">Añade tu música</span><span class="empty-detail">Una canción o una emisora</span></button>`;
@@ -153,6 +155,11 @@ function render() {
     return `<article class="slot" aria-label="Espacio ${number}"><div class="frame">${content}</div><div class="slot-caption">${caption}</div></article>`;
   }).join('');
 }
+$('slots').addEventListener('error',event=>{
+  if(!event.target.matches('img.station-logo'))return;
+  const art=event.target.closest('.station-art');
+  event.target.remove();art?.classList.remove('station-art');
+},true);
 function setTab(type){const song=type==='song';$('song-tab').setAttribute('aria-selected',song);$('radio-tab').setAttribute('aria-selected',!song);$('search-form').hidden=!song;$('radio-form').hidden=song;$('results').replaceChildren();showError('search-error','');$('search-status').hidden=true;searchController?.abort();searchVersion++;}
 function openPicker(i){currentSlot=i;$('slot-label').textContent='ESPACIO '+String(i+1).padStart(2,'0');$('search-form').reset();$('radio-form').reset();setTab('song');$('picker').showModal();setTimeout(()=>$('artist').focus(),30);}
 $('song-tab').onclick=()=>setTab('song');$('radio-tab').onclick=()=>setTab('station');
@@ -199,15 +206,32 @@ function startDemo(result,slot){
   },delay)));
   saveDemo();render();
 }
+async function saveStation(station){
+  const generation=frameGeneration;
+  if(config.mode==='demo'){demo.slots['slot-'+currentSlot]={id:crypto.randomUUID(),kind:'station',title:station.title,artist:'Radio en directo',url:station.url};for(const [id,job]of Object.entries(demo.jobs))if(job.slot===currentSlot)delete demo.jobs[id];saveDemo();state=demo;}
+  else{await api('/stations',{method:'POST',body:JSON.stringify({slot:currentSlot,...station})});if(generation!==frameGeneration)return;await refresh(generation);}
+  if(generation!==frameGeneration)return;
+  $('picker').close();render();toast(config.mode==='demo'?'Emisora de ejemplo guardada en este navegador.':'Emisora guardada.');
+}
 $('radio-form').onsubmit=async event=>{
-  event.preventDefault();const generation=frameGeneration,title=$('radio-name').value.trim(),url=$('radio-url').value.trim();
+  event.preventDefault();const generation=frameGeneration,name=$('radio-query').value.trim(),country=$('radio-country').value.trim();
+  $('radio-search-button').disabled=true;$('search-status').hidden=false;$('search-status').querySelector('p').textContent='Buscando emisoras…';$('results').replaceChildren();showError('search-error','');
   try{
-    if(new URL(url).protocol!=='https:')throw new Error('Utiliza un enlace de streaming HTTPS.');
-    if(config.mode==='demo'){demo.slots['slot-'+currentSlot]={id:crypto.randomUUID(),kind:'station',title,artist:'Radio en directo',url};for(const [id,job]of Object.entries(demo.jobs))if(job.slot===currentSlot)delete demo.jobs[id];saveDemo();state=demo;}
-    else{await api('/stations',{method:'POST',body:JSON.stringify({slot:currentSlot,title,url})});if(generation!==frameGeneration)return;await refresh(generation);}
+    const results=config.mode==='demo'?[]:(await api('/stations/search',{method:'POST',body:JSON.stringify({name,country:country||null})})).results;
     if(generation!==frameGeneration)return;
-    $('picker').close();render();toast(config.mode==='demo'?'Emisora de ejemplo guardada en este navegador.':'Emisora guardada.');
+    const heading=document.createElement('p');heading.className='result-heading';heading.textContent=results.length?'Elige una emisora. Comprueba que el directo funciona al escucharla.':'No encontramos emisoras. Prueba otro nombre o introdúcela manualmente.';$('results').append(heading);
+    for(const station of results){
+      const button=document.createElement('button');button.type='button';button.className='result';
+      button.innerHTML=`${station.favicon?`<img class="result-image" alt="" src="${esc(station.favicon)}" loading="lazy">`:'<span class="result-image" aria-hidden="true"></span>'}<span class="result-info"><strong>${esc(station.name)}</strong><small>${esc(station.country||'País desconocido')}${station.codec?' · '+esc(station.codec):''}${station.bitrate?' · '+esc(station.bitrate)+' kbps':''}</small></span><span class="result-add" aria-hidden="true">+</span>`;
+      button.onclick=async()=>{button.disabled=true;try{await saveStation({title:station.name,url:station.url,stationuuid:station.stationuuid,country:station.country,homepage:station.homepage,favicon:station.favicon,codec:station.codec,bitrate:station.bitrate});}catch(error){showError('search-error',error.message);button.disabled=false;}};
+      $('results').append(button);
+    }
   }catch(error){if(generation===frameGeneration&&error.name!=='AbortError')showError('search-error',error.message);}
+  finally{if(generation===frameGeneration){$('radio-search-button').disabled=false;$('search-status').hidden=true;}}
+};
+$('radio-manual-save').onclick=async()=>{
+  try{const title=$('radio-name').value.trim(),url=$('radio-url').value.trim();if(!title||!url)throw new Error('Indica el nombre y la dirección del stream.');if(new URL(url).protocol!=='https:')throw new Error('Utiliza un enlace de streaming HTTPS.');await saveStation({title,url});}
+  catch(error){showError('search-error',error.message);}
 };
 $('slots').onclick=async event=>{
   const button=event.target.closest('button[data-action]');if(!button)return;const generation=frameGeneration,i=Number(button.dataset.slot),action=button.dataset.action,job=slotJob(i);
