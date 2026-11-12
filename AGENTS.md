@@ -20,7 +20,7 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 
 Antes de editar, revisa `git status --short` y los cambios existentes. Trabaja por fases pequeñas, preserva trabajo ajeno y resuelve decisiones rutinarias dentro de lo autorizado. No borres, recrees ni reescribas un repositorio remoto por seguir una receta de inicio. No introduzcas un segundo framework, base de datos, autenticación para el destinatario o servicio sin justificarlo frente al alcance.
 
-El código heredado es un prototipo de colección única: lee sus límites en `docs/ESTADO.md`. Adaptar el token por cuadro, el aislamiento, las tareas, la limpieza y Radio Browser requiere implementación y pruebas; no basta con renombrar variables o actualizar un README. No prometer continuidad de tareas en Render Free porque exista un hilo de fondo. No hacer que el ESP32 dependa de un Render dormido para cada reproducción.
+El backend ya deriva ámbitos por cuadro a partir del token Bearer y separa datos y objetos nuevos; lee `docs/ESTADO.md` para los límites restantes. La web todavía requiere integrar el acceso/QR, el firmware no tiene lectura autónoma de configuración/medios, y las tareas, limpieza y Radio Browser necesitan el trabajo indicado en el plan. No basta con renombrar variables o actualizar un README. No prometer continuidad de tareas en Render Free porque exista un hilo de fondo. No hacer que el ESP32 dependa de un Render dormido para cada reproducción.
 
 ## Documentación obligatoria
 

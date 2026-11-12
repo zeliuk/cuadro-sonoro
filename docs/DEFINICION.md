@@ -162,7 +162,7 @@ La imagen anterior permanece hasta completar la nueva. Al terminar o detener el 
 
 El modelo de producto es acceso mediante posesión del enlace con token del cuadro. No hay roles de propietario e invitado ni inicio de sesión para el destinatario en la primera versión. El desarrollador prepara la vinculación del dispositivo.
 
-Esto no significa hacer públicos todos los registros o entregar credenciales de administración. El acceso debe quedar limitado al cuadro correspondiente. La validación del token, las reglas de Firebase y el mecanismo técnico para permitir lecturas del ESP32 y actualizaciones web son una decisión de implementación pendiente de cerrar antes de integrar los servicios.
+Esto no significa hacer públicos todos los registros o entregar credenciales de administración. El acceso de la API se presenta como Bearer con el token aleatorio provisionado del cuadro; el backend comprueba su SHA-256 contra los hashes autorizados y usa ese hash como ámbito, sin conservar el token original. La configuración y las tareas quedan separadas por cuadro. Este mecanismo no resuelve todavía la lectura autónoma del ESP32 desde Firebase: se debe definir antes de integrar el firmware y no puede depender de Render en cada reproducción.
 
 Los tokens reales, credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32.
 
@@ -294,7 +294,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 ### Pendientes antes o durante la implementación
 
 - Placa, memoria, pantalla, audio, alimentación, ruedas/pulsadores, pines y medidas.
-- Autorización técnica con token por cuadro y reglas de acceso.
+- Lectura autónoma del ESP32 y reglas de acceso directo a Firebase.
 - Ejecución y recuperación de tareas, concurrencia global, plan de Render y validación de descargas desde ese entorno.
 - Duración máxima de canciones, tiempos máximos de tareas, calidad MP3 y límites de subida de imágenes.
 - Resolución y formato de imágenes, brillo de pantalla y duración exacta de pulsación para restablecer Wi-Fi.

@@ -7,12 +7,12 @@ from .media import persist_media
 from .state import cancelled, check_cancel, patch_job, store
 
 
-def execute_import(job):
+def execute_import(frame_key, job):
     job_id = job['id']
     try:
         check_cancel(job_id)
         import yt_dlp
-        patch_job(job_id, status='downloading', percent=None, message='Conectando con la fuente')
+        patch_job(frame_key, job_id, status='downloading', percent=None, message='Conectando con la fuente')
         with tempfile.TemporaryDirectory(prefix='sonoro-') as tmp:
             base = Path(tmp)
             last = [0.0]
@@ -24,12 +24,12 @@ def execute_import(job):
                     last[0] = time.monotonic()
                     total = data.get('total_bytes') or data.get('total_bytes_estimate')
                     percent = min(99, int(data.get('downloaded_bytes', 0) * 100 / total)) if total else None
-                    patch_job(job_id, status='downloading', percent=percent, estimated=not bool(data.get('total_bytes')), message='Descargando audio')
+                    patch_job(frame_key, job_id, status='downloading', percent=percent, estimated=not bool(data.get('total_bytes')), message='Descargando audio')
                 elif data['status'] == 'finished':
-                    patch_job(job_id, status='processing', percent=None, message='Preparando el MP3')
+                    patch_job(frame_key, job_id, status='processing', percent=None, message='Preparando el MP3')
             def processing(data):
                 check_cancel(job_id)
-                patch_job(job_id, status='processing', percent=None, message='Preparando audio e imagen')
+                patch_job(frame_key, job_id, status='processing', percent=None, message='Preparando audio e imagen')
             options = {
                 'quiet': True, 'no_warnings': True, 'noplaylist': True,
                 'format': 'bestaudio/best', 'outtmpl': str(base / 'audio.%(ext)s'),
@@ -58,8 +58,8 @@ def execute_import(job):
                 image_path = base / 'cover.jpg'
                 with Image.open(thumbnails[0]) as image:
                     ImageOps.fit(image.convert('RGB'), (320, 320)).save(image_path, quality=85)
-            patch_job(job_id, status='uploading', percent=0, message='Guardando en tu biblioteca')
-            audio_key, image_key = persist_media(job_id, audio, image_path)
+            patch_job(frame_key, job_id, status='uploading', percent=0, message='Guardando en tu biblioteca')
+            audio_key, image_key = persist_media(frame_key, job_id, audio, image_path)
             check_cancel(job_id)
             track = {
                 'id': job_id, 'kind': 'song', 'title': job['title'], 'artist': job['artist'],
@@ -71,16 +71,16 @@ def execute_import(job):
                     raise RuntimeError('Importación cancelada.')
                 state['slots']['slot-' + str(job['slot'])] = track
                 state['jobs'][job_id].update(status='ready', percent=100, message='Disponible', updated_at=time.time())
-            store.mutate(complete)
+            store.mutate(frame_key, complete)
     except Exception as exc:
         # Never return dependency logs, credentials, cookies or signed URLs to visitors.
         message = str(exc)
         if job_id in cancelled:
-            patch_job(job_id, status='cancelled', percent=None, message='Importación cancelada')
+            patch_job(frame_key, job_id, status='cancelled', percent=None, message='Importación cancelada')
         else:
             known = ('duración máxima', 'emisión en directo', 'tamaño permitido', 'generado el archivo')
             safe = message if any(x in message for x in known) else 'La fuente no ha permitido completar la importación. Puedes reintentar o elegir otra versión.'
-            patch_job(job_id, status='error', percent=None, message=safe)
+            patch_job(frame_key, job_id, status='error', percent=None, message=safe)
     finally:
         cancelled.discard(job_id)
 

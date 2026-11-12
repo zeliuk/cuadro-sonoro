@@ -12,7 +12,7 @@ def main():
         return
     lines = template.read_text(encoding='utf-8').splitlines()
     for index, line in enumerate(lines):
-        if line == 'IMPORT_API_TOKEN=':
+        if line == 'LOCAL_FRAME_TOKEN=':
             lines[index] = line + secrets.token_urlsafe(32)
     contents = '\n'.join(lines) + '\n'
     # Exclusive create protects an existing file even if another process created it.

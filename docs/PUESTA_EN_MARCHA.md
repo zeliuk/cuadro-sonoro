@@ -26,7 +26,7 @@ Sigue [backend/README.md](../backend/README.md): instalación, preparación de `
 
 ## 4. Comenzar con Codex
 
-Lee y envía el encargo de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El primer paso es verificar esta base y después adaptar acceso y datos por cuadro. No implementar firmware ni presentar el backend global como producto terminado.
+Lee y envía el encargo actualizado de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El backend ya separa datos por token; sigue el plan para completar el acceso de web y dispositivo. No presentar la importación real ni el firmware como validados.
 
 ## Problemas habituales
 
@@ -35,8 +35,7 @@ Lee y envía el encargo de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El prim
 | `python3.12` no existe | Confirmar la instalación de Python 3.12 y su comando local. |
 | No se importan módulos `backend` | Ejecutar Uvicorn desde la raíz, no desde `backend/`. |
 | Puerto ocupado | Identificar el proceso antes de detenerlo; si cambias el puerto API, actualizar la URL web y CORS según corresponda. |
-| 401 | Token ausente/incorrecto; usar el generado en el `.env` local. |
-| 503 de autorización | `IMPORT_API_TOKEN` vacío o `.env` sin cargar; reiniciar con `--env-file`. |
+| 401 | Falta el Bearer, no tiene al menos 32 caracteres o no está provisionado. Para la revisión local, cargar `LOCAL_FRAME_TOKEN` de `backend/.env` sin imprimirlo. |
 | 503 de importación | Firebase no configurado; es normal en la revisión local sin nube. |
 | Búsqueda devuelve 502 | Comprobar dependencias, red y logs redactados; una búsqueda fallida no se arregla abriendo reglas Firebase. |
 | Fallo al obtener medios | Verificar recurso del hueco, credenciales y capacidad de generar URL firmada. |

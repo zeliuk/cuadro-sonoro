@@ -14,13 +14,13 @@ En una segunda terminal, desde la misma raíz:
 ```bash
 source .venv/bin/activate
 export API_BASE='http://127.0.0.1:8000'
-export API_TOKEN="$(python -c 'from dotenv import dotenv_values; print(dotenv_values("backend/.env").get("IMPORT_API_TOKEN", ""))')"
+export API_TOKEN="$(python -c 'from dotenv import dotenv_values; print(dotenv_values("backend/.env").get("LOCAL_FRAME_TOKEN", ""))')"
 curl -i "$API_BASE/health"
 curl -i "$API_BASE/state"
 curl -i "$API_BASE/state" -H "Authorization: Bearer $API_TOKEN"
 ```
 
-Se espera 200 con flags Firebase falsos, 401 sin token y 200 con `slots`/`jobs` inicialmente vacíos al usar el token. Si ya había datos locales, no vaciarlos automáticamente: utilizar un `.env`/SQLite de desarrollo dedicado. No continuar una prueba de modificación contra datos reales.
+Se espera 200 con flags Firebase falsos, 401 sin token y 200 con `slots`/`jobs` inicialmente vacíos al usar el token local. En modo local la API admite solo `LOCAL_FRAME_TOKEN`; otro token largo no provisionado devuelve 401. Si ya había datos locales, no vaciarlos automáticamente: utilizar un `.env`/SQLite de desarrollo dedicado. No continuar una prueba de modificación contra datos reales. El estado se guarda bajo el hash del token en `frame_states`.
 
 Abrir [Swagger](http://127.0.0.1:8000/docs) y comprobar que coincide con el catálogo [API.md](API.md). Guardar y borrar un registro local sintético, sin descargar audio:
 
@@ -36,13 +36,13 @@ curl -i "$API_BASE/media/2" -H "Authorization: Bearer $API_TOKEN"
 
 Se espera 200, 200 con la URL sintética, 200 y 404. Esto verifica operaciones de metadatos, no una emisora funcional. Sin bucket configurado, un POST `/imports` válido debe devolver 503 sin crear una importación; no rellenar nombres ficticios para forzarlo.
 
-Al acabar, `unset API_TOKEN` en la segunda terminal y `Ctrl+C` en la primera. No imprimir `.env` para comprobar valores.
+Al acabar, `unset API_TOKEN` en la segunda terminal y `Ctrl+C` en la primera. No imprimir `.env` para comprobar valores. En producción el desarrollador prepara un token aleatorio diferente por cuadro y configura su hash en `FRAME_TOKEN_HASHES`; no configura una credencial global en Render. Los tokens anteriores de `IMPORT_API_TOKEN` ya no sirven.
 
 ## B. Recorrido real cuando esté preparada la fase de integración
 
 Esta parte todavía requiere configurar recursos dedicados, autorizar su uso y resolver los límites del prototipo. Puede generar consumo y modificar Firebase. No ejecutarla como parte de los tests automáticos de un fork.
 
-1. Configurar backend/Firebase y arrancar según sus guías. Usar el contrato por cuadro cuando se implemente; los comandos siguientes corresponden al prototipo actual.
+1. Configurar backend/Firebase y arrancar según sus guías. Usar el token Bearer preparado para el cuadro de prueba; el backend actual ya aísla sus datos, pero el acceso directo del ESP32 y la importación real todavía requieren validación.
 2. Buscar con el ejemplo `/search` de [API.md](API.md). Elegir explícitamente uno de sus resultados y anotar `id`, título y artista; no importar automáticamente el primero.
 3. Llamar a `/imports` con esos datos y un hueco de prueba. Comprobar 202 y conservar su `id` de tarea.
 4. Consultar `/state` y localizar esa tarea en `jobs`. Repetir la consulta hasta `ready`, `error` o `cancelled`; no tratar `percent=100` de una etapa como éxito final.

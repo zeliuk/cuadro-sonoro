@@ -1,6 +1,6 @@
 # API: instalar, arrancar y probar
 
-**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** El servicio actual es el prototipo de colección única; ver [límites](../docs/ESTADO.md). Su ejecución local permite comprobar el punto de partida sin nube.
+**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por token Bearer del cuadro; ver [límites](../docs/ESTADO.md). Su ejecución local permite comprobarla sin nube.
 
 ## Requisitos e instalación nativa
 
@@ -14,7 +14,7 @@ python scripts/setup_local.py
 python scripts/check_project.py
 ```
 
-El script crea `backend/.env` a partir de la plantilla, genera un token privado y deja vacíos los valores Firebase. No sobrescribe un archivo existente ni muestra el token. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
+El script crea `backend/.env` a partir de la plantilla, genera `LOCAL_FRAME_TOKEN` para ejemplos locales y deja vacíos los valores Firebase. No sobrescribe un archivo existente ni muestra el token. La API no carga una credencial global; cada cuadro presenta su propio Bearer y el servicio deriva su clave SHA-256. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
 
 ## Arranque nativo
 
@@ -30,7 +30,7 @@ En otra terminal:
 curl -sS http://127.0.0.1:8000/health
 ```
 
-Sin Firebase se espera `{"ok":true,"storage_configured":false,"durable_state":false}`. Las banderas no prueban permisos. Las rutas privadas devolverán 503 si el token del servidor está vacío, o 401 si la petición no lleva el correcto.
+Sin Firebase se espera `{"ok":true,"storage_configured":false,"durable_state":false}`. Las banderas no prueban permisos. Las rutas del cuadro devuelven 401 si falta el Bearer, tiene menos de 32 caracteres o no está provisionado. En local, `LOCAL_FRAME_TOKEN` sirve para los ejemplos de [API.md](../docs/API.md); en Firebase, configura hashes permitidos en `FRAME_TOKEN_HASHES` como se describe en [CONFIGURACION.md](../docs/CONFIGURACION.md).
 
 Abre [Swagger UI](http://127.0.0.1:8000/docs), [ReDoc](http://127.0.0.1:8000/redoc) o [OpenAPI JSON](http://127.0.0.1:8000/openapi.json). En Swagger, «Authorize» recibe el token local, sin el prefijo `Bearer`. Usa el catálogo con ejemplos de [API.md](../docs/API.md) y el recorrido de [PRUEBA_API.md](../docs/PRUEBA_API.md).
 
@@ -77,4 +77,4 @@ Las pruebas usan token sintético y SQLite temporal, simulando descarga/subida. 
 
 Para una prueba real, usar recursos dedicados y completar el entorno según [CONFIGURACION.md](../docs/CONFIGURACION.md). Nativo: ruta absoluta de la cuenta de servicio en `GOOGLE_APPLICATION_CREDENTIALS`. Compose: archivo privado `secrets/firebase.json` y ruta `/run/secrets/firebase.json`, dejando vacía la alternativa JSON.
 
-El [despliegue](../docs/DESPLIEGUE.md) es una fase posterior: resolver antes el aislamiento por cuadro y la ejecución recuperable. No usar varios workers/réplicas con el prototipo actual. No hay comando de limpieza remota de canciones terminado; no inventarlo ni borrar objetos a mano como parte de una verificación rutinaria.
+El [despliegue](../docs/DESPLIEGUE.md) es una fase posterior: resolver el acceso directo del ESP32 a configuración y medios, la ejecución recuperable y la migración manual de datos antiguos dedicados. No usar varios workers/réplicas todavía. No hay comando de limpieza remota de canciones terminado; no inventarlo ni borrar objetos a mano como parte de una verificación rutinaria.

@@ -2,7 +2,7 @@
 
 El repo público no implica datos, importador o archivos públicos. No versionar `.env`, cuentas de servicio, tokens reales, cookies, claves privadas, bases de ejecución o medios personales. Las plantillas contienen privados vacíos.
 
-El token global `IMPORT_API_TOKEN` existe solo en el prototipo de desarrollo; no distribuirlo a invitados ni incorporarlo a la web pública. El producto usa acceso limitado por cuadro, pendiente de implementación. La cuenta de servicio Firebase pertenece al servidor, nunca al navegador o ESP32. El familiar solo configura Wi-Fi; no gestiona administración de nube.
+El backend recibe un token aleatorio por cuadro como Bearer, exige su SHA-256 en `FRAME_TOKEN_HASHES` y usa ese hash para aislar el estado. No usa el antiguo `IMPORT_API_TOKEN`, ni guarda los tokens originales en datos o rutas de Storage. El token es una capacidad: quien lo posee puede consultar y modificar ese cuadro. No incorporarlo como constante en la web pública. La cuenta de servicio Firebase pertenece al servidor, nunca al navegador o ESP32. El acceso autónomo del firmware a configuración/medios sigue pendiente.
 
 Las variables enviadas al navegador son visibles. CORS no autoriza usuarios. Admin SDK se rige por IAM y no por reglas Firebase de clientes. No abrir reglas como solución a un fallo de permisos.
 

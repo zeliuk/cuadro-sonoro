@@ -13,8 +13,8 @@ PRIVATE_PATTERNS = (
     ('token de proveedor', re.compile(r'\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16})\b')),
     ('URL de acceso temporal', re.compile(r'[?&](?:X-Goog-Signature|X-Amz-Signature|token)=[A-Za-z0-9%_-]{24,}', re.I)),
 )
-DOTENV_SECRET = re.compile(r'''(?im)^[ \t]*(?:export[ \t]+)?(?:IMPORT_API_TOKEN|FIREBASE_SERVICE_ACCOUNT_JSON|GH_TOKEN|GITHUB_TOKEN|AWS_SECRET_ACCESS_KEY)[ \t]*[:=][ \t]*["']?([^\r\n#]*)''')
-CODE_SECRET = re.compile(r'''(?im)["'](?:IMPORT_API_TOKEN|GH_TOKEN|GITHUB_TOKEN)["']\]?\s*[:=]\s*["']([^"'\r\n]+)["']''')
+DOTENV_SECRET = re.compile(r'''(?im)^[ \t]*(?:export[ \t]+)?(?:FRAME_TOKEN_HASHES|LOCAL_FRAME_TOKEN|IMPORT_API_TOKEN|FIREBASE_SERVICE_ACCOUNT_JSON|GH_TOKEN|GITHUB_TOKEN|AWS_SECRET_ACCESS_KEY)[ \t]*[:=][ \t]*["']?([^\r\n#]*)''')
+CODE_SECRET = re.compile(r'''(?im)["'](?:FRAME_TOKEN_HASHES|LOCAL_FRAME_TOKEN|IMPORT_API_TOKEN|GH_TOKEN|GITHUB_TOKEN)["']\]?\s*[:=]\s*["']([^"'\r\n]+)["']''')
 TEST_VALUES = {'test-token-only', 'test-only', 'CHANGE_ME', 'YOUR_TOKEN', 'YOUR_SECRET'}
 PRIVATE_DIRS = {'secrets', 'credentials', '.aws', '.ssh', 'downloads', 'runtime-data'}
 

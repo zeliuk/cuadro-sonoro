@@ -2,7 +2,7 @@
 
 En la primera revisión local no necesitas crear recursos: la demo funciona sin nube y la API usa SQLite si `FIREBASE_DATABASE_URL` está vacía.
 
-Se usarán Realtime Database para datos y Storage para archivos. No se usa Firebase Hosting; `firebase.json` solo declara reglas de Database y Storage. Las reglas iniciales deniegan acceso directo de clientes y no configuran todavía el acceso por cuadro del ESP32.
+Se usarán Realtime Database para datos y Storage para archivos. No se usa Firebase Hosting; `firebase.json` solo declara reglas de Database y Storage. Las reglas iniciales deniegan acceso directo de clientes. El backend aísla solicitudes por token, pero todavía no hay acceso por cuadro del ESP32.
 
 ## Configuración real, cuando se aborde esa fase
 

@@ -5,12 +5,12 @@ from .firebase_client import firebase
 from .state import check_cancel, patch_job
 
 
-def persist_media(job_id, audio: Path, image: Path | None):
+def persist_media(frame_key, job_id, audio: Path, image: Path | None):
     from firebase_admin import storage
     bucket = storage.bucket(app=firebase())
     uploaded = []
     try:
-        audio_key = f'private/sonoro/{job_id}/audio.mp3'
+        audio_key = f'private/frames/{frame_key}/{job_id}/audio.mp3'
         uploaded.append(audio_key)
         # Resumable chunks expose actual completed byte counts.
         from google.auth.transport.requests import AuthorizedSession
@@ -25,11 +25,11 @@ def persist_media(job_id, audio: Path, image: Path | None):
             while not upload.finished:
                 check_cancel(job_id)
                 upload.transmit_next_chunk(transport)
-                patch_job(job_id, status='uploading', percent=min(99, int(upload.bytes_uploaded / total * 100)), message='Guardando audio')
+                patch_job(frame_key, job_id, status='uploading', percent=min(99, int(upload.bytes_uploaded / total * 100)), message='Guardando audio')
         image_key = None
         if image:
             check_cancel(job_id)
-            image_key = f'private/sonoro/{job_id}/cover.jpg'
+            image_key = f'private/frames/{frame_key}/{job_id}/cover.jpg'
             uploaded.append(image_key)
             bucket.blob(image_key).upload_from_filename(str(image), content_type='image/jpeg')
         return audio_key, image_key

@@ -4,9 +4,9 @@
 
 Leer definición y estado; revisar Git; ejecutar demo, API local, tests, checks y comandos documentados; registrar límites reales del entorno. No requiere servicios de nube ni hardware.
 
-## Fase 1 — Acceso y datos por cuadro
+## Fase 1 — Acceso y datos por cuadro (en curso)
 
-Sustituir el modelo global por token fijo por cuadro, tres huecos y separación de datos. Definir autorización de web/dispositivo/medios sin cuentas para el familiar ni administración global expuesta. Probar que un cuadro no lee ni cambia otro. Resolver cómo el ESP32 accede sin depender de despertar Render para cada reproducción. Actualizar OpenAPI, curl y guías.
+Completado en el primer cambio: la API recibe un Bearer provisionado por cuadro, valida su SHA-256 en `FRAME_TOKEN_HASHES`, separa estado/tareas/medios nuevos, permite una importación activa por cuadro y tiene pruebas de separación; se actualizaron OpenAPI y guías. En curso: entregar el token automáticamente a la web desde el enlace QR/NFC, evitando pedirlo manualmente al familiar. Pendiente: definir y probar acceso autónomo del ESP32 a configuración y medios sin depender de despertar Render para cada reproducción. Los datos de la antigua colección global no se migran automáticamente.
 
 ## Fase 2 — Importación real fiable
 

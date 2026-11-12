@@ -139,7 +139,7 @@ $('settings-form').onsubmit=async event=>{
   try{
     if(mode==='real'){
       const url=new URL(config.url);if(url.protocol!=='https:'&&url.hostname!=='localhost'&&url.hostname!=='127.0.0.1')throw new Error('Utiliza HTTPS para conectar tu servicio.');
-      if(!config.token)throw new Error('Introduce la clave de acceso al servicio.');
+      if(!config.token)throw new Error('Introduce el token de acceso del cuadro.');
       const health=await api('/health');if(!health.storage_configured)throw new Error('El servicio responde, pero todavía necesita configurar Firebase Storage.');
       state=await api('/state');
     }else{state=demo;}

@@ -1,8 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Sonoro import service",
-    "version": "0.1.0"
+    "title": "Sonoro API",
+    "description": "API experimental de Sonoro. Las operaciones de cuadro usan un token Bearer y separan datos mediante su huella SHA-256. No proporciona acceso autónomo a medios para el ESP32.",
+    "version": "0.2.0"
   },
   "paths": {
     "/health": {
@@ -43,6 +44,12 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
+          },
+          "502": {
+            "description": "Falló la búsqueda en la fuente."
           },
           "422": {
             "description": "Validation Error",
@@ -85,6 +92,15 @@
               }
             }
           },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
+          },
+          "409": {
+            "description": "El cuadro ya tiene una importación activa."
+          },
+          "503": {
+            "description": "Firebase Storage no está configurado."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -115,6 +131,9 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
           }
         },
         "security": [
@@ -153,6 +172,12 @@
               }
             }
           },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
+          },
+          "404": {
+            "description": "Tarea no encontrada en este cuadro."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -188,6 +213,12 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
+          },
+          "409": {
+            "description": "El cuadro ya tiene una importación activa."
           },
           "422": {
             "description": "Validation Error",
@@ -236,6 +267,9 @@
               }
             }
           },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -277,6 +311,12 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Token ausente, inválido o no provisionado."
+          },
+          "404": {
+            "description": "Hueco vacío en este cuadro."
           },
           "422": {
             "description": "Validation Error",
@@ -436,6 +476,7 @@
     "securitySchemes": {
       "HTTPBearer": {
         "type": "http",
+        "description": "Token aleatorio provisionado para el cuadro, mínimo 32 caracteres. No usar una credencial administrativa de Firebase.",
         "scheme": "bearer"
       }
     }

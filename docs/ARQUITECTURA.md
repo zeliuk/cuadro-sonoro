@@ -22,9 +22,9 @@ Una tarea aceptada debe poder sobrevivir a cerrar la web. Persistir su registro 
 
 ## Acceso
 
-El token de un cuadro sirve como llave de su configuración. El familiar no configura una cuenta ni una segunda credencial técnica. El servicio debe validar ese acceso sin revelar IAM/Admin SDK. Definir un acceso seguro del ESP32 a configuración y medios que mantenga la reproducción independiente de un servicio Render dormido; no abrir reglas globales ni asumir que un ID secreto en una ruta basta para proteger todos los recursos.
+El token aleatorio provisionado de cada cuadro se envía en `Authorization: Bearer`. La API exige que su SHA-256 esté en `FRAME_TOKEN_HASHES` y usa ese hash como ámbito en RTDB (`frames/{sha256}`), SQLite local (`frame_states`) y rutas de objetos nuevos en Storage. El token original no se guarda. El familiar no configura una cuenta ni una segunda credencial técnica. Los datos de la antigua colección común no se migran porque no tienen identidad de cuadro.
 
-El prototipo todavía no implementa esa solución: tiene un token global y colección única. Es el primer cambio del plan.
+La web todavía no incorpora automáticamente el token al QR/enlace y el firmware no existe. La API de importación sigue necesitando Render; los enlaces de Storage firmados 30 minutos no permiten afirmar que el ESP32 pueda reproducir con Render dormido. Resolver ese acceso antes de integrar el firmware; no abrir reglas globales ni dar por cumplida esa parte.
 
 ## Decisiones aplazadas
 

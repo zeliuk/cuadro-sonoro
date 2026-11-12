@@ -1,10 +1,10 @@
 # Despliegue: receta y condiciones previas
 
-Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar las fases de [PLAN.md](PLAN.md), especialmente autorización por cuadro y ejecución recuperable. La receta heredada `render.prototype.yaml` es referencia de un prototipo global, no el blueprint final del producto ni garantía de ejecución fiable.
+Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar las fases de [PLAN.md](PLAN.md), especialmente el acceso autónomo del dispositivo y la ejecución recuperable. El backend ya aísla sus datos por token; la receta heredada `render.prototype.yaml` sigue siendo referencia del prototipo, no el blueprint final ni garantía de ejecución fiable.
 
 ## Web en el servidor propio
 
-Servir únicamente `web/` con HTTPS. Nunca subir `.env`, backend, cuentas de servicio o el repo completo a una carpeta pública. No hay build obligatorio. El comando exacto de subida dependerá del acceso/proveedor del servidor de Carlos y se añadirá cuando se configure. Mantener la demo hasta tener listo el contrato de acceso por cuadro.
+Servir únicamente `web/` con HTTPS. Nunca subir `.env`, backend, cuentas de servicio o el repo completo a una carpeta pública. No hay build obligatorio. El comando exacto de subida dependerá del acceso/proveedor del servidor de Carlos y se añadirá cuando se configure. Mantener la demo hasta integrar el acceso del cuadro en el flujo web.
 
 ## Comprobar el contenedor local
 

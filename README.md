@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: base de desarrollo con un prototipo ejecutable.** La definición del producto está acordada; el firmware, el acceso por cuadro y varias integraciones todavía no están implementados. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
+**Estado: base de desarrollo con un prototipo ejecutable.** El backend ya aísla datos nuevos por token del cuadro; la integración QR/NFC, el acceso autónomo del ESP32 y varias integraciones todavía no están implementados. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
 
 ## Prueba la interfaz sin credenciales
 
@@ -55,7 +55,7 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 | Ruta | Contenido |
 |---|---|
 | `web/` | Diseño aprobado y prototipo dinámico. |
-| `backend/` | API e importador iniciales, pendientes de adaptación al producto. |
+| `backend/` | API e importador iniciales; el aislamiento por token ya está implementado y faltan integraciones y validación real. |
 | `firebase/` | Reglas iniciales cerradas y guía de configuración. |
 | `firmware/` | Alcance documentado; todavía sin firmware. |
 | `docs/` | Definición, arquitectura, comandos, endpoints, fases y decisiones. |

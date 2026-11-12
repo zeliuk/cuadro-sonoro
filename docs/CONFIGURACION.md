@@ -1,10 +1,11 @@
 # Configuración por entorno
 
-El modo demo no necesita configuración de nube. Para el backend local, ejecuta desde la raíz `python3 scripts/setup_local.py`: crea `backend/.env` con un token aleatorio y valores de nube vacíos. Si ya existe, no lo sobrescribe y no imprime su contenido.
+El modo demo no necesita configuración de nube. Para el backend local, ejecuta desde la raíz `python3 scripts/setup_local.py`: crea `backend/.env` con un token aleatorio y valores de nube vacíos. Si ya existe, no lo sobrescribe ni imprime su contenido; si fue creado con el antiguo `IMPORT_API_TOKEN`, añade `LOCAL_FRAME_TOKEN` nuevo a la configuración local y deja las variables Firebase vacías para el modo de desarrollo.
 
 | Variable actual | Función | Ubicación |
 |---|---|---|
-| `IMPORT_API_TOKEN` | Token global del prototipo, solo para pruebas del desarrollador. No es el acceso por cuadro final. | `.env` privado o secreto de Render. |
+| `LOCAL_FRAME_TOKEN` | Token aleatorio local generado para los ejemplos HTTP. La API no lo carga como secreto global: cada petición presenta el token del cuadro como Bearer. | `.env` local; no se usa para autenticar el proceso. |
+| `FRAME_TOKEN_HASHES` | Hashes SHA-256 hex de los tokens provisionados en producción, separados por comas. | Variable de entorno del servicio. |
 | `ALLOWED_ORIGINS` | Orígenes exactos permitidos por CORS. | `.env`/Render. No sustituye autorización. |
 | `FIREBASE_DATABASE_URL` | URL exacta de RTDB. Vacía: SQLite local. | `.env`/Render. |
 | `FIREBASE_STORAGE_BUCKET` | Nombre del bucket sin `gs://`. Vacío: importación no disponible. | `.env`/Render. |
@@ -13,7 +14,15 @@ El modo demo no necesita configuración de nube. Para el backend local, ejecuta 
 | `STATE_DB` | SQLite local de desarrollo. El archivo no se versiona. | `.env`; valor inicial en `/tmp`. |
 | `PORT` | Puerto del proceso Docker/Render; por defecto 8000. | Entorno de ejecución. |
 
-No rellenar valores Firebase ficticios para saltarse el 503: no configuran recursos reales y provocan fallos del worker. `storage_configured` y `durable_state` en `/health` solo reflejan presencia de variables; no acreditan acceso.
+El token de cuadro debe ser aleatorio y largo; generar uno con `python -c 'import secrets; print(secrets.token_urlsafe(32))'` por dispositivo y guardarlo en el sistema seguro usado para preparar el QR/NFC. Para calcular el valor de autorización sin mostrar el token durante la entrada:
+
+```bash
+python -c 'import getpass,hashlib; print(hashlib.sha256(getpass.getpass("Token del cuadro: ").encode()).hexdigest())'
+```
+
+Añadir ese hash hexadecimal a `FRAME_TOKEN_HASHES`, separado por comas si hay varios cuadros. Reiniciar el servicio después de cambiar la lista. La API recibe el token original en `Authorization: Bearer ...`, comprueba su hash permitido y usa el mismo hash como ámbito. El token original no se guarda en Firebase, SQLite, tareas o rutas de Storage. RTDB usa `frames/{sha256}`; SQLite usa filas independientes en `frame_states`. No hay token global ni endpoint para emitir tokens. `LOCAL_FRAME_TOKEN` solo facilita probar la API local cuando Firebase no está configurado; no se acepta en despliegues con Firebase. Los tokens previos de `IMPORT_API_TOKEN` ya no autentican.
+
+Los datos de la antigua colección única no se asignan automáticamente a un cuadro: su identidad no se puede deducir de forma segura. En local, el nuevo código deja la tabla antigua sin uso y escribe en `frame_states`. No rellenar valores Firebase ficticios para saltarse el 503: no configuran recursos reales y provocan fallos del worker. `storage_configured` y `durable_state` en `/health` solo reflejan presencia de variables; no acreditan acceso.
 
 ## Firebase cuando se aborde la integración
 
@@ -21,6 +30,6 @@ Crear/configurar un proyecto dedicado y copiar desde su consola URL RTDB y nombr
 
 Usar una sola vía de credencial y reiniciar el proceso tras cambiar variables. Compose usa `env_file`; la ejecución nativa usa `--env-file backend/.env`. La web no carga ese archivo ni recibe sus secretos.
 
-Las reglas iniciales deniegan acceso directo de clientes. Admin SDK usa IAM y no está restringido por esas reglas. La autorización por cuadro está pendiente y debe resolverse antes de distribuir enlaces reales.
+Las reglas iniciales deniegan acceso directo de clientes. Admin SDK usa IAM y no está restringido por esas reglas. La API aplica ámbito por token Bearer en su acceso mediado; el acceso directo del ESP32 sigue pendiente y debe resolverse antes de distribuir enlaces reales.
 
 El token de enlace del producto estará preparado por cuadro y será visible para quien acceda a él por diseño; no concede administración del proyecto Firebase. Una variable `.env` que termina en JavaScript no queda oculta. `.env.example` debe mantener privados vacíos y ejemplos inequívocos.
