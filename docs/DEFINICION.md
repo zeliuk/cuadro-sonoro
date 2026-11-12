@@ -22,6 +22,7 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 - Cada cuadro tiene un token aleatorio, largo y difícil de adivinar, fijado por el desarrollador al preparar el dispositivo.
 - Ese token relaciona el acceso web, los datos del cuadro y el ESP32. No es un identificador numérico predecible ni una credencial global para todos los cuadros.
 - El QR y el NFC habituales abren la web alojada en el servidor de Carlos, con acceso al cuadro correspondiente.
+- El enlace entrega el token mediante el fragmento, con formato `https://dominio/#token=<token>`. El navegador lo consume sin incluirlo en la petición al servidor web y después limpia la barra de direcciones.
 - No se plantea un registro ni un selector de usuarios para la primera versión. Quien tenga el enlace podrá consultar y cambiar la configuración de ese cuadro.
 - Las selecciones pertenecen al cuadro y son compartidas entre quienes acceden desde distintos móviles.
 - No se añade una credencial de dispositivo que el destinatario deba introducir o gestionar. El mecanismo técnico de autorización se resolverá durante la implementación respetando esta experiencia.

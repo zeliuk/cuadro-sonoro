@@ -18,7 +18,7 @@ Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3
 python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 ```
 
-Abre [la web](http://127.0.0.1:5173). Comprueba tres huecos, búsqueda simulada, selección, progreso, cancelación y persistencia al recargar. Se detiene con `Ctrl+C`. La continuidad de una tarea real al cerrar la web no está demostrada por los temporizadores de demo.
+Abre [la web](http://127.0.0.1:5173). Sin un enlace de cuadro aparece el acceso bloqueado; para recorrer la experiencia elige «Demostración» en ajustes. Comprueba tres huecos, búsqueda simulada, selección, progreso, cancelación y persistencia al recargar. El acceso por enlace y su prueba local están en [web/README.md](../web/README.md). Se detiene con `Ctrl+C`. La continuidad de una tarea real al cerrar la web no está demostrada por los temporizadores de demo.
 
 ## 3. API
 

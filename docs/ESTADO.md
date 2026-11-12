@@ -4,7 +4,7 @@ Esta entrega conserva el código del prototipo como punto de partida, con docume
 
 | Área | Existe ahora | Pendiente para el producto |
 |---|---|---|
-| Interfaz | HTML/CSS/JS dinámico, tres huecos, búsqueda/progreso simulados, entrada manual de radio y conexión experimental al backend con token Bearer manual. | Modularizar JS, integrar el token en acceso QR/NFC, Radio Browser, imagen decorativa y pulido móvil. |
+| Interfaz | HTML/CSS/JS dinámico; acepta `#token=...`, usa Bearer y conserva el token en `sessionStorage` de la pestaña. Sin token muestra acceso bloqueado; demo es explícita. Se conserva el acceso manual de desarrollo. | Preparar/imprimir QR y programar NFC, modularizar JS, Radio Browser, imagen decorativa y pulido móvil. |
 | Demo | Datos en localStorage, resultados y progreso identificados como simulados. | Audio/recursos de ejemplo publicables y completar el flujo final; las tareas de demo no continúan al cerrar la página. |
 | API | Ocho operaciones; operaciones del cuadro protegidas con Bearer de al menos 32 caracteres. OpenAPI actualizado. | Autorización y lectura directa de medios para ESP32; Radio Browser, imagen decorativa y otras funciones. |
 | Identidad | Token aleatorio provisionado por cuadro; la API valida su SHA-256 en `FRAME_TOKEN_HASHES` y usa el hash como ámbito. No hay token global ni emisión de credenciales en el servicio. | Integración del token en QR/NFC y mecanismo seguro de acceso autónomo del ESP32. |
@@ -17,6 +17,6 @@ Esta entrega conserva el código del prototipo como punto de partida, con docume
 
 Los límites de 15 minutos, 40 MiB y la carátula 320×320 son valores del prototipo, no decisiones definitivas de producto. No confundir flags de configuración de `/health` con permisos verificados. Las URLs firmadas actuales caducan a los 30 minutos; no están validadas como mecanismo de acceso autónomo para el firmware.
 
-La revisión local del 12 de noviembre de 2026 preparó `.venv` con Python 3.12.15 y ejecutó la demo y la API sin Firebase. Las comprobaciones y sus límites están en [VALIDACION.md](VALIDACION.md). El primer cambio de aislamiento por cuadro está implementado en backend y almacenamiento; el acceso automático desde QR/NFC y el acceso autónomo del ESP32 siguen pendientes.
+La revisión local del 12 de noviembre de 2026 preparó `.venv` con Python 3.12.15 y ejecutó la demo y la API sin Firebase. Las comprobaciones y sus límites están en [VALIDACION.md](VALIDACION.md). El backend aísla cuadros y la web consume el enlace con token; generar QR, programar NFC y dar acceso autónomo al ESP32 siguen pendientes.
 
 Consultar [validaciones](VALIDACION.md), [plan](PLAN.md) y [definición](DEFINICION.md). No desplegar el prototipo actual como producto listo: faltan el acceso del dispositivo, la integración QR/NFC, la recuperación fiable de tareas y la validación real del flujo de medios.

@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: base de desarrollo con un prototipo ejecutable.** El backend ya aísla datos nuevos por token del cuadro; la integración QR/NFC, el acceso autónomo del ESP32 y varias integraciones todavía no están implementados. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
+**Estado: base de desarrollo con un prototipo ejecutable.** El backend aísla datos por cuadro y la web acepta el token desde un enlace. La generación QR/NFC, el acceso autónomo del ESP32 y varias integraciones todavía no están implementados. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
 
 ## Prueba la interfaz sin credenciales
 
@@ -12,7 +12,7 @@ Desde la raíz del repositorio, con Python 3 disponible:
 python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 ```
 
-Abre [la demo local](http://127.0.0.1:5173). Se detiene con `Ctrl+C`. No necesitas instalar el backend ni configurar Firebase. Los resultados y las barras son simulados y están identificados como demo; la demo actual todavía no reproduce audio de ejemplo.
+Abre [la interfaz local](http://127.0.0.1:5173) y elige «Demostración» desde ajustes para probarla sin backend. Se detiene con `Ctrl+C`. Los resultados y las barras son simulados y están identificados como demo; la demo actual todavía no reproduce audio de ejemplo.
 
 ## Producto definido
 

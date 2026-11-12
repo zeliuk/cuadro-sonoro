@@ -61,6 +61,20 @@ Se implementó el contrato Bearer por cuadro: el backend usa SHA-256 para deriva
 
 Estas pruebas usan SQLite temporal y URLs sintéticas. No prueban Firebase RTDB/Storage reales, descargas de YouTube, Docker, Render, acceso ESP32 ni enlaces QR/NFC. No se validó visualmente el cambio de texto en distintos tamaños de pantalla; no se modificaron CSS ni estructura.
 
+## Enlace de acceso por cuadro — 12 de noviembre de 2026
+
+La web acepta `https://dominio/#token=<token_urlsafe>`. El token se recoge en el navegador, se conserva en `sessionStorage` de la pestaña y se quita de la barra sin navegar de nuevo. Las operaciones usan `Authorization: Bearer`; el backend mantiene su allowlist `FRAME_TOKEN_HASHES`. Cambiar de enlace aborta solicitudes del contexto anterior y vacía el estado visible. Token ausente queda bloqueado; 401 limpia la sesión y no abre la demo. La demo continúa siendo una elección explícita.
+
+| Comprobación | Resultado |
+|---|---|
+| `node --check web/app.js` | Correcto. |
+| Tests locales backend/scripts, Firebase env retiradas | 13 pasaron; un aviso conocido de deprecación Starlette/TestClient con HTTPX. |
+| `python -m compileall -q backend scripts` | Correcto. |
+| Navegador Chrome headless, web estática y FastAPI local con SQLite temporal | Bloqueo inicial sin token; guardar URL sin token no abrió demo; fragmento eliminado sin navegación; la petición `/state` incluyó Bearer; recarga de pestaña conservó acceso; cambio entre dos tokens provisionados mostró solo el estado del segundo; token largo no provisionado recibió 401, limpió el token/estado y no abrió demo; selección explícita de demo y retorno mediante enlace funcionaron. |
+| Interfaz móvil a 390 × 844 CSS px | `innerWidth` 390 y `scrollWidth` 390, sin desbordamiento horizontal. No se probó en un móvil físico. |
+
+Los dos cuadros y el token rechazado eran datos ficticios en una base SQLite temporal. No se usaron credenciales ni servicios Firebase reales. El endpoint local se permitió mediante CORS solo para el origen temporal de la prueba. La prueba no valida QR impreso, NFC, hosting ni una integración real con Firebase/Render. No se comprobó visualmente en un dispositivo físico.
+
 ## Reproducir los checks
 
 Desde la raíz, con `.venv` activado:
