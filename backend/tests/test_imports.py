@@ -27,7 +27,6 @@ def reset():
     if not m.store.cloud:
         m.store.conn.execute('DELETE FROM frame_states')
         m.store.conn.commit()
-    m.cancelled.clear()
 
 
 def test_missing_or_malformed_identifier_is_rejected_but_short_valid_id_works():
@@ -97,6 +96,7 @@ def test_validate_id_slot_and_duplicate_jobs(monkeypatch):
     assert client.post('/imports',headers=AUTH,json=second_slot).status_code == 409
     job_id=first.json()['id']
     assert client.post('/jobs/'+job_id+'/cancel',headers=AUTH).status_code == 200
+    assert m.store.read(KEY_A)['jobs'][job_id]['status'] == 'cancelled'
     assert client.post('/imports',headers=AUTH,json=base).status_code == 202
 
 
@@ -130,7 +130,7 @@ def test_progress_pipeline_only_commits_after_upload():
             assert m.store.read(KEY_A)['jobs']['pipeline']['percent']==50
             options['progress_hooks'][0]({'status':'finished'})
         instance.download.side_effect=download
-        def uploaded(*args):
+        def uploaded(*args, **kwargs):
             state=m.store.read(KEY_A)
             assert state['jobs']['pipeline']['status']=='uploading'
             assert 'slot-1' not in state['slots']
@@ -138,14 +138,15 @@ def test_progress_pipeline_only_commits_after_upload():
         upload.side_effect=uploaded
         worker.execute_import(KEY_A, job)
     state=m.store.read(KEY_A)
-    assert state['jobs']['pipeline']['status']=='ready'
-    assert state['slots']['slot-1']['audio_key']==f'private/frames/{KEY_A}/pipeline/audio.mp3'
+    assert state['jobs']['pipeline']['status']=='ready', state['jobs']['pipeline']
+    assert state['slots']['slot-1']['audio_key'].startswith(f'private/frames/{KEY_A}/pipeline/')
+    assert state['slots']['slot-1']['audio_key'].endswith('/audio.mp3')
 
 
 def test_cancel_before_download_and_station_validation():
     job={'id':'cancel','slot':2,'source_id':'BaW_jenozKc','title':'Test','artist':'Test','status':'queued','created_at':0}
     m.store.mutate(KEY_A, lambda state: state['jobs'].update(cancel=job))
-    m.cancelled.add('cancel')
+    m.store.mutate(KEY_A, lambda state: state['jobs']['cancel'].update(status='cancelled'))
     with patch('yt_dlp.YoutubeDL') as ydl:
         worker.execute_import(KEY_A, job)
         ydl.assert_not_called()

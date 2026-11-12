@@ -22,7 +22,7 @@ El script crea `backend/.env` a partir de la plantilla y deja vacíos los valore
 python -m uvicorn backend.main:app --env-file backend/.env --host 127.0.0.1 --port 8000 --workers 1
 ```
 
-Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso. Para reiniciar, vuelve a ejecutar el comando. Un solo worker es un requisito del prototipo, que tiene un bucle de tareas dentro del proceso.
+Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso. El apagado ordenado deja las tareas vigentes en cola; si el proceso cae sin apagarse, al siguiente inicio se recuperan hasta dos veces desde el principio. Después la tarea queda en error con instrucciones para cancelarla y volver a crearla. Usa siempre `--workers 1`.
 
 En otra terminal:
 
@@ -64,7 +64,25 @@ Reiniciar procesos existentes:
 docker compose start
 ```
 
-Tras cambiar código, reconstruir con `docker compose up --build -d`. Tras cambiar `.env`, recrear con `docker compose up -d --force-recreate api` (un simple restart no recarga el entorno). Eliminar contenedores con `docker compose down`; no elimina tu `.env` ni los datos remotos. SQLite está dentro del contenedor y se pierde al recrearlo: solo es persistencia temporal de desarrollo.
+Tras cambiar código, reconstruir con `docker compose up --build -d`. Tras cambiar `.env`, recrear con `docker compose up -d --force-recreate api` (un simple restart no recarga el entorno). SQLite local se guarda en el volumen nombrado `sonoro-state`, que sobrevive a reinicios, recreación de API y `docker compose down`. `docker compose down -v` elimina deliberadamente el volumen y sus datos; Firebase y `.env` no están en él.
+
+### Recorrido Docker de recuperación
+
+Este recorrido solo escribe datos sintéticos en el volumen local y no necesita credenciales Firebase ni acceso a YouTube:
+
+```bash
+docker compose -f compose.recovery.yaml up -d --build api
+docker compose -f compose.recovery.yaml exec api python /app/scripts/docker_import_recovery.py seed
+docker compose -f compose.recovery.yaml kill api
+docker compose -f compose.recovery.yaml run --rm api python /app/scripts/docker_import_recovery.py recover
+docker compose -f compose.recovery.yaml run --rm api python /app/scripts/docker_import_recovery.py show
+```
+
+`seed` crea una tarea ficticia en fase `uploading`; `kill` simula una caída abrupta. `recover` ejecuta la misma función de recuperación del arranque y debe mostrar estado `queued`, `recoveries: 1` y mensaje de repetición desde el inicio. `show` lee el registro desde un contenedor distinto que monta el mismo volumen. La configuración de recuperación tiene un proyecto y volumen propios, no carga `.env` ni monta `secrets/`; no llama a proveedores. La limpieza de Storage reintenta restos al arrancar, al terminar/cancelar importaciones y cada cinco minutos mientras la API está inactiva.
+
+La configuración `compose.recovery.yaml` no carga `backend/.env`, no monta `secrets/` y usa el volumen independiente `recovery-state`, por lo que el recorrido queda aislado incluso si el Compose normal apunta a Firebase. `docker compose -f compose.recovery.yaml down -v` borra solo los datos sintéticos de este recorrido.
+
+En el Compose normal, `docker compose restart api` reinicia el contenedor existente. `docker compose up -d --force-recreate api` lo reemplaza conservando el volumen. `docker compose down -v` borra el volumen de desarrollo.
 
 ## Pruebas aisladas
 
@@ -81,4 +99,4 @@ Las pruebas usan identificadores sintéticos y SQLite temporal, simulando descar
 
 Para una prueba real, usar recursos dedicados y completar el entorno según [CONFIGURACION.md](../docs/CONFIGURACION.md). Nativo: ruta absoluta de la cuenta de servicio en `GOOGLE_APPLICATION_CREDENTIALS`. Compose: archivo privado `secrets/firebase.json` y ruta `/run/secrets/firebase.json`, dejando vacía la alternativa JSON.
 
-El [despliegue](../docs/DESPLIEGUE.md) es una fase posterior: resolver el acceso directo del ESP32 a configuración y medios, la ejecución recuperable y la migración manual de datos antiguos dedicados. No usar varios workers/réplicas todavía. El inicio de API y el vaciado de un hueco eliminan objetos de Storage que ya no estén referenciados por una selección; fallos quedan pendientes para el siguiente intento.
+El [despliegue](../docs/DESPLIEGUE.md) es una fase posterior: resolver el acceso directo del ESP32 a configuración y medios, las garantías de ejecución en Render y la migración manual de datos antiguos dedicados. No usar varios workers/réplicas todavía. El inicio de API y el vaciado de un hueco eliminan objetos de Storage que ya no estén referenciados por una selección; fallos quedan pendientes para el siguiente intento.

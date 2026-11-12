@@ -16,7 +16,7 @@ from .identity import frame_key_for
 from .lifecycle import lifespan
 from .media import delete_orphaned_media
 from .models import Import, Search, Station, StationSearch
-from .state import cancelled, patch_job, store
+from .state import store
 
 
 app = FastAPI(
@@ -123,8 +123,12 @@ def cancel(job_id: str, frame_key: str = Depends(identify_frame)):
     if not job:
         raise HTTPException(404, 'Tarea no encontrada.')
     if job['status'] in ACTIVE:
-        cancelled.add(job_id)
-        patch_job(frame_key, job_id, status='cancelled', percent=None, message='Cancelando importación')
+        def cancel_job(state):
+            current = state['jobs'].get(job_id)
+            if current and current['status'] in ACTIVE:
+                current.update(status='cancelled', percent=None, message='Importación cancelada', updated_at=time.time())
+                current.pop('execution_id', None)
+        store.mutate(frame_key, cancel_job)
     return {'ok': True}
 
 
@@ -158,8 +162,8 @@ def delete_slot(slot: int, frame_key: str = Depends(identify_frame)):
         for job in state['jobs'].values():
             if job['slot'] == slot:
                 if job['status'] in ACTIVE:
-                    cancelled.add(job['id'])
-                job.update(status='cancelled', message='Espacio vaciado', percent=None)
+                    job.update(status='cancelled', message='Espacio vaciado', percent=None, updated_at=time.time())
+                    job.pop('execution_id', None)
         state['slots'].pop('slot-' + str(slot), None)
     store.mutate(frame_key, remove)
     try:

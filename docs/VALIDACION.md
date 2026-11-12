@@ -329,3 +329,21 @@ Comprobación aislada ejecutada: `env -u FIREBASE_DATABASE_URL -u FIREBASE_STORA
 ## Logo de emisora en portada — 12 de noviembre de 2026
 
 La tarjeta de emisora muestra centrado el `favicon` HTTPS recibido de Radio Browser. Si no hay URL válida o la imagen falla al cargar, se retira el logo y queda la tarjeta con el nombre. La canción mantiene su imagen actual. Comprobaciones: 30 tests backend/scripts, `compileall`, `node --check web/app.js` y `git diff --check` correctos. No se pudo hacer revisión visual en navegador/móvil porque no hay Chromium disponible en el entorno.
+
+## Recuperación durable de importaciones — 12 de noviembre de 2026
+
+El worker guarda reclamación y generación de ejecución en el estado. Cancelar o vaciar el hueco marca la tarea terminal de forma durable. Las actualizaciones de progreso exigen la ejecución vigente; el hueco y `ready` se escriben en la misma transacción. Cada reintento de recuperación vuelve a descargar y convertir desde el principio, hasta dos recuperaciones; después comunica que hay que cancelar y crear una importación nueva. Las subidas usan rutas por ejecución para que una solicitud antigua no pueda pisar los objetos de un reintento. Un apagado ordenado reencola sin cancelar. La limpieza conserva objetos publicados y tareas activas, y reintenta restos al inicio, al terminar trabajos y cada cinco minutos.
+
+SQLite usa transacciones `BEGIN IMMEDIATE`, WAL y timeout de bloqueo. Compose lo monta en el volumen `sonoro-state`; recrear API conserva el archivo, mientras `down -v` lo elimina. Se añadió `compose.recovery.yaml` con nombre de proyecto y volumen separados, sin `.env`, secretos ni Firebase.
+
+| Comprobación | Resultado |
+|---|---|
+| Tests backend/scripts en contenedor Python 3.12, Firebase env retiradas | 40 pasaron; un aviso conocido de Starlette/TestClient con HTTPX. Incluye reinicios sintéticos en descarga/preparación/subida, cancelación persistente, vaciado de hueco, subida tardía, límite de recuperación, rollback de publicación, recuperación en lifespan y lectura desde un proceso separado. |
+| `python -m compileall -q backend scripts` | Correcto en contenedor; `PYTHONPYCACHEPREFIX=/tmp/sonoro-pycache` evitó escribir en el montaje de scripts de solo lectura. |
+| `node --check web/app.js` | Correcto; JS/UI no cambiaron. |
+| `docker compose config --quiet` y build de API | Correctos. |
+| `docker compose -f compose.recovery.yaml config --quiet` | Correcto. |
+| Recorrido Docker aislado | Sembró estado sintético `uploading`, mató API, ejecutó recuperación en otro contenedor y leyó `queued` con `recoveries: 1` desde el mismo volumen; luego eliminó el volumen aislado. No llamó Firebase ni YouTube. |
+| `git diff --check` | Correcto. |
+
+El anfitrión solo tenía Python 3.9 sin pytest; la suite se ejecutó dentro de la imagen Docker Python 3.12 e instaló Git y dependencias de desarrollo en un contenedor temporal. No se hicieron pruebas funcionales contra Firebase, YouTube, Render, ni se aceptaron importaciones reales. Para restaurar el API Compose habitual tras la prueba aislada se recreó su contenedor con el `.env` local existente; al arrancar, el ciclo de vida ejecutó la limpieza normal de huérfanos configurada para ese entorno. No se consultaron ni imprimieron sus datos, por lo que no se registra aquí el resultado de esa limpieza. Tampoco se probaron escucha, hardware ni garantías de almacenamiento/proceso en Render. El Compose habitual quedó levantado.

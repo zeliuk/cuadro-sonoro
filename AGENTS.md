@@ -20,6 +20,10 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 
 Antes de editar, revisa `git status --short` y los cambios existentes. Trabaja por fases pequeñas, preserva trabajo ajeno y resuelve decisiones rutinarias dentro de lo autorizado. No borres, recrees ni reescribas un repositorio remoto por seguir una receta de inicio. No introduzcas un segundo framework, base de datos, autenticación para el destinatario o servicio sin justificarlo frente al alcance.
 
+## Mensajes de commit
+
+Usa mensajes con prefijo de tipo y dos puntos, siguiendo el estilo Conventional Commits: por ejemplo `feat:`, `fix:`, `docs:`, `test:`, `refactor:` o `chore:`. El prefijo debe describir el cambio principal.
+
 El identificador del cuadro no es una credencial: cualquier identificador válido se puede usar sin registro previo. Se transporta como Bearer por compatibilidad, y su SHA-256 deriva ámbitos en API, Firebase, SQLite y cliente directo. La web acepta `#token=...`, lo conserva en la pestaña y limpia el fragmento. Por decisión expresa de Carlos, Firebase deja leer sin sesión la configuración/medios publicados por URL conocida, con listados y escrituras públicas cerrados en sus reglas. Las escrituras de API quedan agrupadas por identificador, sin lista de autorización ni cuentas de usuario. Lee `docs/ESTADO.md` para los límites restantes: Render, preparar QR/NFC, firmware, tareas, limpieza y Radio Browser. No basta con renombrar variables o actualizar un README. No prometer continuidad de tareas en Render Free porque exista un hilo de fondo. No hacer que el ESP32 dependa de un Render dormido para cada reproducción.
 
 ## Documentación obligatoria

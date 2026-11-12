@@ -95,6 +95,6 @@ Solo si se prepara otro cuadro/slot de prueba autorizado, seguir estos pasos. El
 8. Cerrar/reabrir la web y comprobar estado. Reiniciar el backend y registrar qué se recupera y qué requiere reintento. En Render validar desde su IP; lo probado en el Mac no acredita el alojamiento.
 9. El DELETE de un hueco elimina los medios que ya no tengan referencias. En Firebase real, úsalo solo cuando quieras borrar definitivamente ese favorito. La limpieza también reintenta huérfanos cuando se vacía un hueco y al arrancar la API.
 
-El reintento actual consiste en crear una tarea nueva con `/imports`; no existe `/retry`. La continuidad fiable al cerrar la web o reiniciar el servicio es un criterio de aceptación del producto, no una garantía ya demostrada.
+El reintento manual consiste en crear una tarea nueva con `/imports`; no existe `/retry`. Una interrupción del servicio durante descarga, preparación o subida se recupera desde cero hasta dos veces. Una cancelación persiste y no se reactiva tras reiniciar. La guía de backend incluye un recorrido reproducible en Docker con un trabajo sintético, sin credenciales ni servicios externos.
 
 Los resultados ejecutados, incluidos los límites que siguen pendientes, se registran en [VALIDACION.md](VALIDACION.md). Esta validación local no acredita Render, hardware ESP32 ni que una persona haya percibido el sonido.

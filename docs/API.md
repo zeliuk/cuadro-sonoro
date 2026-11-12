@@ -113,7 +113,7 @@ Forma de respuesta 202:
 
 Errores: 503 si falta configuración Storage; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una tarea nueva.
 
-La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo.
+La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo. `attempts` cuenta ejecuciones iniciadas; `recoveries` cuenta recuperaciones tras caída (máximo dos).
 
 ## GET /state
 
@@ -142,9 +142,9 @@ curl -sS -X POST "$API_BASE/jobs/$JOB_ID/cancel" \
   -H "Authorization: Bearer $FRAME_ID"
 ```
 
-200: `{"ok":true}` si la tarea existe; 404: `{"detail":"Tarea no encontrada."}` si no existe. Si está activa, se solicita la cancelación y el worker la comprueba durante el proceso. Una respuesta 200 no prueba que todos los archivos remotos hayan sido eliminados. Si ya es terminal, devuelve `ok` sin revertir una canción publicada.
+200: `{"ok":true}` si la tarea existe; 404: `{"detail":"Tarea no encontrada."}` si no existe. Si está activa, escribe `cancelled` en el estado durable; el worker consulta ese estado antes de publicar y las actualizaciones tardías no cambian un estado terminal. Tras reiniciar, una tarea cancelada permanece cancelada. Una respuesta 200 no prueba que los objetos remotos ya se hayan eliminado; la limpieza los retira cuando no están publicados ni hay trabajo vigente. Si ya es terminal, devuelve `ok` sin revertir una canción publicada.
 
-Para reintentar, la interfaz vuelve a llamar a `/imports` con los datos originales y obtiene un ID nuevo. No hay endpoint `/retry` en esta base. Tareas y cancelación están aisladas por cuadro. Persistencia de cancelación y recuperación fiable siguen pendientes de adaptación.
+Para reintentar manualmente, la interfaz vuelve a llamar a `/imports` con los datos originales y obtiene un ID nuevo. No hay endpoint `/retry`. Tareas y cancelación están aisladas por cuadro. Con una instancia y un worker, una caída durante descarga, preparación o subida reencola hasta dos veces desde cero; después queda en `error` y el mensaje pide cancelar y volver a elegir. Un apagado ordenado deja el trabajo en cola sin marcarlo como cancelado.
 
 ## POST /stations
 
@@ -178,7 +178,7 @@ curl -sS -X DELETE "$API_BASE/slots/2" \
   -H "Authorization: Bearer $FRAME_ID"
 ```
 
-200: `{"ok":true,"deleted_objects":2,"cleanup_pending":false}`; el contador puede ser 0. Vaciar un hueco ya vacío también devuelve 200 y reintenta la limpieza de objetos huérfanos del cuadro. 422 para índices fuera de 0–2. Cancela las tareas relacionadas, retira la selección y elimina de Storage todo objeto del cuadro que ya no esté referenciado por otro hueco ni pertenezca a una importación activa. Si Firebase falla, `cleanup_pending` es `true`; la limpieza se vuelve a intentar al reiniciar la API o al vaciar otro hueco. Al iniciar, la API también limpia medios sin referencias. El reproductor local se detiene al vaciar su favorito; no hay hardware ni seguimiento de reproducciones del ESP32 todavía.
+200: `{"ok":true,"deleted_objects":2,"cleanup_pending":false}`; el contador puede ser 0. Vaciar un hueco ya vacío también devuelve 200 y reintenta la limpieza de objetos huérfanos del cuadro. 422 para índices fuera de 0–2. Cancela durablemente las tareas relacionadas, retira la selección y elimina de Storage todo objeto del cuadro que ya no esté referenciado por otro hueco ni pertenezca a una importación activa. Si Firebase falla, `cleanup_pending` es `true`; la limpieza se reintenta al reiniciar, al vaciar otro hueco, al terminar una importación y cada cinco minutos mientras el worker está inactivo. El reproductor local se detiene al vaciar su favorito; no hay hardware ni seguimiento de reproducciones del ESP32 todavía.
 
 ## GET /media/{slot}
 
@@ -199,6 +199,6 @@ El endpoint sigue recibiendo el Bearer para seleccionar el registro del cuadro, 
 
 ## Qué no está implementado
 
-El SHA-256 del identificador válido deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. No hay lista de IDs ni usuarios. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. La búsqueda de Radio Browser ya está disponible; no existen aún imagen decorativa, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial.
+El SHA-256 del identificador válido deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos de cada ejecución se guardan bajo `private/frames/{sha256}/{job_id}/{execution_id}/` para impedir que una subida tardía pise el intento vigente. La publicación del hueco y `ready` comparten transacción. No hay lista de IDs ni usuarios. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. La búsqueda de Radio Browser ya está disponible; no existen aún imagen decorativa, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial.
 
 Consultar [PRUEBA_API.md](PRUEBA_API.md) para el orden de prueba, [ESTADO.md](ESTADO.md) para las diferencias con el producto y [VALIDACION.md](VALIDACION.md) para la evidencia ejecutada.

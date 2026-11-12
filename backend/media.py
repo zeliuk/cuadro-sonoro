@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .firebase_client import firebase
 from .config import ACTIVE
-from .state import cancelled, check_cancel, patch_job
+from .state import check_cancel, patch_job
 
 
 def delete_orphaned_media(frame_key, state, bucket=None):
@@ -18,10 +18,7 @@ def delete_orphaned_media(frame_key, state, bucket=None):
         for key in ('audio_key', 'image_key')
         if track.get(key)
     }
-    active_jobs = {
-        job_id for job_id, job in state.get('jobs', {}).items()
-        if job.get('status') in ACTIVE or job_id in cancelled
-    }
+    active_jobs = {job_id for job_id, job in state.get('jobs', {}).items() if job.get('status') in ACTIVE}
     deleted = 0
     pending = False
     for blob in bucket.list_blobs(prefix=prefix):
@@ -39,12 +36,13 @@ def delete_orphaned_media(frame_key, state, bucket=None):
     return {'deleted_objects': deleted, 'cleanup_pending': pending}
 
 
-def persist_media(frame_key, job_id, audio: Path, image: Path | None):
+def persist_media(frame_key, job_id, audio: Path, image: Path | None, execution_id=None):
     from firebase_admin import storage
     bucket = storage.bucket(app=firebase())
     uploaded = []
     try:
-        audio_key = f'private/frames/{frame_key}/{job_id}/audio.mp3'
+        run_prefix = f'private/frames/{frame_key}/{job_id}/{execution_id or "legacy"}'
+        audio_key = run_prefix + '/audio.mp3'
         uploaded.append(audio_key)
         # Resumable chunks expose actual completed byte counts.
         from google.auth.transport.requests import AuthorizedSession
@@ -57,15 +55,16 @@ def persist_media(frame_key, job_id, audio: Path, image: Path | None):
         with audio.open('rb') as stream:
             upload.initiate(transport, stream, {'name': audio_key}, 'audio/mpeg', total_bytes=total)
             while not upload.finished:
-                check_cancel(job_id)
+                check_cancel(frame_key, job_id, execution_id)
                 upload.transmit_next_chunk(transport)
-                patch_job(frame_key, job_id, status='uploading', percent=min(99, int(upload.bytes_uploaded / total * 100)), message='Guardando audio')
+                patch_job(frame_key, job_id, execution_id, status='uploading', percent=min(99, int(upload.bytes_uploaded / total * 100)), message='Guardando audio')
         image_key = None
         if image:
-            check_cancel(job_id)
-            image_key = f'private/frames/{frame_key}/{job_id}/cover.jpg'
+            check_cancel(frame_key, job_id, execution_id)
+            image_key = run_prefix + '/cover.jpg'
             uploaded.append(image_key)
             bucket.blob(image_key).upload_from_filename(str(image), content_type='image/jpeg')
+            check_cancel(frame_key, job_id, execution_id)
         return audio_key, image_key
     except Exception:
         for key in uploaded:

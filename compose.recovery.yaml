@@ -1,0 +1,19 @@
+name: cuadro-sonoro-recovery
+
+services:
+  api:
+    build: .
+    environment:
+      STATE_DB: /var/lib/sonoro/state.sqlite3
+      FIREBASE_DATABASE_URL: ""
+      FIREBASE_STORAGE_BUCKET: ""
+      FIREBASE_SERVICE_ACCOUNT_JSON: ""
+      GOOGLE_APPLICATION_CREDENTIALS: ""
+      PYTHONPATH: /app
+    volumes:
+      - recovery-state:/var/lib/sonoro
+      - ./scripts:/app/scripts:ro
+    init: true
+
+volumes:
+  recovery-state:

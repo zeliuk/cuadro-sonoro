@@ -18,7 +18,7 @@ El audio no atraviesa Render al reproducirse. No se añaden órdenes web de repr
 
 Búsqueda → selección explícita → tarea → descarga → preparación → subida → publicación del hueco. Solo se sustituye tras preparar todos los recursos. El error conserva el contenido anterior. Tras retirar una selección, la API borra los objetos del cuadro sin referencias publicadas ni subidas activas; el reproductor local se detiene antes. El firmware todavía no tiene leases de reproducción.
 
-Una tarea aceptada debe poder sobrevivir a cerrar la web. Persistir su registro no garantiza que un worker vuelva a ejecutarla. Concretar antes del despliegue la ejecución, reclamación de tareas, recuperación, reintentos, idempotencia, cancelación y concurrencia por cuadro.
+Una tarea aceptada se guarda en RTDB o SQLite local durable. Con una instancia y un worker, el inicio reencola ejecuciones interrumpidas hasta dos veces para repetir descarga y conversión desde cero; después indica que hay que cancelar y volver a elegir. Cancelar y vaciar hueco actualiza el registro durable, y la publicación comprueba la ejecución vigente en la misma transacción que marca `ready`. SQLite local serializa cambios y Compose mantiene el archivo en un volumen nombrado. No usar varios workers o réplicas: la exclusión distribuida, leases y ejecución administrada para Render siguen pendientes.
 
 ## Acceso
 

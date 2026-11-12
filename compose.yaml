@@ -4,10 +4,13 @@ services:
     env_file: backend/.env
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase.json
+      STATE_DB: /var/lib/sonoro/state.sqlite3
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./secrets:/run/secrets:ro
+      - sonoro-state:/var/lib/sonoro
+      - ./scripts:/app/scripts:ro
     init: true
   web:
     image: python:3.12-alpine
@@ -17,3 +20,6 @@ services:
       - ./web:/web:ro
     ports:
       - "127.0.0.1:5173:5173"
+
+volumes:
+  sonoro-state:

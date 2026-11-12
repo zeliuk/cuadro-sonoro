@@ -10,7 +10,7 @@ Completado: la API deriva ámbitos del identificador sin alta previa; IDs válid
 
 ## Fase 2 — Importación real fiable
 
-Comprobación inicial completada en Docker local: búsqueda de YouTube, selección explícita, descarga y conversión, subida de MP3/portada a Firebase real, publicación RTDB y reproducción en Chrome Headless. Pendiente: fiabilidad y recuperación de tareas, cancelación/reintentos seguros, sustitución/limpieza de objetos, escucha humana, validación desde Render y elegir su configuración sin asumir garantías de Free.
+Comprobación inicial completada en Docker local: búsqueda de YouTube, selección explícita, descarga y conversión, subida de MP3/portada a Firebase real, publicación RTDB y reproducción en Chrome Headless. Implementado y probado localmente: recuperación acotada tras reinicio, cancelación durable, publicación atómica e idempotencia por ejecución, conservación de selección previa y volumen SQLite Docker. Pendiente: validar durabilidad y ciclo de ejecución en Render, escucha humana y elegir su configuración sin asumir garantías de Free.
 
 ## Fase 3 — Completar la configuración web
 
