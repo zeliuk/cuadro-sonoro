@@ -1,6 +1,6 @@
 # Despliegue: receta y condiciones previas
 
-Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar las fases de [PLAN.md](PLAN.md), especialmente el acceso autónomo del dispositivo y la ejecución recuperable. El backend ya aísla sus datos por token; la receta heredada `render.prototype.yaml` sigue siendo referencia del prototipo, no el blueprint final ni garantía de ejecución fiable.
+Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar las fases de [PLAN.md](PLAN.md), especialmente validar la lectura pública por URL conocida y una importación en Firebase real, además de la ejecución recuperable. El backend ya aísla sus datos por identificador; la receta heredada `render.prototype.yaml` sigue siendo referencia del prototipo, no el blueprint final ni garantía de ejecución fiable.
 
 ## Web en el servidor propio
 
@@ -33,4 +33,4 @@ Consultar [firebase/README.md](../firebase/README.md) para seleccionar proyecto,
 
 ## Aceptación real
 
-Verificar acceso por cuadro y aislamiento; buscar desde Render; procesar una pista de prueba adecuada; comprobar MP3, imagen y metadatos; escuchar desde navegador; verificar fallo/cancelación/sustitución sin pérdida; cerrar y reabrir la web; reiniciar el servicio; confirmar limpieza segura. Registrar evidencia redactada y coste observado sin incluir URLs firmadas ni credenciales. El ESP32 se valida en su propia fase.
+Verificar lectura por URL conocida, separación de registros, listados/escrituras denegados; buscar desde Render; procesar una pista de prueba adecuada; comprobar MP3, imagen y metadatos; escuchar desde navegador; verificar fallo/cancelación/sustitución sin pérdida; cerrar y reabrir la web; reiniciar el servicio; confirmar limpieza segura. Registrar evidencia redactada y coste observado sin incluir URLs de cuadro ni credenciales. El ESP32 se valida en su propia fase.

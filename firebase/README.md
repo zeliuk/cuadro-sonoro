@@ -1,47 +1,67 @@
-# Lectura del ESP32 desde Firebase
+# Lectura pública por URL conocida
 
-El dispositivo usa directamente Realtime Database y Storage; Render no participa durante reproducción. El token fijo ya asignado al cuadro se reutiliza como Bearer de la API y como contraseña de una cuenta técnica Firebase Auth creada por el desarrollador. No hay registro para familiares ni una credencial administrativa dentro del dispositivo. Firebase Auth entrega un ID token temporal y un refresh token: esos valores de sesión cambian automáticamente, pero el token configurado en el cuadro permanece fijo. El firmware guardará el estado de sesión de forma privada y podrá renovar/restablecer la sesión sin contactar Render.
+## Decisión de acceso
 
-La identidad Auth tiene UID `frame-reader-{sha256(token)}`. Las reglas comparan ese UID con la ruta y solo permiten leer `frames/{sha256}/slots` y objetos `private/frames/{sha256}/...`; toda escritura y el resto del árbol quedan denegados. El hash/ruta no es una autorización sin una sesión autenticada. No se usan URLs firmadas para el ESP32 (las actuales siguen para escucha web).
+Por decisión expresa de Carlos, la configuración musical publicada y los medios se pueden leer sin sesión desde Firebase si se conoce la URL. El identificador aleatorio del cuadro no es una credencial de Firebase. La web sigue llevando `#token=<identificador>`; la API recibe ese valor como Bearer, valida su SHA-256 contra `FRAME_TOKEN_HASHES` y deriva `frames/{sha256}` y `private/frames/{sha256}/...`.
 
-## Emuladores locales y prueba reproducible
+Las reglas de RTDB dejan leer únicamente `frames/{sha256}/slots`. El acceso a `/frames.json`, a la raíz, a `jobs` y a escrituras queda denegado. Las reglas de Storage permiten obtener un objeto individual bajo `private/frames/{sha256}/` por una URL estable, sin sesión; no permiten listar ni escribir. No hay Firebase Auth, contraseña de dispositivo ni sesión temporal que renovar. El hash separa registros, no autoriza: quien conozca el enlace puede derivar la ruta de configuración, ver sus claves de medios y descargar esos objetos. Esta exposición de los datos publicados está aceptada. La API mantiene su Bearer para modificar configuración y crear importaciones; Admin SDK y credenciales administrativas se quedan en backend/herramientas privadas.
 
-Desde la raíz del repositorio se necesitan Node/npm, Java 17 o superior para la versión fijada de Firebase CLI y el entorno del proyecto `.venv` ya instalado. No se necesita proyecto de nube, cuenta de servicio, facturación ni Render. `npx` descarga `firebase-tools@14.22.0` y los emuladores la primera vez.
+## Emuladores y prueba reproducible
 
-```bash
-source .venv/bin/activate
-npx --yes firebase-tools@14.22.0 emulators:exec --only auth,database,storage --project demo-sonoro-device --log-verbosity=QUIET 'source .venv/bin/activate && python scripts/test_device_access.py'
-```
-
-Resultado esperado: salida `PASS` que confirma lectura de RTDB y Storage propios, rechazo de otro cuadro, sesión ausente y escrituras, y renovación Firebase forzada manteniendo el Bearer fijo. La prueba usa datos y tokens aleatorios temporales, emuladores aislados y no invoca la API/Render. Los emuladores se detienen al terminar. La expiración se simula adelantando el vencimiento local y ejercitando el endpoint de refresh; no espera una hora real.
-
-## Aprovisionar un dispositivo para un proyecto real
-
-Esto aún requiere un proyecto Firebase dedicado ya configurado con Realtime Database, Storage y Authentication (proveedor Email/Password habilitado), datos y medios importados bajo las rutas de cuadro, reglas revisadas y una cuenta de servicio privada de desarrollador. Storage puede requerir Blaze; este procedimiento no habilita facturación ni despliega reglas. No usar recursos reales hasta decidir proyecto, región y facturación.
-
-Desde la raíz, activar el entorno virtual y editar localmente `backend/.env` (ignorado por Git). `FRAME_TOKEN_HASHES` debe contener el SHA-256 del token que ya usa la API, y las variables Firebase deben apuntar al mismo proyecto; `GOOGLE_APPLICATION_CREDENTIALS` apunta al archivo privado de Admin SDK. `FIREBASE_WEB_API_KEY` es la clave pública del proyecto usada por el cliente Auth REST, no un secreto administrativo. Nunca imprimir el `.env` ni pasar el token por argumento:
+Ejecuta desde la raíz del repositorio. Requisitos locales: Node/npm, Java 17 para la versión de Firebase CLI fijada en el comando y `.venv` con las dependencias del proyecto. La prueba no necesita cuenta de nube, credenciales, API, Render ni facturación. `npx` descarga la CLI y los emuladores la primera vez.
 
 ```bash
 source .venv/bin/activate
-python scripts/provision_device.py --env-file backend/.env --output device-private/cuadro-config.json
+npx --yes firebase-tools@14.22.0 emulators:exec --only database,storage --project demo-sonoro-device --log-verbosity=QUIET 'source .venv/bin/activate && python scripts/test_device_access.py'
 ```
 
-El script solicita el token ocultando la entrada, verifica su hash contra `FRAME_TOKEN_HASHES`, crea o actualiza la cuenta técnica con Admin SDK y guarda configuración no secreta en `device-private/cuadro-config.json` (carpeta ignorada). No copia el token a ese archivo. Admin SDK se usa solo durante aprovisionamiento en una máquina del desarrollador; no va al ESP32. El token fijo deberá cargarse en el dispositivo por el proceso físico de preparación, fuera de Git y sin mostrarlo en logs.
+Resultado esperado: `PASS` confirma lectura de configuración y medios sin sesión, separación entre dos cuadros, denegación del listado general, tareas y escrituras, y descarga completa desde el cliente de ordenador. El arnés exige que la API local no esté escuchando en `127.0.0.1:8000`; toda lectura sale directamente a los emuladores. Los datos de prueba son aleatorios y temporales. Los emuladores se detienen al terminar.
 
-## Cliente de prueba desde ordenador
+## Conexión pública para el dispositivo
 
-El cliente reproduce el flujo esperado del futuro dispositivo, sin llamar a Render. Los archivos de sesión contienen el Bearer y credenciales temporales; guárdalos localmente, no los adjuntes ni versionees. Ejecutar desde la raíz:
+Desde la raíz, copia la plantilla pública y completa el URL exacto de RTDB y el nombre de bucket que muestra el proyecto Firebase. Esos dos valores identifican endpoints públicos; no son credenciales. La copia local está ignorada por Git.
+
+```bash
+cp firebase/device-config.example.json firebase/device-config.json
+```
+
+Luego ejecuta el cliente para el hueco 0:
 
 ```bash
 source .venv/bin/activate
-python scripts/device_client.py login --config device-private/cuadro-config.json --state device-private/cuadro-session.json
-python scripts/device_client.py read --state device-private/cuadro-session.json --slot 0 --out /tmp/cuadro-pista.mp3
+python scripts/device_client.py read --config firebase/device-config.json --slot 0 --out /tmp/cuadro-pista.mp3
 ```
 
-`login` pide el token fijo de forma oculta. `read` renueva la sesión Firebase si está cerca de caducar, lee `frames/{sha256}/slots` y descarga el `audio_key` y `image_key` indicados por la configuración; `--force-refresh` permite comprobar renovaciones inmediatamente. Salida esperada: metadatos de selección, número de bytes y `session_renewed`, nunca token o URL firmada. El audio de ejemplo se guarda en `/tmp`; el cliente limita permisos locales de los archivos de sesión/salida.
+El cliente solicita de forma oculta el identificador fijo, calcula su SHA-256, hace GET a RTDB y descarga `audio_key` e `image_key` directamente de Storage. No envía el identificador a Firebase como credencial y no llama a la API. La salida esperada muestra el título y bytes descargados. El archivo de imagen se guarda junto al audio con sufijo `.cover`.
 
-## Límites de validación
+## URLs directas de ejemplo
 
-Solo el recorrido de emuladores está verificado localmente. No se desplegaron reglas ni se contactó un proyecto Firebase real. Antes del firmware hay que, en un proyecto dedicado y autorizado, validar creación de Auth user, API key, lectura de RTDB/Storage con reglas, refresh real después de caducidad, aislamiento entre dos cuadros y acceso a datos producidos por una importación real. Comprobar aparte políticas de persistencia segura del refresh token del hardware elegido. No basta con una prueba contra URLs sintéticas.
+Las URL siguientes son ficticias. El primer GET no lleva autenticación y devuelve solo la configuración publicada de un cuadro:
 
-Las referencias oficiales consultadas están enlazadas en [VALIDACION.md](../docs/VALIDACION.md): Firebase Auth REST (sign-in/refresh), autenticación RTDB REST y variables `auth.uid`/`request.auth.uid` en reglas.
+```bash
+curl --fail-with-body 'https://example-sonoro-default-rtdb.europe-west1.firebasedatabase.app/frames/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/slots.json'
+```
+
+Si un hueco devuelve `audio_key: "private/frames/<sha256>/<job>/audio.mp3"`, la URL de descarga tiene esta forma; se sustituye el bucket y el nombre de objeto por los valores leídos de RTDB:
+
+```bash
+curl --fail-with-body --location 'https://firebasestorage.googleapis.com/v0/b/example-sonoro.firebasestorage.app/o/private%2Fframes%2Faaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%2Fjob-ficticio%2Faudio.mp3?alt=media' --output /tmp/cuadro-pista.mp3
+```
+
+No añadir token Firebase, cookie, firma ni query de sesión. Cualquier persona que conozca esa URL puede obtener el archivo; los enlaces no caducan a los 30 minutos. No publicar URLs reales del cuadro en capturas o informes públicos si no se quiere compartir su música.
+
+La URL de `/frames.json` y las rutas `jobs` deben responder 401/403. PUT/POST/DELETE públicos de RTDB y Storage también deben responder 401/403. La API autorizada sigue siendo la única vía de escritura e importación.
+
+## Firebase real: estado de validación
+
+El proyecto ya tiene URL RTDB y bucket configurados localmente. Se verificaron el acceso administrativo del backend a RTDB y el ciclo de subida/descarga/eliminación de un objeto temporal de Storage; también se probó `/state` con un identificador provisionado. Carlos aplicó manualmente en Firebase Console las reglas definidas en este repositorio. Después, con la API detenida y un proceso de cliente sin credenciales, se comprobó lectura pública de la configuración y descarga directa de un medio temporal. Listados, lectura de tareas y escrituras públicas fueron rechazados. El estado y objetos temporales se eliminaron.
+
+La CLI no pudo publicar las reglas por problemas de OAuth/IAM. El comando que se intentó desde la raíz fue:
+
+```bash
+npx --yes firebase-tools@14.22.0 deploy --only database,storage --project cuadro-sonoro --non-interactive
+```
+
+No se desplegó nada por CLI ni se modificaron otras reglas. Para futuros cambios con CLI habrá que renovar su sesión autorizada o dar a la identidad de despliegue los permisos necesarios; el resultado funcional actualmente comprobado procede de la aplicación manual. No se ejecutó una importación real y el archivo de prueba no era un MP3 reproducible.
+
+Las credenciales de Admin SDK solo se configuran en `backend/.env` o en el entorno privado de backend. Nunca se copian al archivo público de conexión ni al cliente ESP32. Las referencias oficiales sobre lectura sin sesión y reglas `get/list` están en [VALIDACION.md](../docs/VALIDACION.md).

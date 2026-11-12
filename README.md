@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: base de desarrollo con un prototipo ejecutable.** El backend aísla datos por cuadro y la web acepta el token desde un enlace. Hay reglas Firebase y un cliente de ordenador para probar lectura directa por cuadro; faltan la validación contra Firebase real, firmware y generación física QR/NFC. Ver [estado real](docs/ESTADO.md) antes de activar servicios reales.
+**Estado: base de desarrollo con un prototipo ejecutable.** El backend aísla datos por cuadro y la web acepta el identificador desde un enlace. Las reglas públicas se aplicaron manualmente en Firebase y la lectura directa de configuración y un archivo pasó sin sesión; falta validar una importación real y escuchar el medio final en navegador. Firmware y QR/NFC físicos siguen pendientes. Ver [estado real](docs/ESTADO.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -56,7 +56,7 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 |---|---|
 | `web/` | Diseño aprobado y prototipo dinámico. |
 | `backend/` | API e importador iniciales; el aislamiento por token ya está implementado y faltan integraciones y validación real. |
-| `firebase/` | Reglas iniciales cerradas y guía de configuración. |
+| `firebase/` | Reglas de lectura por URL conocida, sin escrituras/listados, y guía del cliente directo. |
 | `firmware/` | Alcance documentado; todavía sin firmware. |
 | `docs/` | Definición, arquitectura, comandos, endpoints, fases y decisiones. |
 | `scripts/` | Preparación local y verificaciones. |

@@ -1,10 +1,12 @@
 import os
 import hashlib
+import secrets
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 import sqlite3
 import json
+from urllib.parse import quote
 
 import pytest
 from fastapi.testclient import TestClient
@@ -38,6 +40,52 @@ def test_auth_and_configuration_fail_closed():
     assert client.get('/state', headers={'Authorization': 'Bearer ' + 'z' * 43}).status_code == 401
     assert client.post('/imports',headers=AUTH,json={'slot':0,'source_id':'BaW_jenozKc','title':'Test','artist':'Test'}).status_code == 503
     assert client.get('/health').json()['storage_configured'] is False
+
+
+def test_first_authorized_state_read_creates_and_reuses_frame_record(monkeypatch):
+    token = 'frame-first-read-' + secrets.token_urlsafe(30)
+    frame_key = hashlib.sha256(token.encode()).hexdigest()
+    assert client.get('/state', headers={'Authorization': f'Bearer {token}'}).status_code == 401
+    assert frame_key not in m.store.read_all()
+    monkeypatch.setenv('FRAME_TOKEN_HASHES', f'{KEY_A},{KEY_B},{frame_key}')
+
+    assert frame_key not in m.store.read_all()
+    first = client.get('/state', headers={'Authorization': f'Bearer {token}'})
+    assert first.status_code == 200
+    assert first.json() == {'slots': {}, 'jobs': {}}
+    assert m.store.read_all()[frame_key] == {'slots': {}, 'jobs': {}}
+
+    m.store.mutate(frame_key, lambda state: state['slots'].update({
+        'slot-0': {'id': 'existing', 'kind': 'station', 'title': 'Radio', 'url': 'https://example.org/radio'}
+    }))
+    second = client.get('/state', headers={'Authorization': f'Bearer {token}'})
+    assert second.json()['slots']['slot-0']['id'] == 'existing'
+    assert len([key for key in m.store.read_all() if key == frame_key]) == 1
+
+
+def test_cloud_ensure_transaction_persists_and_reuses_initial_state(monkeypatch):
+    from backend import state as state_module
+    from firebase_admin import db
+
+    class Reference:
+        value = None
+
+        def transaction(self, update):
+            self.value = update(self.value)
+            return self.value
+
+    reference = Reference()
+    monkeypatch.setenv('FIREBASE_DATABASE_URL', 'https://example.invalid')
+    monkeypatch.setattr(state_module, 'firebase', lambda: object())
+    monkeypatch.setattr(db, 'reference', lambda *args, **kwargs: reference)
+    cloud_store = state_module.StateStore()
+    cloud_store.cloud = True
+    cloud_store.ensure(KEY_A)
+    reference.value['slots']['slot-0'] = {'id': 'published'}
+
+    second = cloud_store.ensure(KEY_A)
+    assert second == {'slots': {'slot-0': {'id': 'published'}}, 'jobs': {}}
+    assert reference.value == second
 
 
 def test_local_token_is_not_accepted_in_a_firebase_deployment(monkeypatch):
@@ -131,6 +179,21 @@ def test_frames_cannot_read_cancel_or_change_each_others_data():
     assert client.delete('/slots/1',headers=AUTH_B).status_code==200
     assert client.get('/media/1',headers=AUTH).status_code==200
     assert m.store.read(KEY_A)['jobs']['job-a']['status']=='queued'
+
+
+def test_media_api_returns_stable_public_storage_urls(monkeypatch):
+    monkeypatch.setenv('FIREBASE_STORAGE_BUCKET', 'demo-sonoro.firebasestorage.app')
+    media_key = f'private/frames/{KEY_A}/job%20id/audio.mp3'
+    m.store.mutate(KEY_A, lambda state: state['slots'].update({
+        'slot-0': {'id': 'song', 'kind': 'song', 'audio_key': media_key, 'image_key': None}
+    }))
+
+    response = client.get('/media/0', headers=AUTH)
+    assert response.status_code == 200
+    assert response.json()['audio_url'] == (
+        'https://firebasestorage.googleapis.com/v0/b/demo-sonoro.firebasestorage.app/o/'
+        + quote(media_key, safe='') + '?alt=media'
+    )
 
 
 def test_legacy_sqlite_collection_is_not_assigned_to_a_frame(tmp_path, monkeypatch):

@@ -5,7 +5,7 @@
     "frames": {
       "$frame_key": {
         "slots": {
-          ".read": "auth != null && auth.uid === 'frame-reader-' + $frame_key"
+          ".read": true
         }
       }
     }

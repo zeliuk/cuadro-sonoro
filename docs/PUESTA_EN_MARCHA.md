@@ -26,7 +26,7 @@ Sigue [backend/README.md](../backend/README.md): instalación, preparación de `
 
 ## 4. Comenzar con Codex
 
-Lee y envía el encargo actualizado de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El backend ya separa datos por token; sigue el plan para completar el acceso de web y dispositivo. No presentar la importación real ni el firmware como validados.
+Lee y envía el encargo actualizado de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El backend ya separa datos por identificador y el cliente directo está probado con emuladores y con reglas aplicadas manualmente en Firebase real. La conexión Admin a RTDB/Storage y el estado API del cuadro de prueba también se verificaron. Falta importar una canción real, escucharla en la web y completar el firmware. No presentar esas partes pendientes como validadas.
 
 ## Problemas habituales
 
@@ -38,4 +38,4 @@ Lee y envía el encargo actualizado de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.
 | 401 | Falta el Bearer, no tiene al menos 32 caracteres o no está provisionado. Para la revisión local, cargar `LOCAL_FRAME_TOKEN` de `backend/.env` sin imprimirlo. |
 | 503 de importación | Firebase no configurado; es normal en la revisión local sin nube. |
 | Búsqueda devuelve 502 | Comprobar dependencias, red y logs redactados; una búsqueda fallida no se arregla abriendo reglas Firebase. |
-| Fallo al obtener medios | Verificar recurso del hueco, credenciales y capacidad de generar URL firmada. |
+| Fallo al obtener medios | Verificar `audio_key`, bucket y lectura pública del objeto individual configurada por regla. |

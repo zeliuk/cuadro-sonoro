@@ -38,6 +38,21 @@ class StateStore:
             data = json.loads(row[0]) if row else None
         return self._normalize(data)
 
+    def ensure(self, frame_key):
+        """Create an empty per-frame record on its first authorized API read."""
+        if self.cloud:
+            from firebase_admin import db
+            reference = db.reference(f'frames/{frame_key}', app=firebase())
+            data = reference.transaction(lambda current: self._normalize(current))
+            return self._normalize(data)
+        with lock:
+            self.conn.execute(
+                'INSERT OR IGNORE INTO frame_states (frame_key, data) VALUES (?, ?)',
+                (frame_key, json.dumps({'slots': {}, 'jobs': {}})),
+            )
+            self.conn.commit()
+            return self.read(frame_key)
+
     def read_all(self):
         if self.cloud:
             from firebase_admin import db

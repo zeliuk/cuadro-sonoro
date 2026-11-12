@@ -6,7 +6,7 @@ Leer definición y estado; revisar Git; ejecutar demo, API local, tests, checks 
 
 ## Fase 1 — Acceso y datos por cuadro (en curso)
 
-Completado: la API valida el Bearer provisionado, deriva ámbitos aislados y permite una importación activa por cuadro. La web recibe el token desde `#token=...`, lo mantiene en `sessionStorage`, limpia la URL y cambia de cuadro cancelando solicitudes anteriores. El soporte local para aprovisionar Firebase Auth con el mismo token fijo, las reglas de lectura aislada y un cliente de ordenador están implementados; los emuladores cubren lectura y renovación sin Render. Pendiente: importar datos/medios reales, validar reglas en un proyecto Firebase dedicado y trasladar el cliente al firmware. Los datos de la antigua colección global no se migran automáticamente.
+Completado: la API valida el Bearer provisionado, deriva ámbitos aislados y permite una importación activa por cuadro. La web recibe el identificador desde `#token=...`, lo mantiene en `sessionStorage`, limpia la URL y cambia de cuadro cancelando solicitudes anteriores. Las reglas locales permiten GET público solo en rutas concretas conocidas; escrituras e importaciones siguen mediadas por la API. La conexión de Admin SDK a RTDB/Storage, la respuesta API por cuadro y la lectura pública directa real se verificaron; Carlos aplicó reglas desde Firebase Console después de que la CLI quedara bloqueada por permisos. Pendiente: importar audio real, escucharlo en web y trasladar el lector al firmware. Los datos de la antigua colección global no se migran automáticamente.
 
 ## Fase 2 — Importación real fiable
 

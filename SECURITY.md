@@ -2,7 +2,7 @@
 
 El repo público no implica datos, importador o archivos públicos. No versionar `.env`, cuentas de servicio, tokens reales, cookies, claves privadas, bases de ejecución o medios personales. Las plantillas contienen privados vacíos.
 
-El backend recibe un token aleatorio por cuadro como Bearer, exige su SHA-256 en `FRAME_TOKEN_HASHES` y usa ese hash para aislar el estado. No usa el antiguo `IMPORT_API_TOKEN`, ni guarda los tokens originales en datos o rutas de Storage. El token es una capacidad: quien lo posee puede consultar y modificar ese cuadro. No incorporarlo como constante en la web pública. La cuenta de servicio Firebase pertenece al servidor, nunca al navegador o ESP32. El acceso autónomo del firmware a configuración/medios sigue pendiente.
+El backend recibe un identificador aleatorio por cuadro como Bearer, exige su SHA-256 en `FRAME_TOKEN_HASHES` y usa ese hash para aislar el estado. No usa el antiguo `IMPORT_API_TOKEN`, ni guarda identificadores originales en datos o rutas de Storage. La decisión de Carlos es que la configuración musical publicada y los medios puedan leerse sin sesión si se conocen sus URLs; SHA-256 separa rutas, no protege esa lectura. La API exige Bearer provisionado para escrituras/importaciones. No incorporar credenciales Admin a web o ESP32. Las reglas Firebase no permiten escrituras ni listados generales. El firmware sigue pendiente.
 
 Las variables enviadas al navegador son visibles. CORS no autoriza usuarios. Admin SDK se rige por IAM y no por reglas Firebase de clientes. No abrir reglas como solución a un fallo de permisos.
 
@@ -17,4 +17,4 @@ El script muestra rutas/motivos y omite valores; es una comprobación limitada d
 
 Si una credencial real se publica, revocarla o rotarla primero, sin repetir su valor al informar. Retirar un archivo o añadir `.gitignore` no elimina versiones previas. Revisar impacto e historial con el propietario antes de reescribirlo o forzar pushes. No borrar datos de nube como respuesta automática.
 
-Las pruebas reales usarán recursos dedicados, con resultados redactados. No compartir tokens de cuadros, contraseñas Wi-Fi ni URLs firmadas en capturas o issues públicos. Las subidas e imágenes se validarán con límites y se limpiarán según las referencias activas.
+Las pruebas reales usarán recursos dedicados, con resultados redactados. No publicar identificadores/enlaces de cuadros ni credenciales Admin. Las URLs de medios son legibles por cualquiera que las conozca; no son firmadas ni temporales. Las subidas e imágenes se validarán con límites y se limpiarán según las referencias activas.

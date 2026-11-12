@@ -20,7 +20,7 @@ curl -i "$API_BASE/state"
 curl -i "$API_BASE/state" -H "Authorization: Bearer $API_TOKEN"
 ```
 
-Se espera 200 con flags Firebase falsos, 401 sin token y 200 con `slots`/`jobs` inicialmente vacíos al usar el token local. En modo local la API admite solo `LOCAL_FRAME_TOKEN`; otro token largo no provisionado devuelve 401. Si ya había datos locales, no vaciarlos automáticamente: utilizar un `.env`/SQLite de desarrollo dedicado. No continuar una prueba de modificación contra datos reales. El estado se guarda bajo el hash del token en `frame_states`.
+Se espera 200 con flags Firebase falsos, 401 sin token y 200 con `slots`/`jobs` inicialmente vacíos al usar el token local. Esa primera consulta autorizada crea el registro SQLite; futuras consultas reutilizan el mismo registro. En modo local la API admite solo `LOCAL_FRAME_TOKEN`; otro token largo no provisionado devuelve 401. Si ya había datos locales, no vaciarlos automáticamente: utilizar un `.env`/SQLite de desarrollo dedicado. No continuar una prueba de modificación contra datos reales. El estado se guarda bajo el hash del identificador en `frame_states`.
 
 Abrir [Swagger](http://127.0.0.1:8000/docs) y comprobar que coincide con el catálogo [API.md](API.md). Guardar y borrar un registro local sintético, sin descargar audio:
 
@@ -42,12 +42,12 @@ Al acabar, `unset API_TOKEN` en la segunda terminal y `Ctrl+C` en la primera. No
 
 Esta parte todavía requiere configurar recursos dedicados, autorizar su uso y resolver los límites del prototipo. Puede generar consumo y modificar Firebase. No ejecutarla como parte de los tests automáticos de un fork.
 
-1. Configurar backend/Firebase y arrancar según sus guías. Usar el token Bearer preparado para el cuadro de prueba; el backend actual ya aísla sus datos, pero el acceso directo del ESP32 y la importación real todavía requieren validación.
+1. Configurar backend/Firebase y arrancar según sus guías. Usar el identificador Bearer del cuadro de prueba. El dispositivo puede leer slots/medios por URL sin sesión; las escrituras siguen en API.
 2. Buscar con el ejemplo `/search` de [API.md](API.md). Elegir explícitamente uno de sus resultados y anotar `id`, título y artista; no importar automáticamente el primero.
 3. Llamar a `/imports` con esos datos y un hueco de prueba. Comprobar 202 y conservar su `id` de tarea.
 4. Consultar `/state` y localizar esa tarea en `jobs`. Repetir la consulta hasta `ready`, `error` o `cancelled`; no tratar `percent=100` de una etapa como éxito final.
 5. Si está `ready`, comprobar el hueco y sus claves de audio/imagen, obtener `/media/{slot}` y usar la escucha local de la web. Confirmar que es el audio elegido y la imagen esperada.
-6. Verificar en Firebase el registro y los objetos del entorno dedicado, sin copiar URLs firmadas o credenciales al informe.
+6. Verificar en Firebase el registro y los objetos del entorno dedicado, sin copiar URLs públicas del cuadro ni credenciales al informe.
 7. Comprobar un fallo de importación conservando una selección anterior. Comprobar cancelación y que no publica contenido cancelado.
 8. Cerrar/reabrir la web y comprobar estado. Reiniciar el backend y registrar qué se recupera y qué requiere reintento. En Render validar desde su IP; lo probado en el Mac no acredita el alojamiento.
 9. Comprobar la limpieza cuando esté implementada. El DELETE actual no borra archivos remotos: no reportarlo como limpieza completa ni usarlo para borrar producción.

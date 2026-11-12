@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sonoro API",
-    "description": "API experimental de Sonoro. Las operaciones de cuadro usan un token Bearer y separan datos mediante su huella SHA-256. No proporciona acceso autónomo a medios para el ESP32.",
+    "description": "API experimental de Sonoro. Las operaciones de escritura/importación requieren el token Bearer del cuadro y se aíslan por SHA-256. La configuración publicada y los medios tienen lectura directa por URL conocida.",
     "version": "0.2.0"
   },
   "paths": {
@@ -317,6 +317,9 @@
           },
           "404": {
             "description": "Hueco vacío en este cuadro."
+          },
+          "503": {
+            "description": "Firebase Storage no está configurado."
           },
           "422": {
             "description": "Validation Error",

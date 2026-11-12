@@ -87,23 +87,87 @@ node --check web/app.js
 
 El recorrido HTTP manual está en [PRUEBA_API.md](PRUEBA_API.md). El esquema se puede actualizar desde una API local arrancada con `curl -sS http://127.0.0.1:8000/openapi.json -o docs/openapi.prototype.json`, revisando el diff junto a `API.md` antes de commit.
 
-## Lectura directa del ESP32 — preparación local
+## Lectura pública por URL conocida — 12 de noviembre de 2026
 
-Se implementó el acceso directo con el token fijo ya usado por API/web: el aprovisionamiento crea o actualiza un usuario Firebase Auth técnico y el cliente de ordenador renueva su ID token usando el refresh token de Firebase. El token del cuadro no se renueva ni cambia. Reglas RTDB permiten leer solo `frames/{sha256}/slots`; reglas Storage permiten leer solo `private/frames/{sha256}/...`; las escrituras y otros ámbitos quedan cerrados. El cliente no llama a Render.
+Carlos decidió que la configuración publicada y los medios sean legibles sin sesión si se conocen sus URLs. El identificador sigue siendo Bearer de la API y SHA-256 separa registros/rutas, pero no se considera autorización de lectura Firebase. RTDB limita el GET público a `frames/{sha256}/slots`; raíz, listado de cuadros, `jobs` y escrituras quedan denegados. Storage permite GET de objeto bajo `private/frames/{sha256}/`, sin sesión ni URL firmada temporal; listar y escribir siguen denegados. Cambios e importaciones siguen pasando por API con `FRAME_TOKEN_HASHES`.
 
-Verificación ejecutada en macOS desde la raíz, `.venv` con Python 3.12.15, Node 22 y Java 17; Firebase CLI fijado transitoriamente a `firebase-tools@14.22.0` vía `npx` (no instalado globalmente):
+Desde la raíz, en macOS con `.venv`, Node 22 y Java 17, se ejecutó Firebase CLI 14.22.0 vía `npx`:
 
 ```bash
-npx --yes firebase-tools@14.22.0 emulators:exec --only auth,database,storage --project demo-sonoro-device --log-verbosity=QUIET 'source .venv/bin/activate && python scripts/test_device_access.py'
+npx --yes firebase-tools@14.22.0 emulators:exec --only database,storage --project demo-sonoro-device --log-verbosity=QUIET 'source .venv/bin/activate && python scripts/test_device_access.py'
 ```
 
-Resultado: `PASS` para lectura propia en RTDB/Storage, rechazo entre cuadros, rechazo sin sesión, rechazo de escritura en RTDB/Storage, descarga de los bytes preparados en el emulador y renovación Firebase forzada mientras no hay API/Render. La prueba fuerza el vencimiento local y llama al refresh endpoint, conservando exactamente el Bearer fijo; no espera el vencimiento real de una hora. La cuenta de prueba se crea por REST dentro de Auth Emulator y los datos/archivos son fixtures aleatorios locales. Los emuladores paran al terminar.
+Resultado `PASS`: lectura directa RTDB/Storage sin sesión; configuración y medios separados en dos identificadores; rechazo de listado raíz, `jobs`, listados Storage y escrituras públicas; el cliente descargó ambos medios con la API detenida. Datos aleatorios/temporales en emuladores `demo-*`; no se usaron credenciales reales.
 
-`env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS .venv/bin/python -m pytest backend/tests scripts/tests -q` pasó: 13 tests; queda el aviso conocido de deprecación Starlette/TestClient con HTTPX. `compileall` y `node --check web/app.js` también pasaron. No cambiaron CSS ni layout, por lo que no se repitió revisión móvil.
+También pasó `env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS .venv/bin/python -m pytest backend/tests scripts/tests -q`: 16 tests, con el aviso conocido de deprecación Starlette/TestClient con HTTPX. `compileall`, `node --check web/app.js` y `git diff --check` pasaron. Tests de API y transacción simulada confirman que un primer GET autorizado crea estado y los siguientes reutilizan el registro; `/media` forma URLs Storage directas.
 
-No se desplegaron reglas, no se creó ni modificó un proyecto Firebase real, no se habilitó facturación y no se ejecutó importación real. La validación emulada no acredita la interoperabilidad de producción, la seguridad del almacenamiento de sesión del hardware elegido, ni streaming de audio en firmware.
+No se desplegaron reglas, no se modificó Firebase real, no se activó facturación ni se ejecutó una importación real. Los emuladores verifican las reglas locales, no su publicación ni la disponibilidad de medios cargados en un proyecto real. El firmware no existe; la validación de audio en hardware queda pendiente.
 
-Mecanismo contrastado con documentación oficial de Firebase: [Auth REST sign-in y refresh](https://firebase.google.com/docs/reference/rest/auth), [autenticación RTDB REST con ID token](https://firebase.google.com/docs/database/rest/auth), [condiciones de reglas RTDB](https://firebase.google.com/docs/database/security/rules-conditions) y [`request.auth.uid` en reglas de Storage](https://firebase.google.com/docs/storage/security/rules-conditions). La guía operativa y el cliente de prueba están en [firebase/README.md](../firebase/README.md).
+Referencias oficiales consultadas: [GET RTDB por REST y reglas públicas](https://firebase.google.com/docs/database/rest/retrieve-data), [métodos get/list de Security Rules Storage](https://firebase.google.com/docs/storage/security/core-syntax) y [autenticación requerida solo cuando la regla la exige](https://firebase.google.com/docs/reference/rest/database). Comandos completos y URLs ficticias están en [firebase/README.md](../firebase/README.md).
+
+## Conexión local al proyecto Firebase real — 12 de noviembre de 2026
+
+Se actualizó el `backend/.env` ignorado por Git sin reemplazar el resto de sus variables. Se configuró Application Default Credentials mediante un archivo de cuenta de servicio; `FIREBASE_SERVICE_ACCOUNT_JSON` quedó vacío. El JSON local existe, es válido y su `project_id` coincide con el proyecto esperado. No se imprimió ni copió al repositorio. `firebase/device-config.json` también se completó con la URL RTDB y el bucket públicos, y su forma coincide con la que consume `scripts/device_client.py`.
+
+| Comprobación contra servicios reales | Resultado |
+|---|---|
+| FastAPI `/state` con autorización temporal generada solo en memoria, usando el Admin SDK del archivo local | RTDB respondió con estado vacío; el registro temporal se eliminó y se confirmó su ausencia. No se consultaron ni modificaron selecciones existentes. |
+| Primeras consultas de metadatos y subida temporal a Storage | Respondieron con HTTP 404. No se concluyó que faltara configurar el producto y no se creó ningún recurso. |
+| Comprobación repetida de configuración, metadatos, subida, descarga y eliminación | Correcta: el proceso cargó el bucket previsto; el JSON de credencial y el proyecto de Admin coinciden. La lectura de metadatos y el ciclo de objeto temporal pasaron; después de borrar se confirmó que el objeto ya no existe. No se cambió el bucket, reglas ni facturación. |
+| Reglas públicas y cliente de dispositivo | Pendiente: no se desplegaron reglas; la lectura directa sin sesión no se probó contra el proyecto real. |
+
+La primera respuesta 404 no se reproduce en la comprobación repetida; no se atribuye una causa sin evidencia. Los emuladores verificaron anteriormente lectura pública, rechazo de listados/escrituras y separación entre cuadros. Eso no sustituye la validación de reglas contra Firebase real. En el `.env` anterior no existía `FRAME_TOKEN_HASHES`; se conservaron las variables e identificadores que sí estaban, sin añadir un token de cuadro. Por tanto, el backend accede a RTDB y Storage, pero la API local no autoriza operaciones de cuadro hasta provisionar el hash.
+
+La prueba real utilizó un registro aleatorio temporal fuera de selecciones y verificó su limpieza. No se ejecutaron importaciones de YouTube, no se tocaron reglas ni otros recursos Firebase y no se incluyeron rutas personales o credenciales en esta documentación.
+
+## Preparación y validación de reglas del cuadro de prueba — 12 de noviembre de 2026
+
+Se reutilizó el identificador local aleatorio que ya existía, sin imprimirlo. Se guardó una copia recuperable en `secrets/frame-test-token.txt` (ignorada por Git) y se añadió únicamente su SHA-256 a `FRAME_TOKEN_HASHES`, conservando los valores previos. Antes de llamar a la API se confirmó que RTDB no tenía cuadros ni tareas previas.
+
+| Comprobación | Resultado |
+|---|---|
+| Reglas locales con emuladores Database y Storage | `PASS`: leer `frames/{sha256}/slots` y descargar objetos individuales; listar `/frames`, leer `jobs`, listar Storage y escribir públicamente fueron rechazados. El cliente descargó medios separados de dos cuadros. Emuladores detenidos al terminar. |
+| API local contra RTDB real | `GET /state` con el identificador provisionado: 200 y estado vacío. Identificador aleatorio no autorizado: 401, sin crear registro. El estado temporal de prueba se eliminó y se verificó su ausencia. |
+| Despliegue real de reglas | Firebase CLI no pudo publicarlas por problemas de autenticación/permisos. Carlos aplicó manualmente las reglas locales de RTDB y Storage en Firebase Console. La comprobación de abajo confirma el comportamiento efectivo de las reglas aplicadas. |
+| Configuración pública directa desde ordenador contra Firebase real | Correcta: el cliente leyó `slots` y descargó el archivo de Storage en un proceso separado sin credenciales ni sesión; la API local estaba detenida. |
+
+Desde la raíz del repositorio, el comando completo intentado para desplegar solo estos dos servicios fue:
+
+```bash
+npx --yes firebase-tools@14.22.0 deploy --only database,storage --project cuadro-sonoro --non-interactive
+```
+
+Este es el comando CLI que se intentó desde la raíz, aunque el propietario aplicó después las reglas manualmente. No se seleccionaron Firestore, Hosting, Auth ni Functions. El CLI falló antes de publicar: primero por credenciales OAuth caducadas y luego, usando ADC aislado, por falta de permisos como `serviceusage.services.get`, `firebase.projects.get`, `firebasedatabase.instances.update`, `firebaserules.rulesets.create`, `firebaserules.releases.create` y `firebaserules.releases.update`. No hubo despliegue por CLI. La referencia oficial explica que `--only` limita los servicios y que el despliegue reemplaza las reglas existentes de cada servicio seleccionado: [Firebase CLI](https://firebase.google.com/docs/cli#deploy-specific-firebase-services).
+
+Tras la aplicación manual, se volvió a preparar solo el cuadro de prueba con un registro `slots`, una tarea interna ficticia y un objeto mínimo bajo el prefijo de ese cuadro. Con la API detenida, un proceso independiente sin variables de cuenta ni cabeceras de sesión leyó la configuración, descargó el archivo exacto mediante `scripts/device_client.py` y comprobó los rechazos:
+
+| Petición pública | Resultado real |
+|---|---|
+| RTDB `frames/{sha256}/slots.json` | 200, configuración de prueba leída. |
+| Descarga de un objeto individual de Storage | 200, bytes coincidentes con el fixture. |
+| RTDB `/frames.json`, `frames/{sha256}/jobs.json` y escritura de prueba | 401. |
+| Listado y escritura de prueba en Storage | 403. |
+
+El contenido de audio era solo un fixture de bytes, no un MP3 reproducible. El estado del cuadro y los objetos bajo el prefijo temporal se eliminaron; la comprobación administrativa final confirmó que el registro no existe y el prefijo está vacío. Un intento de borrado del objeto de escritura denegada respondió 404 porque no se llegó a crear; se confirmó después que no quedó ningún archivo.
+
+La API se probó desde la raíz con:
+
+```bash
+source .venv/bin/activate
+python -m uvicorn backend.main:app --env-file backend/.env --host 127.0.0.1 --port 8000 --workers 1
+```
+
+La credencial permite al Admin SDK usar RTDB y Storage, pero no da a Firebase CLI los permisos de publicación necesarios. Para revisar el cuadro de prueba localmente, el valor está en `secrets/frame-test-token.txt`; no se copia al informe ni a documentación compartida. Para generar el enlace en la terminal local, desde la raíz:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+token = Path('secrets/frame-test-token.txt').read_text(encoding='utf-8').strip()
+print('https://<dominio-de-la-web>/#token=' + token)
+PY
+```
+
+No activar trazas de shell ni copiar la salida a logs o informes. El archivo privado se conserva para continuar la fase. No se hicieron importaciones de YouTube ni se dejaron registros u objetos remotos de prueba. La prueba de descarga no valida un MP3 real ni la reproducción en navegador.
 
 ## Ajuste de contexto compartido
 

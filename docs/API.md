@@ -1,6 +1,6 @@
 # API del prototipo: endpoints y ejemplos
 
-Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el token Bearer del cuadro. La API deriva una clave SHA-256 de ese token para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. La lectura directa del ESP32 usa Firebase Auth y las reglas descritas en [Firebase](../firebase/README.md); no añade endpoints a esta API.
+Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el identificador fijo del cuadro en Bearer. La API valida su SHA-256 contra `FRAME_TOKEN_HASHES` y usa ese hash para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. Por decisión expresa de Carlos, RTDB/Storage permiten lectura sin sesión a quien conozca las URLs concretas; las escrituras e importaciones siguen protegidas por la API. Ver [Firebase](../firebase/README.md).
 
 ## Arranque y variables para los ejemplos
 
@@ -109,7 +109,7 @@ Respuesta inicial 200:
 {"slots":{},"jobs":{}}
 ```
 
-Los huecos se indexan por `slot-0`, `slot-1`, `slot-2`; las tareas por su `id`. Una canción lista contiene `id`, `kind: "song"`, `title`, `artist`, `source_id`, `duration`, `audio_key`, `image_key` y `created_at`. Una emisora contiene `id`, `kind: "station"`, `title`, `artist` y `url`. El estado siempre corresponde al token enviado; otro token no puede leerlo ni modificarlo.
+Los huecos se indexan por `slot-0`, `slot-1`, `slot-2`; las tareas por su `id`. Una canción lista contiene `id`, `kind: "song"`, `title`, `artist`, `source_id`, `duration`, `audio_key`, `image_key` y `created_at`. Una emisora contiene `id`, `kind: "station"`, `title`, `artist` y `url`. El estado corresponde al identificador Bearer. En Firebase, la ruta `slots` se lee sin autenticación y su URL conocida permite acceder a esos datos; las tareas no se incluyen en esa ruta pública. Una primera consulta API autorizada crea y persiste el estado vacío del cuadro; las siguientes reutilizan el mismo registro.
 
 Las tareas incluyen los datos de solicitud, estado, mensaje, porcentaje y marcas temporales que se hayan publicado. El prototipo consulta esta ruta periódicamente para mostrar progreso. No hay SSE ni un endpoint de consulta individual de tarea implementado; usar `jobs[job_id]`. La poda actual conserva un número limitado de tareas finalizadas y aún debe revisarse.
 
@@ -172,9 +172,9 @@ curl -sS "$API_BASE/media/0" \
 {"audio_url":"https://example.org/stream.mp3","image_url":null}
 ```
 
-Para una canción, devuelve URLs firmadas de Storage, con vigencia actual de 30 minutos. No incluirlas en Git, capturas o informes. La ruta devuelve JSON, no el MP3: abrir `audio_url` en el reproductor del navegador, que hace su petición directa. No envía comandos al ESP32. Un hueco sin contenido devuelve 404: `{"detail":"Espacio vacío."}`.
+Para una canción, devuelve URLs directas estables de Storage, legibles sin sesión mientras siga vigente la regla de acceso por URL conocida. Ejemplo ficticio de la forma de `audio_url`: `https://firebasestorage.googleapis.com/v0/b/example-sonoro.firebasestorage.app/o/private%2Fframes%2F<sha256>%2F<job>%2Faudio.mp3?alt=media`. Cualquiera que conozca esta URL podrá descargar el archivo. La ruta devuelve JSON, no el MP3: abrir `audio_url` en el reproductor del navegador, que hace su petición directa. No envía comandos al ESP32. Un hueco sin contenido devuelve 404: `{"detail":"Espacio vacío."}`.
 
-La generación de enlaces requiere configuración y credenciales capaces de firmar; errores de permisos/firma no tienen aún un contrato de errores completo y pueden producir 500. Deben manejarse al endurecer el backend, sin filtrar detalles sensibles. Este enlace temporal no resuelve la reproducción autónoma del ESP32 si Render está dormido.
+El endpoint sigue requiriendo el Bearer porque consulta el registro del cuadro, pero construir la URL no contacta Firebase ni firma un token temporal. Se requiere `FIREBASE_STORAGE_BUCKET`; sin bucket responde 503. El ESP32 no depende de este endpoint durante la reproducción: obtiene `audio_key` desde RTDB y forma la URL directa descrita en [Firebase](../firebase/README.md). Un hueco sin contenido devuelve 404: `{"detail":"Espacio vacío."}`.
 
 ## Qué no está implementado
 

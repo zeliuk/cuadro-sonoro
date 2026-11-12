@@ -4,15 +4,13 @@ import os
 import re
 import secrets
 import time
-from datetime import timedelta
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import ACTIVE, MAX_DURATION
-from .firebase_client import firebase
 from .lifecycle import lifespan
 from .models import Import, Search, Station
 from .state import cancelled, patch_job, store
@@ -21,7 +19,7 @@ from .state import cancelled, patch_job, store
 app = FastAPI(
     title='Sonoro API',
     version='0.2.0',
-    description='API experimental de Sonoro. Las operaciones de cuadro usan un token Bearer y separan datos mediante su huella SHA-256. No proporciona acceso autónomo a medios para el ESP32.',
+    description='API experimental de Sonoro. Las operaciones de escritura/importación requieren el token Bearer del cuadro y se aíslan por SHA-256. La configuración publicada y los medios tienen lectura directa por URL conocida.',
     lifespan=lifespan,
 )
 origins = [x.strip() for x in os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',') if x.strip()]
@@ -96,7 +94,7 @@ def create_import(body: Import, frame_key: str = Depends(authorized)):
 
 @app.get('/state', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}})
 def state(frame_key: str = Depends(authorized)):
-    return store.read(frame_key)
+    return store.ensure(frame_key)
 
 
 @app.post('/jobs/{job_id}/cancel', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 404: {'description': 'Tarea no encontrada en este cuadro.'}})
@@ -139,15 +137,18 @@ def delete_slot(slot: int, frame_key: str = Depends(authorized)):
     return {'ok': True}
 
 
-@app.get('/media/{slot}', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 404: {'description': 'Hueco vacío en este cuadro.'}})
+@app.get('/media/{slot}', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 404: {'description': 'Hueco vacío en este cuadro.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
 def media(slot: int, frame_key: str = Depends(authorized)):
     track = store.read(frame_key)['slots'].get('slot-' + str(slot))
     if not track:
         raise HTTPException(404, 'Espacio vacío.')
     if track['kind'] == 'station':
         return {'audio_url': track['url'], 'image_url': None}
-    from firebase_admin import storage
-    bucket = storage.bucket(app=firebase())
-    def signed(key):
-        return bucket.blob(key).generate_signed_url(version='v4', expiration=timedelta(minutes=30), method='GET') if key else None
-    return {'audio_url': signed(track['audio_key']), 'image_url': signed(track.get('image_key'))}
+    bucket = os.getenv('FIREBASE_STORAGE_BUCKET', '').strip()
+    if not bucket:
+        raise HTTPException(503, 'Configura Firebase Storage antes de obtener enlaces de medios.')
+    def public_url(key):
+        if not key:
+            return None
+        return f'https://firebasestorage.googleapis.com/v0/b/{quote(bucket, safe="")}/o/{quote(key, safe="")}?alt=media'
+    return {'audio_url': public_url(track['audio_key']), 'image_url': public_url(track.get('image_key'))}

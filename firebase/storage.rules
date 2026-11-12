@@ -2,9 +2,8 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /private/frames/{frame_key}/{allPaths=**} {
-      allow read: if request.auth != null
-        && request.auth.uid == 'frame-reader-' + frame_key;
-      allow write: if false;
+      allow get: if true;
+      allow list, write: if false;
     }
     match /{allPaths=**} {
       allow read, write: if false;

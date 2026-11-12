@@ -20,7 +20,7 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 
 Antes de editar, revisa `git status --short` y los cambios existentes. Trabaja por fases pequeñas, preserva trabajo ajeno y resuelve decisiones rutinarias dentro de lo autorizado. No borres, recrees ni reescribas un repositorio remoto por seguir una receta de inicio. No introduzcas un segundo framework, base de datos, autenticación para el destinatario o servicio sin justificarlo frente al alcance.
 
-El backend ya deriva ámbitos por cuadro a partir del token Bearer y separa datos y objetos nuevos; la web acepta el token desde el fragmento del enlace y lo mantiene en la pestaña. Lee `docs/ESTADO.md` para los límites restantes: preparación de QR/NFC, lectura autónoma del firmware, tareas, limpieza y Radio Browser. No basta con renombrar variables o actualizar un README. No prometer continuidad de tareas en Render Free porque exista un hilo de fondo. No hacer que el ESP32 dependa de un Render dormido para cada reproducción.
+El backend deriva ámbitos por cuadro a partir del identificador Bearer; la web acepta el valor desde el fragmento y lo mantiene en la pestaña. Por decisión expresa de Carlos, Firebase deja leer sin sesión la configuración/medios publicados por URL conocida, con listados, tareas y escrituras cerrados. La API mantiene `FRAME_TOKEN_HASHES` para cambios e importaciones. Lee `docs/ESTADO.md` para los límites restantes: validar reglas/importación en Firebase real, preparar QR/NFC, firmware, tareas, limpieza y Radio Browser. No basta con renombrar variables o actualizar un README. No prometer continuidad de tareas en Render Free porque exista un hilo de fondo. No hacer que el ESP32 dependa de un Render dormido para cada reproducción.
 
 ## Documentación obligatoria
 
@@ -32,7 +32,7 @@ Las instrucciones del proyecto ChatGPT también son parte del repositorio: `docs
 
 ## Secretos y datos
 
-Versionar plantillas vacías, nunca `.env`, cuentas de servicio, tokens reales, cookies, audios privados o bases de ejecución. Admin SDK solo en el servidor, nunca en web o firmware. Un `.env` no oculta valores enviados al navegador. No imprimir secretos ni URLs firmadas al verificar una configuración. No abrir reglas para superar una prueba. No borrar datos reales como limpieza rutinaria de tests. La política de eliminación de medios del producto debe implementarse de forma explícita y segura.
+Versionar plantillas vacías, nunca `.env`, cuentas de servicio, tokens reales, cookies, audios privados o bases de ejecución. Admin SDK solo en el servidor, nunca en web o firmware. Un `.env` no oculta valores enviados al navegador. No imprimir secretos ni identificadores/enlaces reales de cuadros al verificar una configuración. No abrir reglas para superar una prueba. No borrar datos reales como limpieza rutinaria de tests. La política de eliminación de medios del producto debe implementarse de forma explícita y segura.
 
 Usa pruebas aisladas sin entorno de nube heredado. No activar facturación, publicar recursos o desplegar cambios fuera del alcance autorizado. No pedir de nuevo permisos ya concedidos. Si falta una decisión material, prepara el resultado revisable y explica qué falta.
 
