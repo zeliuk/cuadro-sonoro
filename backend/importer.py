@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 
 from .config import MAX_BYTES, MAX_DURATION
-from .media import persist_media
+from .media import delete_orphaned_media, persist_media
 from .state import cancelled, check_cancel, patch_job, store
 
 
@@ -83,4 +83,8 @@ def execute_import(frame_key, job):
             patch_job(frame_key, job_id, status='error', percent=None, message=safe)
     finally:
         cancelled.discard(job_id)
+        try:
+            delete_orphaned_media(frame_key, store.read(frame_key))
+        except Exception:
+            pass
 

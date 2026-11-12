@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Sonoro API",
-    "description": "API experimental de Sonoro. Las operaciones de escritura/importación requieren el token Bearer del cuadro y se aíslan por SHA-256. La configuración publicada y los medios tienen lectura directa por URL conocida.",
-    "version": "0.2.0"
+    "description": "API experimental de Sonoro. El identificador del cuadro viaja como Bearer y deriva un ámbito SHA-256; no autentica ni autoriza usuarios. La configuración publicada y los medios tienen lectura directa por URL conocida.",
+    "version": "0.3.0"
   },
   "paths": {
     "/health": {
@@ -46,7 +46,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           },
           "502": {
             "description": "Falló la búsqueda en la fuente."
@@ -93,7 +93,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           },
           "409": {
             "description": "El cuadro ya tiene una importación activa."
@@ -133,7 +133,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           }
         },
         "security": [
@@ -173,7 +173,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           },
           "404": {
             "description": "Tarea no encontrada en este cuadro."
@@ -215,7 +215,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           },
           "409": {
             "description": "El cuadro ya tiene una importación activa."
@@ -268,7 +268,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           },
           "422": {
             "description": "Validation Error",
@@ -313,7 +313,7 @@
             }
           },
           "401": {
-            "description": "Token ausente, inválido o no provisionado."
+            "description": "Identificador ausente o no válido."
           },
           "404": {
             "description": "Hueco vacío en este cuadro."
@@ -479,7 +479,7 @@
     "securitySchemes": {
       "HTTPBearer": {
         "type": "http",
-        "description": "Token aleatorio provisionado para el cuadro, mínimo 32 caracteres. No usar una credencial administrativa de Firebase.",
+        "description": "Identificador público del cuadro (1–128 caracteres ASCII; no es una credencial).",
         "scheme": "bearer"
       }
     }

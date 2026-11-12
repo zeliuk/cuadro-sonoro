@@ -1,16 +1,18 @@
 """Direct, unauthenticated Firebase reader representing the ESP32."""
 import argparse
 import getpass
-import hashlib
 import json
 import os
-import re
 import stat
 import sys
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from backend.identity import frame_key_for
 
 
 def request_json(url: str) -> dict:
@@ -32,12 +34,6 @@ def request_bytes(url: str) -> bytes:
         raise RuntimeError(f'Firebase Storage devolvió HTTP {error.code}.') from None
     except (URLError, TimeoutError):
         raise RuntimeError('No se pudo descargar el medio desde Firebase Storage.') from None
-
-
-def frame_key_for(identifier: str) -> str:
-    if not re.fullmatch(r'[A-Za-z0-9_-]{32,}', identifier):
-        raise ValueError('El identificador del cuadro debe ser aleatorio y tener al menos 32 caracteres.')
-    return hashlib.sha256(identifier.encode('utf-8')).hexdigest()
 
 
 def load_config(path: Path) -> dict:

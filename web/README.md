@@ -8,25 +8,31 @@ python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 
 Abre [la interfaz](http://127.0.0.1:5173). `Ctrl+C` detiene el servidor y sus logs se ven en esa terminal. No hay instalación npm, bundler ni variables secretas de frontend. No abrir `index.html` como archivo local: usar HTTP para los módulos.
 
-`index.html`, `style.css` y `app.js` conservan el diseño aprobado. Hoy JS está concentrado en un archivo: modularizar sin rediseñar, separando componentes, estado y servicios. La demo usa localStorage, no Firebase; se activa explícitamente desde el engranaje.
+`index.html`, `style.css` y `app.js` conservan el diseño aprobado. Hoy JS está concentrado en un archivo: modularizar sin rediseñar, separando componentes, estado y servicios. La demo usa localStorage, no Firebase; se activa explícitamente con «Probar demostración».
+
+En una selección real, el botón play superpuesto a la portada inicia el audio en este navegador. Cambia a stop mientras suena; al tocarlo se detiene, y al terminar vuelve a play. No hay panel inferior de reproducción ni autoplay. Esto solo controla la escucha local, no el ESP32.
 
 ## Acceso mediante enlace de cuadro
 
-El formato es `https://dominio-del-cuadro/#token=<token_urlsafe>`, por ejemplo `https://cuadro.example/#token=TOKEN_FICTICIO_NO_VALIDO`. El ejemplo es deliberadamente inválido. El fragmento no se incluye en la petición HTTP que obtiene la web. `app.js` lo lee al cargar o al cambiar el hash, lo guarda en `sessionStorage` de esa pestaña y lo retira de la barra de direcciones sin recargar. Las peticiones a la API lo envían como `Authorization: Bearer ...`. Al cambiar de enlace se cancelan las peticiones del cuadro anterior y se limpia su estado antes de consultar el nuevo. Una respuesta 401 invalida el acceso de esa pestaña, vacía sus datos y muestra un error; no activa la demo.
+El formato es `https://dominio-del-cuadro/#token=<identificador>`, por ejemplo `http://127.0.0.1:5173/#token=mi-cuadro-prueba`. El identificador admite entre 1 y 128 caracteres ASCII: letra o número inicial, seguidos de letras, números, guion o guion bajo. No es una credencial. El fragmento no se incluye en la petición HTTP que obtiene la web. `app.js` lo lee al cargar o al cambiar el hash, lo guarda en `sessionStorage` de esa pestaña y lo retira de la barra de direcciones sin recargar. Las peticiones a la API lo envían como `Authorization: Bearer ...` para seleccionar el ámbito. Al cambiar de enlace se cancelan las peticiones del cuadro anterior y se limpia su estado antes de consultar el nuevo. Un identificador nuevo crea un cuadro vacío; el mismo recupera los registros existentes. Una entrada mal formada se rechaza sin activar la demo.
 
-Al servir la web en producción, configura la URL pública de la API en `web/index.html`, en `meta[name="sonoro-api-base"]`. Ejemplo ficticio: `<meta name="sonoro-api-base" content="https://api.example.invalid">`. No pongas tokens en esa etiqueta. La URL queda pública; los tokens solo viajan en el fragmento de acceso y en la cabecera Bearer de las llamadas a la API.
+La copia local apunta inicialmente a `http://127.0.0.1:8000`, de modo que el enlace de ejemplo funciona directamente cuando Compose está activo. Antes de publicar, configura la URL HTTPS pública de la API en `meta[name="sonoro-api-base"]`. Esa URL queda pública y no contiene credenciales.
 
-Si el fragmento no trae token pero ya hay una URL local guardada, se puede guardar esa URL desde ajustes y abrir luego el enlace del cuadro. El acceso manual con token sigue disponible para desarrollo. Si no hay token, la interfaz permanece bloqueada hasta abrir un enlace, configurar manualmente un token de desarrollo o elegir la demostración.
+Si el fragmento no trae identificador, la interfaz permanece bloqueada hasta abrir un enlace o elegir explícitamente «Probar demostración». La URL base de API es configuración del sitio, no del usuario: no hay popup ni conexión manual en la interfaz.
 
 ### Prueba local de un enlace
 
-Todos los comandos parten de la raíz del repositorio. No se necesita Firebase. La API usa el `LOCAL_FRAME_TOKEN` de `backend/.env` y SQLite local.
+Todos los comandos parten de la raíz del repositorio. No se necesita Firebase. Para aislar esta prueba, usa una configuración local sin URL de Firebase y SQLite temporal.
 
 ```bash
-python3 scripts/setup_local.py
 source .venv/bin/activate
 export STATE_DB="$(mktemp -t cuadro-sonoro-link)"
-env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS python -m uvicorn backend.main:app --env-file backend/.env --host 127.0.0.1 --port 8000 --workers 1
+LOCAL_API_ENV="$(mktemp -t cuadro-sonoro-env)"
+cat > "$LOCAL_API_ENV" <<EOF
+STATE_DB=$STATE_DB
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+EOF
+env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS python -m uvicorn backend.main:app --env-file "$LOCAL_API_ENV" --host 127.0.0.1 --port 8000 --workers 1
 ```
 
 En otra terminal, también desde la raíz:
@@ -35,17 +41,17 @@ En otra terminal, también desde la raíz:
 python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 ```
 
-Abre `http://127.0.0.1:5173`, entra en ajustes, selecciona «Servicio real» y guarda `http://127.0.0.1:8000` dejando vacío el token. Esto guarda solo la URL local y deja la vista bloqueada. Abre después el enlace en la barra del navegador, sustituyendo el ejemplo por el valor local de `LOCAL_FRAME_TOKEN` que ya tengas guardado en tu entorno privado:
+Abre el enlace directamente; la URL base local ya apunta a la API:
 
 ```text
-http://127.0.0.1:5173/#token=TOKEN_FICTICIO_NO_VALIDO
+http://127.0.0.1:5173/#token=mi-cuadro-prueba
 ```
 
-Resultado esperado: la página elimina el fragmento sin recargarse, muestra los tres huecos del token local y mantiene el acceso al recargar esa pestaña. Para probar el rechazo, abre `http://127.0.0.1:5173/#token=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`; es un token ficticio de 43 caracteres y no está provisionado. La página debe mostrar el error de acceso, vaciar los huecos y no enseñar la demo. Elige «Demostración» explícitamente en ajustes para comprobar el modo aislado; al volver a abrir el enlace del cuadro, debe reaparecer el estado real y ocultarse la nota de demo. Detén ambos procesos con `Ctrl+C`. El servidor local no tiene Firebase Storage: configurar una canción devolverá 503.
+Resultado esperado: la página elimina el fragmento sin recargarse, crea y muestra tres huecos vacíos, y mantiene el acceso al recargar esa pestaña. El mismo enlace recupera el registro. Para comprobar aislamiento, abre `http://127.0.0.1:5173/#token=otro-cuadro-prueba`; su estado debe ser independiente. Un identificador con `!` o más de 128 caracteres se rechaza. La demo continúa siendo una elección explícita y separada. Detén los servidores con `Ctrl+C`. Sin Firebase Storage, configurar una canción devuelve 503.
 
-En el hosting publicado, reemplaza el contenido vacío de `meta[name="sonoro-api-base"]` en `web/index.html` por la URL HTTPS de la API. Esta URL es pública y no lleva el token. No necesitas introducir esa dirección en el navegador del familiar. El token se distribuye por el enlace/NFC como `https://dominio/#token=<token_urlsafe>`; generar la imagen QR y programar NFC siguen fuera de esta fase.
+En el hosting publicado, reemplaza el valor local de `meta[name="sonoro-api-base"]` por la URL HTTPS de la API. No necesitas introducir esa dirección en el navegador del familiar. El identificador se distribuye por el enlace/NFC como `https://dominio/#token=<identificador>`; generar la imagen QR y programar NFC siguen fuera de esta fase.
 
-Para desarrollo local, arranca la API como indica [su guía](../backend/README.md). En la interfaz, abre ajustes, selecciona «Servicio real», guarda `http://127.0.0.1:8000` sin token para asociar la URL local y luego abre un enlace con el `LOCAL_FRAME_TOKEN` generado en `backend/.env`. El token debe permanecer en la URL solo hasta que la web lo quite; no lo copies en código, issues, historial compartido o capturas. La cuenta de servicio nunca se introduce en la web. Las importaciones siguen necesitando Firebase Storage.
+Para desarrollo local, arranca API y web según [backend/README.md](../backend/README.md) y abre `http://127.0.0.1:5173/#token=mi-cuadro-prueba`. Cualquier persona puede cambiar los datos de un identificador conocido; no uses datos privados. La cuenta de servicio nunca se introduce en la web. Las importaciones siguen necesitando Firebase Storage.
 
 Check desde la raíz, con Node instalado:
 

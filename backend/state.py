@@ -18,7 +18,7 @@ class StateStore:
         if not self.cloud:
             self.conn = sqlite3.connect(os.getenv('STATE_DB', '/tmp/sonoro.sqlite3'), check_same_thread=False)
             # Keep the legacy single-collection `state` table inert; it has no
-            # trustworthy frame identity and must never be assigned to a token.
+            # trustworthy frame identity and must never be assigned to an ID.
             self.conn.execute('CREATE TABLE IF NOT EXISTS frame_states (frame_key TEXT PRIMARY KEY, data TEXT)')
             self.conn.commit()
 
@@ -39,7 +39,7 @@ class StateStore:
         return self._normalize(data)
 
     def ensure(self, frame_key):
-        """Create an empty per-frame record on its first authorized API read."""
+        """Create an empty per-frame record on its first identified API read."""
         if self.cloud:
             from firebase_admin import db
             reference = db.reference(f'frames/{frame_key}', app=firebase())

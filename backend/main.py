@@ -1,5 +1,4 @@
 """HTTP API for frame-scoped configuration and imports."""
-import hashlib
 import os
 import re
 import secrets
@@ -11,43 +10,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import ACTIVE, MAX_DURATION
+from .identity import frame_key_for
 from .lifecycle import lifespan
+from .media import delete_orphaned_media
 from .models import Import, Search, Station
 from .state import cancelled, patch_job, store
 
 
 app = FastAPI(
     title='Sonoro API',
-    version='0.2.0',
-    description='API experimental de Sonoro. Las operaciones de escritura/importación requieren el token Bearer del cuadro y se aíslan por SHA-256. La configuración publicada y los medios tienen lectura directa por URL conocida.',
+    version='0.3.0',
+    description='API experimental de Sonoro. El identificador del cuadro viaja como Bearer y deriva un ámbito SHA-256; no autentica ni autoriza usuarios. La configuración publicada y los medios tienen lectura directa por URL conocida.',
     lifespan=lifespan,
 )
 origins = [x.strip() for x in os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',') if x.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=['GET', 'POST', 'DELETE'], allow_headers=['Authorization', 'Content-Type'])
-security = HTTPBearer(auto_error=False, description='Token aleatorio provisionado para el cuadro, mínimo 32 caracteres. No usar una credencial administrativa de Firebase.')
+security = HTTPBearer(auto_error=False, description='Identificador público del cuadro (1–128 caracteres ASCII; no es una credencial).')
 
 
-def allowed_frame_keys():
-    configured = {
-        value.strip().lower()
-        for value in os.getenv('FRAME_TOKEN_HASHES', '').split(',')
-        if re.fullmatch(r'[0-9a-fA-F]{64}', value.strip())
-    }
-    # A local convenience token is never accepted in a Firebase-backed deployment.
-    if not os.getenv('FIREBASE_DATABASE_URL') and not os.getenv('FIREBASE_STORAGE_BUCKET'):
-        local_token = os.getenv('LOCAL_FRAME_TOKEN', '')
-        if re.fullmatch(r'[A-Za-z0-9_-]{32,}', local_token):
-            configured.add(hashlib.sha256(local_token.encode('utf-8')).hexdigest())
-    return configured
-
-def authorized(credentials: HTTPAuthorizationCredentials | None = Depends(security)):
-    if not credentials or not re.fullmatch(r'[A-Za-z0-9_-]{32,}', credentials.credentials):
-        raise HTTPException(401, 'Acceso no autorizado.')
-    # The raw capability is never stored in RTDB, SQLite, jobs, or Storage paths.
-    frame_key = hashlib.sha256(credentials.credentials.encode('utf-8')).hexdigest()
-    if frame_key not in allowed_frame_keys():
-        raise HTTPException(401, 'Acceso no autorizado.')
-    return frame_key
+def identify_frame(credentials: HTTPAuthorizationCredentials | None = Depends(security)):
+    if not credentials:
+        raise HTTPException(401, 'Falta el identificador del cuadro.')
+    try:
+        return frame_key_for(credentials.credentials)
+    except ValueError:
+        raise HTTPException(401, 'El identificador del cuadro no es válido.') from None
 
 
 @app.get('/health')
@@ -55,8 +42,8 @@ def health():
     return {'ok': True, 'storage_configured': bool(os.getenv('FIREBASE_STORAGE_BUCKET')), 'durable_state': store.cloud}
 
 
-@app.post('/search', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 502: {'description': 'Falló la búsqueda en la fuente.'}})
-def search(body: Search, _frame_key: str = Depends(authorized)):
+@app.post('/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 502: {'description': 'Falló la búsqueda en la fuente.'}})
+def search(body: Search, _frame_key: str = Depends(identify_frame)):
     import yt_dlp
     query = f'{body.artist} {body.title} official audio'
     try:
@@ -75,8 +62,8 @@ def search(body: Search, _frame_key: str = Depends(authorized)):
         raise HTTPException(502, 'No se pudo completar la búsqueda. La fuente puede estar bloqueando al servidor; vuelve a intentarlo.')
 
 
-@app.post('/imports', status_code=202, responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
-def create_import(body: Import, frame_key: str = Depends(authorized)):
+@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
+def create_import(body: Import, frame_key: str = Depends(identify_frame)):
     if not os.getenv('FIREBASE_STORAGE_BUCKET'):
         raise HTTPException(503, 'Configura Firebase Storage antes de importar.')
     job = {**body.model_dump(), 'id': secrets.token_hex(12), 'status': 'queued', 'percent': None, 'message': 'Esperando turno', 'created_at': time.time()}
@@ -92,13 +79,13 @@ def create_import(body: Import, frame_key: str = Depends(authorized)):
     return job
 
 
-@app.get('/state', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}})
-def state(frame_key: str = Depends(authorized)):
+@app.get('/state', responses={401: {'description': 'Identificador ausente o no válido.'}})
+def state(frame_key: str = Depends(identify_frame)):
     return store.ensure(frame_key)
 
 
-@app.post('/jobs/{job_id}/cancel', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 404: {'description': 'Tarea no encontrada en este cuadro.'}})
-def cancel(job_id: str, frame_key: str = Depends(authorized)):
+@app.post('/jobs/{job_id}/cancel', responses={401: {'description': 'Identificador ausente o no válido.'}, 404: {'description': 'Tarea no encontrada en este cuadro.'}})
+def cancel(job_id: str, frame_key: str = Depends(identify_frame)):
     job = store.read(frame_key)['jobs'].get(job_id)
     if not job:
         raise HTTPException(404, 'Tarea no encontrada.')
@@ -108,8 +95,8 @@ def cancel(job_id: str, frame_key: str = Depends(authorized)):
     return {'ok': True}
 
 
-@app.post('/stations', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}})
-def station(body: Station, frame_key: str = Depends(authorized)):
+@app.post('/stations', responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}})
+def station(body: Station, frame_key: str = Depends(identify_frame)):
     parsed = urlparse(body.url)
     # Backend never fetches this URL: prevents a generic SSRF/download endpoint.
     if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password:
@@ -119,11 +106,15 @@ def station(body: Station, frame_key: str = Depends(authorized)):
             raise HTTPException(409, 'Este cuadro tiene una importación en curso.')
         state['slots']['slot-' + str(body.slot)] = {'id': secrets.token_hex(12), 'kind': 'station', 'title': body.title, 'artist': 'Radio en directo', 'url': body.url}
     store.mutate(frame_key, add)
-    return {'ok': True}
+    try:
+        cleanup = delete_orphaned_media(frame_key, store.read(frame_key))
+        return {'ok': True, **cleanup}
+    except Exception:
+        return {'ok': True, 'deleted_objects': 0, 'cleanup_pending': True}
 
 
-@app.delete('/slots/{slot}', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}})
-def delete_slot(slot: int, frame_key: str = Depends(authorized)):
+@app.delete('/slots/{slot}', responses={401: {'description': 'Identificador ausente o no válido.'}})
+def delete_slot(slot: int, frame_key: str = Depends(identify_frame)):
     if slot not in range(3):
         raise HTTPException(422, 'Espacio no válido.')
     def remove(state):
@@ -134,11 +125,15 @@ def delete_slot(slot: int, frame_key: str = Depends(authorized)):
                 job.update(status='cancelled', message='Espacio vaciado', percent=None)
         state['slots'].pop('slot-' + str(slot), None)
     store.mutate(frame_key, remove)
-    return {'ok': True}
+    try:
+        cleanup = delete_orphaned_media(frame_key, store.read(frame_key))
+        return {'ok': True, **cleanup}
+    except Exception:
+        return {'ok': True, 'deleted_objects': 0, 'cleanup_pending': True}
 
 
-@app.get('/media/{slot}', responses={401: {'description': 'Token ausente, inválido o no provisionado.'}, 404: {'description': 'Hueco vacío en este cuadro.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
-def media(slot: int, frame_key: str = Depends(authorized)):
+@app.get('/media/{slot}', responses={401: {'description': 'Identificador ausente o no válido.'}, 404: {'description': 'Hueco vacío en este cuadro.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
+def media(slot: int, frame_key: str = Depends(identify_frame)):
     track = store.read(frame_key)['slots'].get('slot-' + str(slot))
     if not track:
         raise HTTPException(404, 'Espacio vacío.')

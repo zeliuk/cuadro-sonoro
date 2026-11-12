@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f1e9"><meta name="sonoro-api-base" content=""><title>Sonoro — Tu música, en un cuadro</title><meta name="description" content="Tres espacios para la música que te acompaña. El mando de tu cuadro musical."><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f1e9"><meta name="sonoro-api-base" content="http://127.0.0.1:8000"><title>Sonoro — Tu música, en un cuadro</title><meta name="description" content="Tres espacios para la música que te acompaña. El mando de tu cuadro musical."><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head>
 <body>
 <div class="page">
-<header><a class="brand" href="./" aria-label="Sonoro, inicio"><span class="brand-icon" aria-hidden="true">◉</span> sonoro<span class="coral">.</span></a><button id="settings-open" class="icon-button" aria-label="Configurar conexión" title="Configurar conexión">⚙</button></header>
+<header><a class="brand" href="./" aria-label="Sonoro, inicio"><span class="brand-icon" aria-hidden="true">◉</span> sonoro<span class="coral">.</span></a></header>
 <div class="statusline"><span class="pill"><i></i> CUADRO 001</span><span class="device-status">Vista previa · sin ESP32 conectado</span></div>
 <main>
 <section class="intro"><div><p class="eyebrow">TU PEQUEÑA COLECCIÓN</p><h1>Un cuadro.<br>Tres formas de <em>sonar.</em></h1></div><p class="intro-copy">Dale un lugar a tus canciones<br>y emisoras favoritas.</p></section>
@@ -11,7 +11,7 @@
 <div class="error-note access-error" id="access-error" role="alert" hidden></div>
 <section id="slots" class="slots" aria-label="Tus tres espacios musicales"></section>
 <div class="demo-note" id="demo-note"><span aria-hidden="true">✳</span><p><strong>Prueba la experiencia.</strong> La búsqueda y las barras son simuladas. Aquí no se descarga ni se guarda audio.</p></div>
-<section class="player" id="player" hidden><div><span class="eyebrow">PRUEBA EN ESTE MÓVIL</span><p id="now-playing"></p></div><audio id="audio" controls preload="none"></audio><button class="icon-button" id="player-close" aria-label="Cerrar reproductor">×</button></section>
+<audio id="audio" preload="none" hidden></audio>
 </main>
 <footer><span>HECHO PARA ESCUCHAR, MIRAR Y DISFRUTAR.</span><span>Tu música. A tu manera. <span class="coral">↗</span></span></footer>
 </div>
@@ -19,7 +19,6 @@
 <form id="search-form"><label for="artist">Artista</label><input id="artist" name="artist" autocomplete="off" placeholder="Nombre del artista" required maxlength="120"><label for="song">Canción</label><input id="song" name="song" autocomplete="off" placeholder="Título de la canción" required maxlength="160"><button class="primary" id="search-button" type="submit">Buscar canción <span>↗</span></button></form>
 <form id="radio-form" hidden><label for="radio-name">Nombre de la emisora</label><input id="radio-name" placeholder="Mi radio favorita" required maxlength="100"><label for="radio-url">Enlace directo de streaming</label><input id="radio-url" placeholder="https://…/stream.mp3" required type="url"><p class="hint">Necesitas la dirección del audio, no la página web de la emisora.</p><button class="primary" type="submit">Guardar emisora <span>↗</span></button></form>
 <div id="search-status" role="status" aria-live="polite" hidden><div class="loading-line"></div><p>Buscando la versión adecuada…</p></div><div id="search-error" class="error-note" role="alert" hidden></div><div id="results" aria-live="polite"></div><p class="dialog-note" id="picker-demo">Demostración: los resultados y el progreso son de ejemplo.</p></dialog>
-<dialog id="settings"><form method="dialog" class="dialog-header"><span class="eyebrow">CONEXIÓN</span><button class="icon-button" aria-label="Cerrar">×</button></form><h2>Conecta tu<br><em>colección.</em></h2><p class="settings-copy">Prueba el diseño o conecta el servicio de importación para buscar y guardar audio real.</p><form id="settings-form"><label for="connection-mode">Modo</label><select id="connection-mode"><option value="demo">Demostración · sin descargas</option><option value="real">Servicio real</option></select><div id="server-fields" hidden><label for="api-url">Dirección del servicio</label><input id="api-url" type="url" placeholder="https://tu-servicio.onrender.com"><label for="api-token">Token de acceso del cuadro</label><input id="api-token" type="password" autocomplete="off" placeholder="Token del cuadro"><p class="hint" id="token-hint">Para desarrollo puedes introducir el token del cuadro. Nunca introduzcas aquí la cuenta de servicio de Firebase.</p></div><button class="primary" type="submit">Guardar conexión <span>↗</span></button><div id="settings-error" class="error-note" role="alert" hidden></div></form><p class="dialog-note">Esta versión controla una colección privada de tres espacios. La conexión con el ESP32 es el siguiente paso.</p></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 <script type="module" src="app.js"></script>
 </body></html>

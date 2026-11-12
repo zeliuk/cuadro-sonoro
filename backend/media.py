@@ -2,7 +2,41 @@ import contextlib
 from pathlib import Path
 
 from .firebase_client import firebase
-from .state import check_cancel, patch_job
+from .config import ACTIVE
+from .state import cancelled, check_cancel, patch_job
+
+
+def delete_orphaned_media(frame_key, state, bucket=None):
+    """Delete frame media not referenced by a published slot or active import."""
+    from firebase_admin import storage
+    if bucket is None:
+        bucket = storage.bucket(app=firebase())
+    prefix = f'private/frames/{frame_key}/'
+    referenced = {
+        track.get(key)
+        for track in state.get('slots', {}).values()
+        for key in ('audio_key', 'image_key')
+        if track.get(key)
+    }
+    active_jobs = {
+        job_id for job_id, job in state.get('jobs', {}).items()
+        if job.get('status') in ACTIVE or job_id in cancelled
+    }
+    deleted = 0
+    pending = False
+    for blob in bucket.list_blobs(prefix=prefix):
+        if blob.name in referenced:
+            continue
+        relative = blob.name[len(prefix):]
+        job_id = relative.split('/', 1)[0]
+        if job_id in active_jobs:
+            continue
+        try:
+            blob.delete()
+            deleted += 1
+        except Exception:
+            pending = True
+    return {'deleted_objects': deleted, 'cleanup_pending': pending}
 
 
 def persist_media(frame_key, job_id, audio: Path, image: Path | None):

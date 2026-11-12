@@ -1,6 +1,6 @@
 # API del prototipo: endpoints y ejemplos
 
-Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el identificador fijo del cuadro en Bearer. La API valida su SHA-256 contra `FRAME_TOKEN_HASHES` y usa ese hash para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. Por decisión expresa de Carlos, RTDB/Storage permiten lectura sin sesión a quien conozca las URLs concretas; las escrituras e importaciones siguen protegidas por la API. Ver [Firebase](../firebase/README.md).
+Este catálogo describe las ocho operaciones implementadas en `backend/main.py`. Todas salvo `/health` requieren el identificador del cuadro en Bearer como selector de ámbito, no como autenticación. Cualquier identificador válido crea o recupera automáticamente su registro. API y cliente directo calculan el mismo SHA-256 UTF-8 para aislar datos y medios; los huecos son `0`, `1`, `2` en HTTP y «01», «02», «03» en la interfaz. No hay usuarios ni lista de cuadros autorizados: quien use un identificador puede leer y cambiar ese ámbito por API. Por decisión expresa de Carlos, RTDB/Storage permiten además lectura sin sesión a quien conozca las URLs concretas, mientras sus reglas bloquean listados y escrituras públicas. Ver [Firebase](../firebase/README.md).
 
 ## Arranque y variables para los ejemplos
 
@@ -8,12 +8,12 @@ Sigue primero [backend/README.md](../backend/README.md). Desde la raíz, con `.v
 
 ```bash
 export API_BASE='http://127.0.0.1:8000'
-export API_TOKEN="$(python -c 'from dotenv import dotenv_values; print(dotenv_values("backend/.env").get("LOCAL_FRAME_TOKEN", ""))')"
+export FRAME_ID='mi-cuadro-prueba'
 ```
 
-El segundo comando carga el token local sin imprimirlo. No ejecutar con traza de shell (`set -x`), compartir variables o pegar tokens en documentos. Después de las pruebas, `unset API_TOKEN` lo retira de esa terminal. En Swagger, «Authorize» recibe el valor sin el prefijo `Bearer`. En producción, el desarrollador prepara y distribuye un token aleatorio diferente por cuadro; no se configura `LOCAL_FRAME_TOKEN` en Render.
+El identificador del cuadro tiene entre 1 y 128 caracteres ASCII: letra o número inicial, seguidos de letras, números, guion o guion bajo. `mi-cuadro-prueba` es válido. No es un secreto; la cabecera Bearer solo conserva el transporte existente y no concede ni comprueba permisos. En Swagger, «Authorize» recibe el identificador sin el prefijo `Bearer`. Después, `unset FRAME_ID` lo retira de esa terminal.
 
-Las operaciones de cuadro requieren `Authorization: Bearer ...` con el token aleatorio provisionado para ese cuadro, de al menos 32 caracteres. Token ausente, mal formado o cuyo hash no está provisionado: 401. En producción, los hashes autorizados están en `FRAME_TOKEN_HASHES`; el servidor no conserva los tokens. No existe token global. Las validaciones de entrada producen 422, con detalles de Pydantic. Los ejemplos de respuesta son ilustrativos; IDs y tiempos reales cambian.
+Las operaciones de cuadro requieren `Authorization: Bearer ...` con un identificador válido. Ausente o mal formado: 401. El primer `GET /state` crea `slots` y `jobs` vacíos; las peticiones posteriores recuperan el mismo estado. Identificadores distintos generan ámbitos independientes. Las validaciones del cuerpo producen 422, con detalles de Pydantic. Los ejemplos de respuesta son ilustrativos; IDs y tiempos reales cambian.
 
 | Método | Ruta | Acceso | Uso |
 |---|---|---|---|
@@ -53,7 +53,7 @@ Busca hasta cinco resultados a partir de artista y título. Requiere dependencia
 
 ```bash
 curl -sS "$API_BASE/search" \
-  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Authorization: Bearer $FRAME_ID" \
   -H 'Content-Type: application/json' \
   -d '{"artist":"Weezer","title":"Island in the Sun"}'
 ```
@@ -81,7 +81,7 @@ El siguiente ID es sintético: sustituirlo por uno seleccionado realmente en `/s
 
 ```bash
 curl -sS "$API_BASE/imports" \
-  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Authorization: Bearer $FRAME_ID" \
   -H 'Content-Type: application/json' \
   -d '{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido"}'
 ```
@@ -100,7 +100,7 @@ La selección anterior se conserva hasta completar audio, imagen y publicación.
 
 ```bash
 curl -sS "$API_BASE/state" \
-  -H "Authorization: Bearer $API_TOKEN"
+  -H "Authorization: Bearer $FRAME_ID"
 ```
 
 Respuesta inicial 200:
@@ -109,7 +109,7 @@ Respuesta inicial 200:
 {"slots":{},"jobs":{}}
 ```
 
-Los huecos se indexan por `slot-0`, `slot-1`, `slot-2`; las tareas por su `id`. Una canción lista contiene `id`, `kind: "song"`, `title`, `artist`, `source_id`, `duration`, `audio_key`, `image_key` y `created_at`. Una emisora contiene `id`, `kind: "station"`, `title`, `artist` y `url`. El estado corresponde al identificador Bearer. En Firebase, la ruta `slots` se lee sin autenticación y su URL conocida permite acceder a esos datos; las tareas no se incluyen en esa ruta pública. Una primera consulta API autorizada crea y persiste el estado vacío del cuadro; las siguientes reutilizan el mismo registro.
+Los huecos se indexan por `slot-0`, `slot-1`, `slot-2`; las tareas por su `id`. Una canción lista contiene `id`, `kind: "song"`, `title`, `artist`, `source_id`, `duration`, `audio_key`, `image_key` y `created_at`. Una emisora contiene `id`, `kind: "station"`, `title`, `artist` y `url`. El estado corresponde al identificador Bearer. En Firebase, la ruta `slots` se lee sin autenticación y su URL conocida permite acceder a esos datos; las tareas no se incluyen en esa ruta pública. Una primera consulta API con su identificador crea y persiste el estado vacío del cuadro; las siguientes reutilizan el mismo registro.
 
 Las tareas incluyen los datos de solicitud, estado, mensaje, porcentaje y marcas temporales que se hayan publicado. El prototipo consulta esta ruta periódicamente para mostrar progreso. No hay SSE ni un endpoint de consulta individual de tarea implementado; usar `jobs[job_id]`. La poda actual conserva un número limitado de tareas finalizadas y aún debe revisarse.
 
@@ -120,12 +120,12 @@ En la terminal, define `JOB_ID` con el `id` devuelto por `/imports`. Para probar
 ```bash
 export JOB_ID='tarea-inexistente-de-prueba'
 curl -sS -X POST "$API_BASE/jobs/$JOB_ID/cancel" \
-  -H "Authorization: Bearer $API_TOKEN"
+  -H "Authorization: Bearer $FRAME_ID"
 ```
 
 200: `{"ok":true}` si la tarea existe; 404: `{"detail":"Tarea no encontrada."}` si no existe. Si está activa, se solicita la cancelación y el worker la comprueba durante el proceso. Una respuesta 200 no prueba que todos los archivos remotos hayan sido eliminados. Si ya es terminal, devuelve `ok` sin revertir una canción publicada.
 
-Para reintentar, la interfaz vuelve a llamar a `/imports` con los datos originales y obtiene un ID nuevo. No hay endpoint `/retry` en esta base. Tareas y cancelación están aisladas por cuadro. Persistencia de cancelación, recuperación fiable y limpieza están pendientes de adaptación.
+Para reintentar, la interfaz vuelve a llamar a `/imports` con los datos originales y obtiene un ID nuevo. No hay endpoint `/retry` en esta base. Tareas y cancelación están aisladas por cuadro. Persistencia de cancelación y recuperación fiable siguen pendientes de adaptación.
 
 ## POST /stations
 
@@ -141,7 +141,7 @@ Ejemplo sintético para comprobar el contrato en **desarrollo local**; el enlace
 
 ```bash
 curl -sS "$API_BASE/stations" \
-  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Authorization: Bearer $FRAME_ID" \
   -H 'Content-Type: application/json' \
   -d '{"slot":2,"title":"Radio de prueba local","url":"https://example.org/stream.mp3"}'
 ```
@@ -154,16 +154,16 @@ Modifica datos. Ejecutar el siguiente ejemplo solo sobre el hueco local de prueb
 
 ```bash
 curl -sS -X DELETE "$API_BASE/slots/2" \
-  -H "Authorization: Bearer $API_TOKEN"
+  -H "Authorization: Bearer $FRAME_ID"
 ```
 
-200: `{"ok":true}`; vaciar un hueco ya vacío también devuelve 200. 422 para índices fuera de 0–2. Cancela las tareas relacionadas y retira la selección del cuadro autenticado. **Todavía no elimina los MP3/carátulas de Storage** ni gestiona referencias de reproducción activa. La política final está en la definición y debe implementarse, no darse por hecha.
+200: `{"ok":true,"deleted_objects":2,"cleanup_pending":false}`; el contador puede ser 0. Vaciar un hueco ya vacío también devuelve 200 y reintenta la limpieza de objetos huérfanos del cuadro. 422 para índices fuera de 0–2. Cancela las tareas relacionadas, retira la selección y elimina de Storage todo objeto del cuadro que ya no esté referenciado por otro hueco ni pertenezca a una importación activa. Si Firebase falla, `cleanup_pending` es `true`; la limpieza se vuelve a intentar al reiniciar la API o al vaciar otro hueco. Al iniciar, la API también limpia medios sin referencias. El reproductor local se detiene al vaciar su favorito; no hay hardware ni seguimiento de reproducciones del ESP32 todavía.
 
 ## GET /media/{slot}
 
 ```bash
 curl -sS "$API_BASE/media/0" \
-  -H "Authorization: Bearer $API_TOKEN"
+  -H "Authorization: Bearer $FRAME_ID"
 ```
 
 200 para una emisora:
@@ -174,10 +174,10 @@ curl -sS "$API_BASE/media/0" \
 
 Para una canción, devuelve URLs directas estables de Storage, legibles sin sesión mientras siga vigente la regla de acceso por URL conocida. Ejemplo ficticio de la forma de `audio_url`: `https://firebasestorage.googleapis.com/v0/b/example-sonoro.firebasestorage.app/o/private%2Fframes%2F<sha256>%2F<job>%2Faudio.mp3?alt=media`. Cualquiera que conozca esta URL podrá descargar el archivo. La ruta devuelve JSON, no el MP3: abrir `audio_url` en el reproductor del navegador, que hace su petición directa. No envía comandos al ESP32. Un hueco sin contenido devuelve 404: `{"detail":"Espacio vacío."}`.
 
-El endpoint sigue requiriendo el Bearer porque consulta el registro del cuadro, pero construir la URL no contacta Firebase ni firma un token temporal. Se requiere `FIREBASE_STORAGE_BUCKET`; sin bucket responde 503. El ESP32 no depende de este endpoint durante la reproducción: obtiene `audio_key` desde RTDB y forma la URL directa descrita en [Firebase](../firebase/README.md). Un hueco sin contenido devuelve 404: `{"detail":"Espacio vacío."}`.
+El endpoint sigue recibiendo el Bearer para seleccionar el registro del cuadro, pero construir la URL no contacta Firebase ni firma un enlace temporal. Se requiere `FIREBASE_STORAGE_BUCKET`; sin bucket responde 503. El ESP32 no depende de este endpoint durante la reproducción: obtiene `audio_key` desde RTDB y forma la URL directa descrita en [Firebase](../firebase/README.md). Un hueco sin contenido devuelve 404: `{"detail":"Espacio vacío."}`.
 
 ## Qué no está implementado
 
-El hash se compara con la lista de tokens provisionados y deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. No existen aún búsqueda de Radio Browser, imagen decorativa, limpieza de huérfanos, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial. El acceso de dispositivo se prueba directamente contra emuladores Firebase, sin esta API; reglas reales e importación real quedan pendientes.
+El SHA-256 del identificador válido deriva el ámbito: RTDB guarda cada uno bajo `frames/{sha256}`; SQLite local usa filas independientes en `frame_states`; los objetos nuevos de Storage se guardan bajo `private/frames/{sha256}/{job_id}/`. No hay lista de IDs ni usuarios. Los registros antiguos de `prototypes/sonoro` y la tabla local `state` no se migran porque no identifican un cuadro de forma fiable. No existen aún búsqueda de Radio Browser, imagen decorativa, estado de dispositivo ni comandos remotos. No añadir rutas de reproducir/detener/volumen del cuadro: no pertenecen al alcance inicial.
 
 Consultar [PRUEBA_API.md](PRUEBA_API.md) para el orden de prueba, [ESTADO.md](ESTADO.md) para las diferencias con el producto y [VALIDACION.md](VALIDACION.md) para la evidencia ejecutada.

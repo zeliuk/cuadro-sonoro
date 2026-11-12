@@ -19,13 +19,13 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 
 ### Acceso habitual
 
-- Cada cuadro tiene un token aleatorio, largo y difícil de adivinar, fijado por el desarrollador al preparar el dispositivo.
-- Ese token relaciona el acceso web, los datos del cuadro y el ESP32. No es un identificador numérico predecible ni una credencial global para todos los cuadros.
+- Cada cuadro usa un identificador de texto para relacionar su enlace, datos y dispositivo. Un identificador válido no requiere alta ni configuración previa.
+- El identificador no es una credencial ni una prueba de identidad; no hay lista de cuadros permitidos, registro de usuarios ni Firebase Auth. Quien elija/conozca uno puede consultar y cambiar ese ámbito mediante la API.
 - El QR y el NFC habituales abren la web alojada en el servidor de Carlos, con acceso al cuadro correspondiente.
-- El enlace entrega el token mediante el fragmento, con formato `https://dominio/#token=<token>`. El navegador lo consume sin incluirlo en la petición al servidor web y después limpia la barra de direcciones.
+- El enlace entrega el identificador mediante el fragmento existente, con formato `https://dominio/#token=<identificador>`. El navegador lo consume sin incluirlo en la petición al servidor web y después limpia la barra de direcciones.
 - No se plantea un registro ni un selector de usuarios para la primera versión. Quien tenga el enlace podrá consultar y cambiar la configuración de ese cuadro.
 - Las selecciones pertenecen al cuadro y son compartidas entre quienes acceden desde distintos móviles.
-- No se añade una credencial de dispositivo que el destinatario deba introducir o gestionar. El mecanismo técnico de autorización se resolverá durante la implementación respetando esta experiencia.
+- El identificador acepta entre 1 y 128 caracteres ASCII: letra o número inicial, luego letras, números, guion o guion bajo. La API lo conserva como Bearer por compatibilidad de transporte; el SHA-256 UTF-8 solo deriva el ámbito de almacenamiento.
 
 ### Configuración Wi-Fi
 
@@ -35,7 +35,7 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 4. La persona selecciona su red doméstica e introduce la contraseña.
 5. El ESP32 comprueba la conexión. Si falla, permite corregirla. Si funciona, guarda la configuración y cierra la red temporal.
 
-La contraseña Wi-Fi se conserva en el dispositivo y no se envía a Firebase. Para cambiarla, se mantiene pulsado cualquiera de los tres botones. Una cuenta atrás en pantalla permite soltarlo antes de confirmar el restablecimiento. Este proceso borra únicamente la configuración Wi-Fi y conserva token, selecciones y volumen.
+La contraseña Wi-Fi se conserva en el dispositivo y no se envía a Firebase. Para cambiarla, se mantiene pulsado cualquiera de los tres botones. Una cuenta atrás en pantalla permite soltarlo antes de confirmar el restablecimiento. Este proceso borra únicamente la configuración Wi-Fi y conserva el identificador, las selecciones y el volumen.
 
 El QR temporal de instalación y el QR/NFC habitual de configuración musical tienen funciones distintas. Una caída temporal de internet no borra la red guardada ni abre automáticamente el asistente de instalación.
 
@@ -116,7 +116,7 @@ La reproducción anterior continúa hasta que se detenga o termine la canción. 
 
 ### En la web
 
-Cada selección podrá ofrecer «Escuchar aquí». El sonido se reproduce en el navegador y no se envían órdenes al cuadro.
+Cada selección ofrece «Escuchar aquí» con un icono de play sobre la portada; mientras suena, el mismo control muestra stop. El sonido se reproduce en el navegador y no se envían órdenes al cuadro. No se abre un panel de reproducción separado.
 
 Para canciones, la prueba está disponible después de completar la importación y utiliza el mismo MP3 definitivo. Se reproduce una única selección a la vez en la web. La escucha de prueba es independiente del sonido y el volumen físicos del cuadro.
 
@@ -161,11 +161,11 @@ La imagen anterior permanece hasta completar la nueva. Al terminar o detener el 
 
 ## 9. Acceso y protección de datos
 
-El modelo de producto es acceso mediante posesión del enlace con token del cuadro. No hay roles de propietario e invitado ni inicio de sesión para el destinatario en la primera versión. El desarrollador prepara la vinculación del dispositivo.
+El modelo de producto es seleccionar el cuadro con el identificador que aparece en el enlace. No hay roles de propietario e invitado ni inicio de sesión para el destinatario. Un identificador nuevo crea su registro; el mismo recupera la selección. El desarrollador puede fijar el identificador en QR/NFC, pero no necesita registrarlo en una allowlist.
 
-La decisión explícita de Carlos es que la configuración musical publicada y los medios se pueden leer sin sesión para quien conozca sus URLs. El token aleatorio fijo identifica el cuadro y su enlace; no es una credencial privada para lectura Firebase. La API conserva su Bearer, valida el SHA-256 contra `FRAME_TOKEN_HASHES` y usa ese hash para separar registros y rutas. RTDB permite GET solo en `frames/{sha256}/slots`; no permite leer el árbol de cuadros ni tareas. Storage permite GET de objetos por URL bajo `private/frames/{sha256}/`, pero no listar objetos. Conocer el enlace permite leer esas selecciones y sus medios publicados; no concede escritura. Todos los cambios e importaciones pasan por la API con el Bearer validado. Las credenciales administrativas permanecen solo en backend y herramientas privadas. No hay cuentas, contraseñas ni renovación de sesiones Firebase. Este modelo está implementado y probado en emuladores; Firebase real y firmware quedan pendientes.
+La decisión de Carlos es que la configuración musical publicada y los medios se pueden leer sin sesión para quien conozca sus URLs. RTDB permite GET solo en `frames/{sha256}/slots`; no permite leer el árbol de cuadros ni tareas. Storage permite GET de objetos por URL bajo `private/frames/{sha256}/`, pero no listar objetos. La API deriva la misma ruta SHA-256 del identificador y no comprueba una lista de autorización. Conocer o elegir un identificador permite cambiar su configuración mediante la API; SHA-256 separa rutas, no autoriza. Las credenciales administrativas permanecen solo en backend y herramientas privadas. No hay cuentas, contraseñas ni sesiones Firebase.
 
-Los tokens reales, credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32. El modelo se probó en emuladores y se confirmó la lectura pública en Firebase real con reglas aplicadas manualmente; siguen pendientes la primera importación real, la escucha final en navegador y el firmware.
+Las credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32. Las reglas y una importación/reproducción se validaron en Firebase real con cambios manuales permitidos; el firmware sigue pendiente.
 
 ## 10. Datos, conservación y limpieza
 
@@ -239,7 +239,7 @@ Un único repositorio con esta separación:
 
 El README presentará el proyecto, funcionamiento, demo, instalación y estado real. `AGENTS.md` explicará cómo trabajar, documentos que leer, límites del alcance, convenciones y verificaciones. Se mantendrán documentación de arquitectura, stack, configuración, seguridad, contribución y primer encargo para Codex.
 
-Credenciales en variables de entorno o mecanismos privados del proveedor, con plantillas de ejemplo sin valores reales. Una variable enviada al navegador es visible para ese navegador aunque proceda de un `.env`; los secretos administrativos permanecen en el backend. Los tokens de cuadros se introducen en la preparación privada del dispositivo y no se compilan como un valor compartido en el repositorio público.
+Credenciales administrativas en variables de entorno o mecanismos privados del proveedor, con plantillas vacías. Una variable enviada al navegador es visible para ese navegador aunque proceda de un `.env`; el identificador de cuadro no es secreto, pero las credenciales Admin permanecen en backend.
 
 El trabajo se divide en cambios pequeños, con comprobaciones relevantes y revisión móvil. Se respetan los cambios existentes y se actualizan los documentos cuando cambie una decisión. No se añade un framework por defecto ni se confunde una comprobación con mocks con una integración verificada.
 
@@ -265,9 +265,9 @@ Cada bloque de comandos indicará desde qué carpeta ejecutarlo, qué requisitos
 
 El backend tendrá un catálogo de todos los endpoints implementados, complementado con documentación interactiva basada en OpenAPI. El catálogo explicará el propósito y el uso real de cada operación, incluyendo:
 
-- Método HTTP, ruta, URL base y requisitos de acceso mediante el token del cuadro, según el contrato de autorización que se implemente.
+- Método HTTP, ruta, URL base y uso del identificador del cuadro para seleccionar el ámbito; no hay autorización por usuario.
 - Parámetros de ruta y consulta, cabeceras, cuerpo JSON o subida de archivos, campos obligatorios, tipos y límites.
-- Ejemplo completo de llamada con `curl`, usando únicamente tokens y datos ficticios, con las variables necesarias definidas de forma explícita.
+- Ejemplo completo de llamada con `curl`, usando identificadores y datos ficticios, con las variables necesarias definidas de forma explícita.
 - Ejemplo de respuesta, códigos HTTP relevantes y errores habituales con su significado y forma de resolverlos.
 - Si una operación es síncrona o crea una tarea; identificador de tarea, estados, consulta o seguimiento del progreso, cancelación, reintento y comportamiento ante solicitudes repetidas cuando corresponda.
 - Recursos que modifica, archivos que crea o elimina y condiciones para publicar la nueva selección.

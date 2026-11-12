@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: base de desarrollo con un prototipo ejecutable.** El backend aísla datos por cuadro y la web acepta el identificador desde un enlace. Las reglas públicas se aplicaron manualmente en Firebase y la lectura directa de configuración y un archivo pasó sin sesión; falta validar una importación real y escuchar el medio final en navegador. Firmware y QR/NFC físicos siguen pendientes. Ver [estado real](docs/ESTADO.md).
+**Estado: prototipo ejecutable con una primera importación real validada.** La importación y el avance del reproductor web se comprobaron con Firebase real y Chrome Headless; posteriormente se eliminó esa canción y sus medios para validar la limpieza. La lectura pública por URL conocida está aplicada manualmente. Falta validar Render, escucha humana, firmware y QR/NFC físicos. Ver [estado real](docs/ESTADO.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -12,11 +12,11 @@ Desde la raíz del repositorio, con Python 3 disponible:
 python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 ```
 
-Abre [la interfaz local](http://127.0.0.1:5173) y elige «Demostración» desde ajustes para probarla sin backend. Se detiene con `Ctrl+C`. Los resultados y las barras son simulados y están identificados como demo; la demo actual todavía no reproduce audio de ejemplo.
+Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración» para recorrerla sin backend. Para un cuadro real usa su enlace, que ya contiene el identificador; no hay que configurar una conexión desde la web. Se detiene con `Ctrl+C`. Los resultados y las barras son simulados y están identificados como demo; la demo actual todavía no reproduce audio de ejemplo.
 
 ## Producto definido
 
-- Un token fijo por cuadro relaciona su enlace QR/NFC, sus selecciones y el ESP32.
+- Un identificador por cuadro relaciona su enlace QR/NFC, sus selecciones y el ESP32; no es una credencial.
 - Tres huecos, cada uno con una canción o emisora; una importación por cuadro a la vez.
 - Búsqueda de canciones con elección de versión y progreso de importación.
 - Radio Browser como directorio de emisoras.
@@ -55,7 +55,7 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 | Ruta | Contenido |
 |---|---|
 | `web/` | Diseño aprobado y prototipo dinámico. |
-| `backend/` | API e importador iniciales; el aislamiento por token ya está implementado y faltan integraciones y validación real. |
+| `backend/` | API e importador iniciales; cada identificador válido deriva un ámbito aislado sin alta previa. |
 | `firebase/` | Reglas de lectura por URL conocida, sin escrituras/listados, y guía del cliente directo. |
 | `firmware/` | Alcance documentado; todavía sin firmware. |
 | `docs/` | Definición, arquitectura, comandos, endpoints, fases y decisiones. |
@@ -63,4 +63,4 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 
 Documentación adicional: [stack](docs/STACK.md), [configuración](docs/CONFIGURACION.md), [despliegue](docs/DESPLIEGUE.md), [publicación en GitHub](docs/PUBLICAR_GITHUB.md), [contribución](CONTRIBUTING.md) y [seguridad](SECURITY.md).
 
-El primer hito real será buscar, importar, guardar audio e imagen en Firebase y escuchar el MP3 final. Las pruebas con proveedores simulados no acreditan ese recorrido ni la compatibilidad con un ESP32. La licencia del código y los recursos de demo está pendiente de elegir; no se atribuye una licencia abierta por defecto.
+El primer hito real —buscar, importar, guardar audio e imagen en Firebase y probar el MP3 en navegador— está validado en [VALIDACION.md](docs/VALIDACION.md). Esto no acredita Render ni la compatibilidad con un ESP32. La licencia del código y los recursos de demo está pendiente de elegir; no se atribuye una licencia abierta por defecto.

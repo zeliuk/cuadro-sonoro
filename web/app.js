@@ -1,8 +1,8 @@
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const load = (storage, key, fallback) => { try { return JSON.parse(storage.getItem(key)) ?? fallback; } catch { return fallback; } };
-const deploymentApiBase = $('meta[name="sonoro-api-base"]')?.content.trim() || '';
-const validFrameToken = token => /^[A-Za-z0-9_-]{32,}$/.test(token);
+const deploymentApiBase = document.querySelector('meta[name="sonoro-api-base"]')?.content.trim() || '';
+const validFrameIdentifier = identifier => /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(identifier);
 function consumeFrameToken() {
   const fragment = new URLSearchParams(location.hash.slice(1));
   if (!fragment.has('token')) return {present:false, token:''};
@@ -11,14 +11,14 @@ function consumeFrameToken() {
   return {present:true, token};
 }
 const initialFrameLink = consumeFrameToken();
-let config = load(localStorage, 'sonoro-config', {mode:'locked',url:deploymentApiBase});
-config.url = deploymentApiBase || config.url || '';
+let config = load(localStorage, 'sonoro-config', {mode:'locked'});
+config.url = deploymentApiBase;
 config.token = sessionStorage.getItem('sonoro-token') || '';
 let accessMessage = '';
 if (initialFrameLink.present) {
   sessionStorage.removeItem('sonoro-token');
   config.token = '';
-  if (validFrameToken(initialFrameLink.token)) {
+  if (validFrameIdentifier(initialFrameLink.token)) {
     config.token = initialFrameLink.token;
     sessionStorage.setItem('sonoro-token', config.token);
     config.url = deploymentApiBase || config.url;
@@ -26,19 +26,19 @@ if (initialFrameLink.present) {
     if (!config.url) accessMessage = 'Este sitio todavía no tiene configurada la dirección del servicio del cuadro.';
   } else {
     config.mode = 'locked';
-    accessMessage = 'El enlace no contiene un token válido para el cuadro.';
+    accessMessage = 'El identificador debe tener entre 1 y 128 caracteres: letras, números, guion o guion bajo.';
   }
 } else if (config.mode === 'demo') {
   sessionStorage.removeItem('sonoro-token');
   config.token = '';
-} else if (!validFrameToken(config.token)) {
+} else if (!validFrameIdentifier(config.token)) {
   sessionStorage.removeItem('sonoro-token');
   config.token = '';
   config.mode = 'locked';
-  accessMessage = 'No hay un enlace de acceso activo. Abre el enlace del cuadro o elige la demostración desde ajustes.';
+  accessMessage = 'No hay un enlace de acceso activo. Abre el enlace del cuadro o prueba la demostración.';
 } else if (config.mode === 'locked') {
   if(config.token&&config.url)config.mode='real';
-  else accessMessage = config.token?'El token está guardado en esta pestaña, pero este sitio no tiene configurada la dirección del servicio.':'No hay un enlace de acceso activo. Abre el enlace del cuadro o elige la demostración desde ajustes.';
+  else accessMessage = config.token?'El identificador está guardado en esta pestaña, pero este sitio no tiene configurada la dirección del servicio.':'No hay un enlace de acceso activo. Abre el enlace del cuadro o prueba la demostración.';
 } else if (!config.url) {
   config.mode = 'locked';
   accessMessage = 'Este sitio todavía no tiene configurada la dirección del servicio del cuadro.';
@@ -48,6 +48,7 @@ let demo = load(localStorage, 'sonoro-demo', {slots:{},jobs:{}});
 for (const j of Object.values(demo.jobs)) if (['queued','downloading','processing','uploading'].includes(j.status)) Object.assign(j,{status:'error',message:'La demostración se interrumpió. Puedes reintentar.'});
 let state = config.mode === 'demo' ? demo : {slots:{},jobs:{}};
 let currentSlot = 0, searchController, searchVersion = 0, toastTimeout, pollingTimer = null, polling = false, lastPollError = false, frameGeneration = 0;
+let playingTrackId = null;
 const apiControllers = new Set();
 const active = new Set(['queued','downloading','processing','uploading']);
 const demoTimers = new Map();
@@ -56,9 +57,13 @@ const stages = ['queued','downloading','processing','uploading'];
 const saveDemo = () => localStorage.setItem('sonoro-demo', JSON.stringify(demo));
 function toast(message) { $('toast').textContent=message; $('toast').classList.add('show'); clearTimeout(toastTimeout); toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),4400); }
 function showError(id,message) { $(id).textContent=message; $(id).hidden=!message; }
+function stopPlayback(updateView=true) {
+  const audio=$('audio');audio.pause();audio.removeAttribute('src');audio.load();playingTrackId=null;
+  if(updateView)render();
+}
 async function api(path,options={}) {
   const generation=frameGeneration, externalSignal=options.signal;
-  if(!config.token)throw new ApiError(401,'Falta el token del cuadro. Abre su enlace o introduce uno de desarrollo en ajustes.');
+  if(!config.token)throw new ApiError(401,'Falta el identificador del cuadro. Abre el enlace del cuadro.');
   const base=config.url||deploymentApiBase;
   if(!base)throw new Error('Este sitio no tiene configurada la dirección del servicio del cuadro.');
   const controller=new AbortController();apiControllers.add(controller);
@@ -70,7 +75,7 @@ async function api(path,options={}) {
     const response=await fetch(base.replace(/\/$/,'')+path,{...requestOptions,headers:{'Content-Type':'application/json',Authorization:'Bearer '+config.token,...options.headers},signal:controller.signal});
     if(generation!==frameGeneration)throw abortError();
     if(response.status===401){
-      const message='Este enlace no está autorizado para el cuadro. Comprueba el enlace o solicita uno vigente.';
+      const message='El identificador falta o no tiene un formato válido para el cuadro.';
       lockFrameAccess(message,generation);
       throw new ApiError(401,message);
     }
@@ -92,9 +97,7 @@ function resetFrameContext(closeSettings=true){
   for(const controller of apiControllers)controller.abort();
   apiControllers.clear();mediaCache.clear();state={slots:{},jobs:{}};currentSlot=0;
   if($('picker').open)$('picker').close();
-  if(closeSettings&&$('settings').open)$('settings').close();
-  $('api-token').value='';
-  $('audio').pause();$('audio').removeAttribute('src');$('audio').load();$('player').hidden=true;
+  $('audio').pause();$('audio').removeAttribute('src');$('audio').load();playingTrackId=null;
 }
 function lockFrameAccess(message,generation=frameGeneration){
   if(generation!==frameGeneration)return;
@@ -103,13 +106,13 @@ function lockFrameAccess(message,generation=frameGeneration){
 }
 function applyFrameLink(token){
   resetFrameContext();sessionStorage.removeItem('sonoro-token');config.token='';
-  if(validFrameToken(token)){
+  if(validFrameIdentifier(token)){
     config.token=token;sessionStorage.setItem('sonoro-token',token);
     config.url=deploymentApiBase||config.url||'';
     config.mode=config.url?'real':'locked';
-    accessMessage=config.url?'':'El enlace se ha leído, pero este sitio todavía no tiene configurada la dirección del servicio del cuadro.';
+    accessMessage=config.url?'':'El enlace se ha leído, pero este sitio no tiene una URL predeterminada para la API.';
   }else{
-    config.mode='locked';accessMessage='El enlace no contiene un token válido para el cuadro.';
+    config.mode='locked';accessMessage='El identificador debe tener entre 1 y 128 caracteres: letras, números, guion o guion bajo.';
   }
   localStorage.setItem('sonoro-config',JSON.stringify({mode:config.mode,url:config.url}));
   render();if(config.mode==='real')startPolling();
@@ -120,7 +123,8 @@ window.addEventListener('pageshow',event=>{if(event.persisted&&config.mode==='re
 function slotJob(i) { return Object.values(state.jobs||{}).filter(j=>j.slot===i).sort((a,b)=>b.created_at-a.created_at)[0]; }
 function render() {
   const demoMode=config.mode==='demo';
-  $('mode-button').innerHTML=demoMode?'Modo demostración <span>↗</span>':config.mode==='real'?'Servicio conectado <span>↗</span>':'Acceso por enlace <span>↗</span>';
+  $('mode-button').innerHTML=demoMode?'Salir de demostración <span>↗</span>':config.mode==='real'?'Cuadro conectado':'Probar demostración <span>↗</span>';
+  $('mode-button').disabled=config.mode==='real';
   $('access-error').textContent=accessMessage;$('access-error').hidden=!accessMessage;
   $('demo-note').hidden=!demoMode;
   $('picker-demo').hidden=!demoMode;
@@ -139,8 +143,9 @@ function render() {
       caption=`<div><h3>${esc(job.title)}</h3><p class="artist-line">Importación pendiente</p></div><span class="caption-mark">${number}</span>`;
     }else if(item){
       const image=mediaCache.get(item.id)?.image_url;
-      content=`<div class="art v${i}">${image?`<img src="${esc(image)}" alt="Imagen de ${esc(item.title)}" loading="lazy">`:''}<span class="art-badge">${demoMode?'DEMO · ':''}${item.kind==='station'?'EN DIRECTO':'TU CANCIÓN'}</span><span class="art-title">${esc(item.title)}</span></div>`;
-      caption=`<div style="min-width:0"><h3>${esc(item.title)}</h3><p class="artist-line">${esc(item.artist)}</p></div><div class="slot-actions"><button data-action="play" data-slot="${i}" aria-label="${demoMode?'Vista previa de':'Probar en el móvil:'} ${esc(item.title)}" title="${demoMode?'Favorito de demostración':'Escuchar en este móvil'}">▷</button><button data-action="edit" data-slot="${i}" aria-label="Cambiar favorito ${number}">↗</button><button data-action="remove" data-slot="${i}" aria-label="Vaciar espacio ${number}">×</button></div>`;
+      const isPlaying=playingTrackId===item.id;
+      content=`<div class="art v${i}">${image?`<img src="${esc(image)}" alt="Imagen de ${esc(item.title)}" loading="lazy">`:''}<span class="art-badge">${demoMode?'DEMO · ':''}${item.kind==='station'?'EN DIRECTO':'TU CANCIÓN'}</span><span class="art-title">${esc(item.title)}</span><button class="art-play ${isPlaying?'is-playing':''}" data-action="toggle-playback" data-slot="${i}" aria-label="${isPlaying?'Detener':'Reproducir'} ${esc(item.title)}" aria-pressed="${isPlaying}" title="${isPlaying?'Detener':'Reproducir'}"><span aria-hidden="true">${isPlaying?'■':'▶'}</span></button></div>`;
+      caption=`<div style="min-width:0"><h3>${esc(item.title)}</h3><p class="artist-line">${esc(item.artist)}</p></div><div class="slot-actions"><button data-action="edit" data-slot="${i}" aria-label="Cambiar favorito ${number}">↗</button><button data-action="remove" data-slot="${i}" aria-label="Vaciar espacio ${number}">×</button></div>`;
     }else{
       content=`<button class="empty" data-action="add" data-slot="${i}"><span class="plus" aria-hidden="true">+</span><span class="empty-title">Añade tu música</span><span class="empty-detail">Una canción o una emisora</span></button>`;
       caption=`<span class="slot-label">ESPACIO ${number}</span><span class="caption-mark">Aún por descubrir</span>`;
@@ -220,48 +225,30 @@ $('slots').onclick=async event=>{
     if(action==='remove'){
       if(!confirm('¿Vaciar este espacio?'))return;
       if(config.mode==='demo'){delete demo.slots['slot-'+i];for(const [id,j]of Object.entries(demo.jobs))if(j.slot===i)delete demo.jobs[id];saveDemo();}
-      else{await api('/slots/'+i,{method:'DELETE'});if(generation!==frameGeneration)return;await refresh(generation);}if(generation!==frameGeneration)return;render();return;
+      else{const removed=state.slots?.['slot-'+i];if(removed&&removed.id===playingTrackId)stopPlayback();const result=await api('/slots/'+i,{method:'DELETE'});if(generation!==frameGeneration)return;await refresh(generation);if(result.cleanup_pending)toast('El hueco se vació; algunos archivos siguen pendientes de limpieza.');else if(result.deleted_objects)toast('El favorito y sus archivos se eliminaron definitivamente.');}if(generation!==frameGeneration)return;render();return;
     }
-    if(action==='play'){
-      if(config.mode==='demo'){toast('Es un favorito de demostración. Conecta el servicio para probar audio real.');return;}
-      const item=state.slots?.['slot-'+i];if(!item)return;const media=await api('/media/'+i);if(generation!==frameGeneration||state.slots?.['slot-'+i]?.id!==item.id)return;$('audio').src=media.audio_url;$('now-playing').textContent=item.title;$('player').hidden=false;await $('audio').play();
+    if(action==='toggle-playback'){
+      if(config.mode==='demo'){toast('El favorito de demostración no tiene audio real. Abre un enlace de cuadro para escuchar canciones.');return;}
+      const item=state.slots?.['slot-'+i];if(!item)return;
+      if(playingTrackId===item.id){stopPlayback();return;}
+      const media=await api('/media/'+i);if(generation!==frameGeneration||state.slots?.['slot-'+i]?.id!==item.id)return;
+      const audio=$('audio');audio.src=media.audio_url;playingTrackId=item.id;render();
+      try{await audio.play();}catch(error){stopPlayback();throw error;}
     }
   }catch(error){if(generation===frameGeneration&&error.name!=='AbortError')toast(error.message||'No se pudo completar la acción.');}
 };
-$('player-close').onclick=()=>{$('audio').pause();$('audio').removeAttribute('src');$('audio').load();$('player').hidden=true;};
-function openSettings(){ $('connection-mode').value=config.mode==='locked'?'real':config.mode;$('api-url').value=config.url||'';$('api-token').value='';$('token-hint').textContent=config.token?'El token del enlace está activo en esta pestaña; no hace falta volver a introducirlo.':'Para desarrollo puedes introducir el token del cuadro. Nunca introduzcas aquí la cuenta de servicio de Firebase.';$('server-fields').hidden=$('connection-mode').value!=='real';showError('settings-error','');$('settings').showModal();}
-$('settings-open').onclick=openSettings;$('mode-button').onclick=openSettings;
-$('connection-mode').onchange=()=>{$('server-fields').hidden=$('connection-mode').value!=='real';};
-$('settings-form').onsubmit=async event=>{
-  event.preventDefault();const previous={...config},previousMessage=accessMessage,mode=$('connection-mode').value,manualToken=$('api-token').value.trim();
-  resetFrameContext(false);const generation=frameGeneration;
-  config={mode,url:$('api-url').value.trim().replace(/\/$/,''),token:manualToken||previous.token||''};
-  const button=event.submitter;button.disabled=true;let storageConfigured=false;
-  try{
-    if(mode==='real'){
-      if(!config.url)throw new Error('Introduce la dirección de la API para desarrollo o configura su URL en este sitio.');
-      const url=new URL(config.url);if(url.protocol!=='https:'&&url.hostname!=='localhost'&&url.hostname!=='127.0.0.1')throw new Error('Utiliza HTTPS para conectar tu servicio.');
-      if(!config.token){
-        config.mode='locked';sessionStorage.removeItem('sonoro-token');state={slots:{},jobs:{}};
-        accessMessage='Dirección guardada. Abre el enlace del cuadro para acceder; no se ha activado la demostración.';
-        localStorage.setItem('sonoro-config',JSON.stringify({mode:config.mode,url:config.url}));$('settings').close();render();toast('Dirección guardada. El acceso al cuadro requiere su enlace.');return;
-      }
-      if(!validFrameToken(config.token))throw new Error('Falta un token válido. Abre el enlace del cuadro o introduce uno para desarrollo.');
-      const health=await api('/health');if(generation!==frameGeneration)return;storageConfigured=health.storage_configured;
-      state=await api('/state');if(generation!==frameGeneration)return;
-      sessionStorage.setItem('sonoro-token',config.token);accessMessage='';
-    }else{
-      config={mode:'demo',url:config.url,token:''};sessionStorage.removeItem('sonoro-token');state=demo;accessMessage='';
-    }
-    localStorage.setItem('sonoro-config',JSON.stringify({mode:config.mode,url:config.url}));
-    mediaCache.clear();$('player-close').click();$('settings').close();render();toast(mode==='demo'?'Modo demostración activado.':storageConfigured?'Servicio conectado. Ya puedes buscar canciones.':'API conectada. Las importaciones requieren Firebase Storage.');
-    if(mode==='real')startPolling();
-  }catch(error){if(generation!==frameGeneration)return;config=previous;accessMessage=previousMessage;state=previous.mode==='demo'?demo:{slots:{},jobs:{}};showError('settings-error',error.message);render();if(previous.mode==='real')startPolling();}
-  finally{button.disabled=false;}
+ $('audio').addEventListener('ended',()=>stopPlayback());
+$('mode-button').onclick=()=>{
+  if(config.mode==='real')return;
+  resetFrameContext();sessionStorage.removeItem('sonoro-token');config.token='';
+  config.mode=config.mode==='demo'?'locked':'demo';
+  state=config.mode==='demo'?demo:{slots:{},jobs:{}};
+  accessMessage=config.mode==='demo'?'':'Abre el enlace del cuadro para acceder a su colección.';
+  localStorage.setItem('sonoro-config',JSON.stringify({mode:config.mode}));render();
 };
 async function refresh(generation=frameGeneration){
   if(generation!==frameGeneration||config.mode!=='real'||!config.token)return;
-  const next=await api('/state');if(generation!==frameGeneration||config.mode!=='real')return;state=next;render();
+  const next=await api('/state');if(generation!==frameGeneration||config.mode!=='real')return;if(playingTrackId&&!Object.values(next.slots||{}).some(track=>track.id===playingTrackId))stopPlayback(false);state=next;render();
   for(const [key,item]of Object.entries(state.slots||{}))if(item.image_key&&!mediaCache.has(item.id)){
     mediaCache.set(item.id,{});try{const media=await api('/media/'+Number(key.replace('slot-','')));if(generation!==frameGeneration||state.slots?.[key]?.id!==item.id)return;mediaCache.set(item.id,media);render();}catch(error){mediaCache.delete(item.id);if(error.name!=='AbortError'&&generation===frameGeneration)throw error;}
   }

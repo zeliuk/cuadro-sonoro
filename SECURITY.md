@@ -2,7 +2,7 @@
 
 El repo público no implica datos, importador o archivos públicos. No versionar `.env`, cuentas de servicio, tokens reales, cookies, claves privadas, bases de ejecución o medios personales. Las plantillas contienen privados vacíos.
 
-El backend recibe un identificador aleatorio por cuadro como Bearer, exige su SHA-256 en `FRAME_TOKEN_HASHES` y usa ese hash para aislar el estado. No usa el antiguo `IMPORT_API_TOKEN`, ni guarda identificadores originales en datos o rutas de Storage. La decisión de Carlos es que la configuración musical publicada y los medios puedan leerse sin sesión si se conocen sus URLs; SHA-256 separa rutas, no protege esa lectura. La API exige Bearer provisionado para escrituras/importaciones. No incorporar credenciales Admin a web o ESP32. Las reglas Firebase no permiten escrituras ni listados generales. El firmware sigue pendiente.
+El backend recibe un identificador público como Bearer solo para derivar el ámbito SHA-256; no autentica ni autoriza usuarios. Cualquier ID válido de 1–128 caracteres ASCII puede leer o cambiar ese ámbito mediante la API. No hay lista de altas, Firebase Auth ni token global. La decisión de Carlos es que la configuración publicada y los medios puedan leerse sin sesión si se conocen sus URLs; SHA-256 separa rutas, no protege esa lectura ni las mutaciones API. No incorporar credenciales Admin a web o ESP32. Las reglas Firebase no permiten escrituras ni listados generales. El firmware sigue pendiente.
 
 Las variables enviadas al navegador son visibles. CORS no autoriza usuarios. Admin SDK se rige por IAM y no por reglas Firebase de clientes. No abrir reglas como solución a un fallo de permisos.
 

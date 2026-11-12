@@ -17,10 +17,8 @@ def test_private_names_and_public_templates():
 
 
 def test_empty_examples_allowed_and_literal_secrets_reported():
-    assert list(guard.findings('backend/.env.example', b'LOCAL_FRAME_TOKEN=\nFRAME_TOKEN_HASHES=\nFIREBASE_SERVICE_ACCOUNT_JSON=\n')) == []
+    assert list(guard.findings('backend/.env.example', b'FIREBASE_SERVICE_ACCOUNT_JSON=\n')) == []
     assert list(guard.findings('settings.py', b"IMPORT_API_TOKEN='not-a-real-credential-but-must-be-rejected'"))
-    assert list(guard.findings('settings.py', b"LOCAL_FRAME_TOKEN='not-a-real-credential-but-must-be-rejected'"))
-    assert list(guard.findings('settings.py', b"FRAME_TOKEN_HASHES='not-a-real-credential-but-must-be-rejected'"))
     field = 'IMPORT_' + 'API_TOKEN'
     assignment = f"os.environ[{field!r}] = 'must-be-rejected'"
     assert list(guard.findings('settings.py', assignment.encode()))

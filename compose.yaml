@@ -2,6 +2,8 @@ services:
   api:
     build: .
     env_file: backend/.env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase.json
     ports:
       - "127.0.0.1:8000:8000"
     volumes:

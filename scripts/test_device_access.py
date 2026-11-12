@@ -1,5 +1,4 @@
 """Verify public, URL-scoped device reads against local RTDB and Storage emulators."""
-import hashlib
 import json
 import os
 import secrets
@@ -12,8 +11,10 @@ from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'scripts'))
 from device_client import read_slot, read_slots
+from backend.identity import frame_key_for
 
 
 PROJECT = 'demo-sonoro-device'
@@ -73,7 +74,7 @@ def run() -> None:
     namespace = PROJECT + '-default-rtdb'
     identifier_a = 'local-frame-a-' + secrets.token_urlsafe(24)
     identifier_b = 'local-frame-b-' + secrets.token_urlsafe(24)
-    key_a, key_b = (hashlib.sha256(value.encode()).hexdigest() for value in (identifier_a, identifier_b))
+    key_a, key_b = (frame_key_for(value) for value in (identifier_a, identifier_b))
     audio_a = f'private/frames/{key_a}/test/audio.mp3'
     image_a = f'private/frames/{key_a}/test/cover.jpg'
     audio_b = f'private/frames/{key_b}/test/audio.mp3'

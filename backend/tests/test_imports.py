@@ -1,6 +1,4 @@
 import os
-import hashlib
-import secrets
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -14,43 +12,38 @@ from fastapi.testclient import TestClient
 os.environ['STATE_DB'] = str(Path(tempfile.mkdtemp()) / 'state.sqlite3')
 from backend import main as m
 from backend import importer as worker
+from backend.identity import frame_key_for
 
-TOKEN_A = 'frame-a-' + 'x' * 40
-TOKEN_B = 'frame-b-' + 'y' * 40
-KEY_A = hashlib.sha256(TOKEN_A.encode()).hexdigest()
-KEY_B = hashlib.sha256(TOKEN_B.encode()).hexdigest()
-os.environ['FRAME_TOKEN_HASHES'] = f'{KEY_A},{KEY_B}'
-AUTH = {'Authorization': f'Bearer {TOKEN_A}'}
-AUTH_B = {'Authorization': f'Bearer {TOKEN_B}'}
+IDENTIFIER_A = 'mi-cuadro-prueba'
+IDENTIFIER_B = 'otro-cuadro-prueba'
+KEY_A = frame_key_for(IDENTIFIER_A)
+KEY_B = frame_key_for(IDENTIFIER_B)
+AUTH = {'Authorization': f'Bearer {IDENTIFIER_A}'}
+AUTH_B = {'Authorization': f'Bearer {IDENTIFIER_B}'}
 client = TestClient(m.app)
 
 @pytest.fixture(autouse=True)
 def reset():
-    def empty(state):
-        state['slots'] = {}
-        state['jobs'] = {}
-    m.store.mutate(KEY_A, empty)
-    m.store.mutate(KEY_B, empty)
+    if not m.store.cloud:
+        m.store.conn.execute('DELETE FROM frame_states')
+        m.store.conn.commit()
     m.cancelled.clear()
 
 
-def test_auth_and_configuration_fail_closed():
+def test_missing_or_malformed_identifier_is_rejected_but_short_valid_id_works():
     assert client.get('/state').status_code == 401
-    assert client.get('/state', headers={'Authorization': 'Bearer short'}).status_code == 401
-    assert client.get('/state', headers={'Authorization': 'Bearer ' + 'z' * 43}).status_code == 401
+    assert client.get('/state', headers={'Authorization': 'Bearer bad!id'}).status_code == 401
+    assert client.get('/state', headers={'Authorization': 'Bearer ' + 'a' * 129}).status_code == 401
+    assert client.get('/state', headers={'Authorization': 'Bearer mi-cuadro-prueba'}).json() == {'slots': {}, 'jobs': {}}
     assert client.post('/imports',headers=AUTH,json={'slot':0,'source_id':'BaW_jenozKc','title':'Test','artist':'Test'}).status_code == 503
     assert client.get('/health').json()['storage_configured'] is False
 
 
-def test_first_authorized_state_read_creates_and_reuses_frame_record(monkeypatch):
-    token = 'frame-first-read-' + secrets.token_urlsafe(30)
-    frame_key = hashlib.sha256(token.encode()).hexdigest()
-    assert client.get('/state', headers={'Authorization': f'Bearer {token}'}).status_code == 401
+def test_first_identifier_read_creates_three_empty_slots_and_reuses_the_same_record():
+    identifier = 'mi-cuadro-prueba'
+    frame_key = frame_key_for(identifier)
     assert frame_key not in m.store.read_all()
-    monkeypatch.setenv('FRAME_TOKEN_HASHES', f'{KEY_A},{KEY_B},{frame_key}')
-
-    assert frame_key not in m.store.read_all()
-    first = client.get('/state', headers={'Authorization': f'Bearer {token}'})
+    first = client.get('/state', headers={'Authorization': f'Bearer {identifier}'})
     assert first.status_code == 200
     assert first.json() == {'slots': {}, 'jobs': {}}
     assert m.store.read_all()[frame_key] == {'slots': {}, 'jobs': {}}
@@ -58,9 +51,14 @@ def test_first_authorized_state_read_creates_and_reuses_frame_record(monkeypatch
     m.store.mutate(frame_key, lambda state: state['slots'].update({
         'slot-0': {'id': 'existing', 'kind': 'station', 'title': 'Radio', 'url': 'https://example.org/radio'}
     }))
-    second = client.get('/state', headers={'Authorization': f'Bearer {token}'})
+    second = client.get('/state', headers={'Authorization': f'Bearer {identifier}'})
     assert second.json()['slots']['slot-0']['id'] == 'existing'
     assert len([key for key in m.store.read_all() if key == frame_key]) == 1
+
+    other = client.get('/state', headers={'Authorization': f'Bearer {IDENTIFIER_B}'})
+    assert other.json() == {'slots': {}, 'jobs': {}}
+    assert frame_key_for(IDENTIFIER_B) != frame_key
+    assert client.get('/state', headers=AUTH).json()['slots']['slot-0']['title'] == 'Radio'
 
 
 def test_cloud_ensure_transaction_persists_and_reuses_initial_state(monkeypatch):
@@ -86,14 +84,6 @@ def test_cloud_ensure_transaction_persists_and_reuses_initial_state(monkeypatch)
     second = cloud_store.ensure(KEY_A)
     assert second == {'slots': {'slot-0': {'id': 'published'}}, 'jobs': {}}
     assert reference.value == second
-
-
-def test_local_token_is_not_accepted_in_a_firebase_deployment(monkeypatch):
-    monkeypatch.setenv('LOCAL_FRAME_TOKEN', TOKEN_A)
-    monkeypatch.setenv('FIREBASE_DATABASE_URL', 'https://database.example.invalid')
-    monkeypatch.setenv('FIREBASE_STORAGE_BUCKET', 'test-bucket')
-    monkeypatch.delenv('FRAME_TOKEN_HASHES', raising=False)
-    assert KEY_A not in m.allowed_frame_keys()
 
 
 def test_validate_id_slot_and_duplicate_jobs(monkeypatch):
@@ -194,6 +184,67 @@ def test_media_api_returns_stable_public_storage_urls(monkeypatch):
         'https://firebasestorage.googleapis.com/v0/b/demo-sonoro.firebasestorage.app/o/'
         + quote(media_key, safe='') + '?alt=media'
     )
+
+
+def test_delete_slot_removes_selection_then_cleans_unreferenced_storage(monkeypatch):
+    track = {
+        'id': 'song', 'kind': 'song',
+        'audio_key': f'private/frames/{KEY_A}/song/audio.mp3',
+        'image_key': f'private/frames/{KEY_A}/song/cover.jpg',
+    }
+    m.store.mutate(KEY_A, lambda state: state['slots'].update({'slot-0': track}))
+    observed = []
+
+    def cleanup(frame_key, state):
+        observed.append((frame_key, state))
+        return {'deleted_objects': 2, 'cleanup_pending': False}
+
+    monkeypatch.setattr(m, 'delete_orphaned_media', cleanup)
+    response = client.delete('/slots/0', headers=AUTH)
+
+    assert response.status_code == 200
+    assert response.json() == {'ok': True, 'deleted_objects': 2, 'cleanup_pending': False}
+    assert 'slot-0' not in observed[0][1]['slots']
+    assert 'slot-0' not in m.store.read(KEY_A)['slots']
+
+
+def test_storage_cleanup_preserves_published_and_active_import_objects():
+    from backend.media import delete_orphaned_media
+
+    prefix = f'private/frames/{KEY_A}/'
+
+    class Blob:
+        def __init__(self, name):
+            self.name = name
+            self.deleted = False
+
+        def delete(self):
+            self.deleted = True
+
+    class Bucket:
+        def __init__(self, blobs):
+            self.blobs = blobs
+
+        def list_blobs(self, prefix):
+            assert prefix == self_prefix
+            return self.blobs
+
+    self_prefix = prefix
+    referenced = Blob(prefix + 'published/audio.mp3')
+    active = Blob(prefix + 'in-progress/audio.mp3')
+    orphan = Blob(prefix + 'removed/cover.jpg')
+    bucket = Bucket([referenced, active, orphan])
+    state = {
+        'slots': {'slot-0': {'audio_key': referenced.name}},
+        'jobs': {'in-progress': {'status': 'uploading', 'slot': 1}},
+    }
+
+    assert delete_orphaned_media(KEY_A, state, bucket=bucket) == {
+        'deleted_objects': 1, 'cleanup_pending': False
+    }
+    assert not referenced.deleted
+    assert not active.deleted
+    assert orphan.deleted
 
 
 def test_legacy_sqlite_collection_is_not_assigned_to_a_frame(tmp_path, monkeypatch):
