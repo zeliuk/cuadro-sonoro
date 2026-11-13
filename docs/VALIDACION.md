@@ -42,6 +42,12 @@ Se añadieron mensajes `import_checkpoint` al worker para marcar búsqueda y val
 
 No se ejecutaron pruebas ni se desplegó esta revisión en Render. Está pendiente comprobar que las líneas aparecen en el servicio publicado y usar el primer `result=error` para localizar la causa de la importación fallida.
 
+## Prueba local con yt-dlp prerelease — 13 de noviembre de 2026
+
+Para comprobar si había una corrección posterior al estable, la imagen Docker instaló `yt-dlp 2026.11.4.232659.dev0` y mantuvo `yt-dlp-ejs 0.8.0` con Deno 2.9.8. La consulta de metadatos de la misma selección que fallaba en Render terminó correctamente dentro de esa imagen (`duration` presente). No se descargó audio, no se subieron archivos ni se accedió a Firebase. El contenedor Compose habitual no se recreó; solo se construyó la imagen y se ejecutó un contenedor efímero sin dependencias.
+
+El resultado local indica que el prerelease puede corregir la extracción desde esta red. Render aún debe desplegar esta revisión y repetir la importación para determinar si también corrige la respuesta desde su red. La versión prerelease es temporal y no queda aprobada como versión definitiva.
+
 ## Límites de la evidencia
 
 - Docker y Deno no estaban disponibles en este entorno: no se ha construido la imagen ni ejecutado Compose.

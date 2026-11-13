@@ -27,6 +27,22 @@ def _safe_error_detail(exc, source_id, temp_dir, frame_key, job_id, run_id):
     return detail[:500]
 
 
+class _YtDlpDiagnosticLogger:
+    """Forward extractor diagnostics after removing URLs and frame/task IDs."""
+    def __init__(self, source_id, temp_dir, frame_key, job_id, run_id):
+        self.context = (source_id, temp_dir, frame_key, job_id, run_id)
+
+    def debug(self, message):
+        if str(message).startswith('[debug]'):
+            logger.info('yt_dlp_diagnostic %s', _safe_error_detail(RuntimeError(message), *self.context))
+
+    def warning(self, message):
+        logger.warning('yt_dlp_diagnostic %s', _safe_error_detail(RuntimeError(message), *self.context))
+
+    def error(self, message):
+        logger.error('yt_dlp_diagnostic %s', _safe_error_detail(RuntimeError(message), *self.context))
+
+
 def execute_import(frame_key, queued_job):
     job_id = queued_job['id']
     job = begin_execution(frame_key, job_id)
@@ -64,7 +80,9 @@ def execute_import(frame_key, queued_job):
                 check_cancel(frame_key, job_id, run_id)
                 patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando audio e imagen')
             options = {
-                'quiet': True, 'no_warnings': True, 'noplaylist': True,
+                'quiet': True, 'no_warnings': False, 'verbose': True,
+                'logger': _YtDlpDiagnosticLogger(job.get('source_id', ''), base, frame_key, job_id, run_id),
+                'noplaylist': True,
                 'format': 'bestaudio/best', 'outtmpl': str(base / 'audio.%(ext)s'),
                 'writethumbnail': True, 'max_filesize': MAX_BYTES,
                 'socket_timeout': 25, 'retries': 2, 'fragment_retries': 2,
