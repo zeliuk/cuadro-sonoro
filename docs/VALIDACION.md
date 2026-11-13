@@ -36,6 +36,12 @@ La radio era una URL sintética `example.org`; no se descargó contenido. No se 
 
 La guía de endpoints se contrastó con las ocho rutas implementadas y sus respuestas locales. Estas comprobaciones son la revisión de fase 0, anterior al cambio de fase 1 que se registra a continuación.
 
+## Checkpoints de diagnóstico para importaciones — 13 de noviembre de 2026
+
+Se añadieron mensajes `import_checkpoint` al worker para marcar búsqueda y validación de metadatos, descarga, conversión, preparación de portada, subida a Firebase, publicación y limpieza. El fallo registra etapa, clase de excepción y detalle redactado; se sustituyen URLs, identificadores del cuadro/tarea y rutas temporales. La guía del backend y el catálogo API indican cómo localizar estos mensajes en la terminal local o en **Logs** de Render.
+
+No se ejecutaron pruebas ni se desplegó esta revisión en Render. Está pendiente comprobar que las líneas aparecen en el servicio publicado y usar el primer `result=error` para localizar la causa de la importación fallida.
+
 ## Límites de la evidencia
 
 - Docker y Deno no estaban disponibles en este entorno: no se ha construido la imagen ni ejecutado Compose.

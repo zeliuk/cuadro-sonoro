@@ -115,6 +115,8 @@ Errores: 503 si falta configuración Storage; 409 si el cuadro ya tiene una tare
 
 La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo. `attempts` cuenta ejecuciones iniciadas; `recoveries` cuenta recuperaciones tras caída (máximo dos).
 
+En caso de `error`, la API devuelve un mensaje general para la interfaz. Para identificar la causa técnica, consulta los logs de Uvicorn o la pestaña **Logs** de Render y busca `import_checkpoint`; allí se registran etapas y detalles redactados sin URLs ni identificadores del cuadro. La guía del backend describe cada etapa.
+
 ## GET /state
 
 ```bash

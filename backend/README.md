@@ -24,6 +24,12 @@ python -m uvicorn backend.main:app --env-file backend/.env --host 127.0.0.1 --po
 
 Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso. El apagado ordenado deja las tareas vigentes en cola; si el proceso cae sin apagarse, al siguiente inicio se recuperan hasta dos veces desde el principio. Después la tarea queda en error con instrucciones para cancelarla y volver a crearla. Usa siempre `--workers 1`.
 
+### Diagnosticar importaciones
+
+Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Render, abre el servicio y consulta **Logs** alrededor de la hora del intento; busca `import_checkpoint`. En local, aparecen en la terminal de Uvicorn. Cada línea indica etapa y resultado (`start`, `complete` o `error`): `initialize`, `source_lookup`, `metadata_validation`, `source_download`, `audio_conversion`, `cover_processing`, `firebase_upload`, `publish` y `cleanup`. El error incluye tipo y detalle técnico redactado; se omiten identificadores, rutas de cuadro, URLs y rutas temporales. Si la última etapa solo tiene `result=start`, el fallo ocurrió dentro de ella. La limpieza puede fallar después de una importación completada sin revertir la publicación.
+
+La tarjeta de la web seguirá mostrando un mensaje general para los fallos de importación. Usa el detalle de los logs del backend para localizar la etapa; no compartas capturas o registros sin revisar que no contengan datos privados.
+
 En otra terminal:
 
 ```bash
