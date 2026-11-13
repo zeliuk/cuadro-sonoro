@@ -1,6 +1,6 @@
 # API: instalar, arrancar y probar
 
-**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). Su ejecución local permite comprobarla sin nube.
+**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). Su ejecución local permite comprobarla sin nube. El servidor estático de Mac es independiente y usa la API de Render; consulta [prueba web móvil](../docs/PRUEBA_WEB_LOCAL.md).
 
 ## Requisitos e instalación nativa
 

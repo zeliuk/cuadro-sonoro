@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: prototipo ejecutable con una primera importación real validada.** La importación y el avance del reproductor web se comprobaron con Firebase real y Chrome Headless; posteriormente se eliminó esa canción y sus medios para validar la limpieza. La lectura pública por URL conocida está aplicada manualmente. Falta validar Render, escucha humana, firmware y QR/NFC físicos. Ver [estado real](docs/ESTADO.md).
+**Estado: prototipo ejecutable con una primera importación real validada.** La importación y el avance del reproductor web se comprobaron con Firebase real y Chrome Headless; posteriormente se eliminó esa canción y sus medios para validar la limpieza. La lectura pública por URL conocida está aplicada manualmente. Falta validar Render, escucha humana, firmware y QR/NFC físicos. Ver [estado real](docs/ESTADO.md) y la [prueba web desde móvil en la LAN](docs/PRUEBA_WEB_LOCAL.md). Para arrancar la prueba (genera el QR y levanta el servicio): `python3 scripts/serve_local_preview.py`.
 
 ## Prueba la interfaz sin credenciales
 

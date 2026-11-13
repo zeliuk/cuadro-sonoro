@@ -47,6 +47,7 @@ firebase-debug.log*
 # Herramientas y archivos locales
 .DS_Store
 .venv/
+.venv-qr/
 venv/
 __pycache__/
 *.py[cod]
@@ -63,3 +64,6 @@ htmlcov/
 # Los informes de análisis pueden contener datos de hallazgos.
 *.sarif
 *gitleaks-report*.json
+
+# QR y ajustes locales del servidor de prueba
+artifacts/local-preview/

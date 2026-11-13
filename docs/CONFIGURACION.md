@@ -10,7 +10,8 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 
 | Variable actual | Función | Ubicación |
 |---|---|---|
-| `ALLOWED_ORIGINS` | Orígenes exactos permitidos por CORS. | `.env`/Render. No autentica usuarios. |
+| `ALLOWED_ORIGINS` | Lista separada por comas de orígenes exactos permitidos por CORS. | `backend/.env`/Render. No autentica usuarios. |
+| `ALLOWED_ORIGIN_REGEX` | Regex opcional de origen CORS; vacío/ausente conserva solo la lista exacta. | `backend/.env`/Render. Para hostname local ver abajo. |
 | `FIREBASE_DATABASE_URL` | URL exacta de RTDB. Vacía: SQLite local. | `.env`/Render. |
 | `FIREBASE_STORAGE_BUCKET` | Nombre del bucket sin `gs://`. Vacía: importación no disponible. | `.env`/Render. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Ruta al JSON privado de cuenta de servicio. | Nativo: absoluta; Compose: `/run/secrets/firebase.json`. |
@@ -30,6 +31,16 @@ En macOS, la API nativa puede conservar en `backend/.env` la ruta absoluta de cr
 
 Admin SDK usa credenciales únicamente en backend y herramientas privadas; no se entrega al dispositivo. Por decisión expresa de Carlos, las reglas Firebase permiten leer `slots` y descargar objetos individuales por URL conocida sin sesión; bloquean listados, tareas y escrituras públicas. Cualquier persona que conozca o elija un identificador puede además modificar los datos de ese espacio mediante la API. SHA-256 solo deriva la ruta; no funciona como autorización. No hay Firebase Auth.
 
-La web recibe la URL de API desde `meta[name="sonoro-api-base"]`; la copia actual para desarrollo local apunta inicialmente a `http://127.0.0.1:8000`, mientras que `web/index.html` está configurado para `https://cuadro-sonoro.onrender.com`. En el producto, el ESP32 servirá los archivos estáticos y el navegador del móvil llamará directamente a esa API HTTPS de Render. La credencial Admin no se envía al navegador.
+La web recibe la URL desde `meta[name="sonoro-api-base"]`. `web/index.html` apunta actualmente a `https://cuadro-sonoro.onrender.com`; el navegador llama directamente a Render. El servidor estático local solo entrega `web/`: no carga `backend/.env`, no lee la configuración del anfitrión y no actúa como proxy. La URL pública del API no es secreta.
 
-El QR/NFC del producto usará un hostname local único del ESP32, preferentemente `http://sonoro-<sufijo-unico>.local/#token=<identificador>`, no `localhost`: en el móvil, `localhost` apunta al propio teléfono. El hostname se anunciará por mDNS y deberá probarse en las versiones objetivo de Android/iOS y routers; si mDNS falla, habrá que aplicar una reserva DHCP o mostrar una dirección local alternativa. El móvil debe permanecer conectado a la red doméstica y tener salida a internet para llegar a Render. La API tendrá que permitir por CORS el origen de la página local; CORS no autentica ni autoriza el identificador.
+El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`, por ejemplo `http://cuadro-sonoro-dev001.local/#token=cuadro-prueba`. En el entorno Mac de prueba se usa Bonjour/mDNS y el puerto HTTP 80. El sufijo es una etiqueta DNS configurable (1–49 caracteres en el script) y permanece estable aunque cambie la IP; el identificador del fragmento sigue siendo el ámbito SHA-256 existente. Instrucciones completas de instalación, QR, arranque y diagnóstico están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md).
+
+En Render > Environment añade esta variable sin comillas exteriores para aceptar los nombres `.local` en HTTP sin puerto explícito:
+
+```dotenv
+ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$
+```
+
+Guarda el cambio y reinicia/redeploy el servicio API para que lea la variable. `ALLOWED_ORIGINS` permanece vigente para orígenes exactos. El regex no admite puertos alternativos, HTTPS ni subdominios engañosos como `cuadro-sonoro-dev001.local.ejemplo.com`; para una prueba por IP o puerto alternativo añade el origen exacto (incluyendo puerto) a `ALLOWED_ORIGINS`. La opción vacía/ausente conserva el comportamiento previo. Se permiten los métodos GET/POST/DELETE y cabeceras Authorization/Content-Type.
+
+CORS solo permite que un navegador lea respuestas desde los orígenes indicados. No autentica el hostname ni el cuadro, no vincula ambos identificadores y no sustituye al identificador Bearer. El token en `#token` no se envía como parte del origen ni en la petición que obtiene la página. El móvil requiere la misma LAN sin aislamiento entre clientes y salida a Internet para llegar a Render/Firebase.

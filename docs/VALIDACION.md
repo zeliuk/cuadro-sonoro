@@ -297,11 +297,11 @@ Antes de la primera llamada, la consulta administrativa de RTDB confirmó que `m
 |---|---|
 | API aislada con SQLite temporal | `mi-cuadro-prueba` pasó de ausente a `GET /state` 200 con `slots`/`jobs` vacíos; una segunda llamada recuperó el mismo estado. Un registro sintético se recuperó después por el mismo ID; el segundo ID obtuvo un estado aparte. Se retiró solo el registro sintético creado durante la prueba y el primer ID volvió a quedar vacío. |
 | Firebase real | La API creó ambos IDs cortos sin alta previa. El cliente directo leyó el slot de prueba bajo el mismo SHA-256; después de retirar el registro sintético, la lectura pública quedó vacía. En aquella comprobación el identificador existente seguía devolviendo «Carefree» y sus referencias `audio_key`/`image_key`; se retiraron después en la validación de limpieza definitiva. |
-| Enlace directo en Chrome Headless | Se abrió `http://127.0.0.1:5173/#token=mi-cuadro-prueba` sin tocar ajustes. La API local se conectó desde el valor base de `web/index.html`; aparecieron tres huecos vacíos, el fragmento se limpió, el ID quedó en `sessionStorage`, la demo siguió oculta y la consola no mostró errores. |
+| Enlace directo en Chrome Headless | Se abrió `http://127.0.0.1:5173/#token=mi-cuadro-prueba` sin tocar ajustes. La descripción histórica atribuía la respuesta a API local, pero el HTML versionado apunta a Render; por ello no se conserva esa atribución como verificada. Se observaron tres huecos vacíos, limpieza del fragmento, ID en `sessionStorage`, demo oculta y consola sin errores. |
 
 ### Sin conexión manual en la web — 12 de noviembre de 2026
 
-Se retiraron el engranaje y el diálogo que pedían elegir modo, URL de API o identificador. Para cuadros reales, el enlace es el único dato que recibe el usuario; el navegador utiliza la URL base publicada en `meta[name="sonoro-api-base"]` (`http://127.0.0.1:8000` en la copia local). La demo sigue disponible como modo explícito con el botón «Probar demostración» cuando no hay un cuadro activo. `node --check web/app.js`, `git diff --check` y `GET /health` pasaron. Los contenedores API y web responden en `127.0.0.1:8000` y `127.0.0.1:5173`. No se repitió Chrome en esta edición: no hay un ejecutable Chrome/Chromium en el PATH de este entorno; la reproducción anterior queda registrada arriba como validación previa.
+Se retiraron el engranaje y el diálogo que pedían elegir modo, URL de API o identificador. Para cuadros reales, el enlace es el único dato que recibe el usuario; el navegador utiliza `https://cuadro-sonoro.onrender.com` desde `meta[name="sonoro-api-base"]`. La demo sigue disponible como modo explícito con el botón «Probar demostración» cuando no hay un cuadro activo. `node --check web/app.js`, `git diff --check` y `GET /health` pasaron. Los contenedores API y web responden en `127.0.0.1:8000` y `127.0.0.1:5173`. No se repitió Chrome en esta edición: no hay un ejecutable Chrome/Chromium en el PATH de este entorno; la reproducción anterior queda registrada arriba como validación previa.
 
 ### Eliminación definitiva de medios sin referencias — 12 de noviembre de 2026
 
@@ -369,3 +369,21 @@ SQLite usa transacciones `BEGIN IMMEDIATE`, WAL y timeout de bloqueo. Compose lo
 | `git diff --check` | Correcto. |
 
 El anfitrión solo tenía Python 3.9 sin pytest; la suite se ejecutó dentro de la imagen Docker Python 3.12 e instaló Git y dependencias de desarrollo en un contenedor temporal. No se hicieron pruebas funcionales contra Firebase, YouTube, Render, ni se aceptaron importaciones reales. Para restaurar el API Compose habitual tras la prueba aislada se recreó su contenedor con el `.env` local existente; al arrancar, el ciclo de vida ejecutó la limpieza normal de huérfanos configurada para ese entorno. No se consultaron ni imprimieron sus datos, por lo que no se registra aquí el resultado de esa limpieza. Tampoco se probaron escucha, hardware ni garantías de almacenamiento/proceso en Render. El Compose habitual quedó levantado.
+
+## Entorno de prueba web local desde Mac — 13 de noviembre de 2026
+
+Se añadió `scripts/serve_local_preview.py`: con un comando genera el QR ficticio y, en macOS, sirve exclusivamente `web/` desde Python HTTP en puerto 80 y publica el nombre/servicio con Bonjour mediante `/usr/bin/dns-sd -P`. Sufijo estable, interfaz o IP y puerto se pueden configurar. La terminación con Ctrl+C detiene únicamente esos dos hijos. `scripts/generate_local_qr.py` crea QR PNG local con `qrcode[pil]` y valores ficticios por defecto; `artifacts/local-preview/` y `.venv-qr/` quedan ignorados.
+
+La API lee opcionalmente `ALLOWED_ORIGIN_REGEX` y pasa su valor (o `None`) a `CORSMiddleware.allow_origin_regex`, conservando `ALLOWED_ORIGINS`, métodos y cabeceras previos. Se documentó la variable para Render, la prueba por IP/puerto y el recorrido desde móvil. `web/index.html` ya tenía `meta[name="sonoro-api-base"]` en `https://cuadro-sonoro.onrender.com`; se mantuvo y se corrigieron guías que indicaban por error el backend local.
+
+| Verificación | Resultado |
+|---|---|
+| Suite aislada backend/scripts, sin entorno Firebase heredado | 44 pasaron, incluido CORS: dos hostnames admitidos, preflight Authorization/Content-Type, origen externo y sufijo engañoso rechazados, exactos conservados, y comportamiento previo sin regex. Aviso conocido de deprecación Starlette/TestClient con HTTPX. |
+| `python -m compileall -q backend scripts` con `.venv` | Correcto. |
+| `node --check web/app.js` | Correcto. |
+| Servidor/anuncio real en macOS, puerto 80 | `dns-sd -P` registró servicio y hostname; `dns-sd -G v4 cuadro-sonoro-dev001.local` resolvió a la IP LAN. GET por IP local y por hostname resolvieron HTTP 200 y el HTML servido contenía la base de Render. |
+| QR local | Instalado `qrcode[pil]` en `.venv-qr`; PNG de prueba generado y reconocido como PNG 410×410. Archivo ignorado por Git. |
+| Ctrl+C/limpieza | Terminal mostró salida ordenada del servidor; el lanzador termina Bonjour y HTTP. |
+| Prueba física móvil/Render/hardware | Pendiente. No se modificó ni desplegó Render; no se hicieron llamadas de importación, cambios Firebase ni pruebas de hardware. |
+
+El siguiente paso manual es añadir en Render `ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$` sin comillas exteriores y reiniciar/redeploy la API. Luego escanear desde el móvil el QR ficticio en la misma Wi-Fi, con aislamiento de clientes desactivado y salida a internet. Si Bonjour no resuelve, probar por IP con esa URL como origen exacto en `ALLOWED_ORIGINS` de Render. Los detalles y comandos están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md). Esta fase solo comprueba acceso web local; no implementa ni emula ESP32/firmware y conserva el problema documentado de importación de YouTube desde Render.

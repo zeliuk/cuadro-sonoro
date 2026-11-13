@@ -16,44 +16,17 @@ En una selección real, el botón play superpuesto a la portada inicia el audio 
 
 ## Acceso mediante enlace de cuadro
 
-En el producto, el formato previsto es `http://sonoro-<sufijo-unico>.local/#token=<identificador>`; por ejemplo, en desarrollo local `http://127.0.0.1:5173/#token=mi-cuadro-prueba`. El primer enlace lo servirá el ESP32 por mDNS y debe abrirse desde un móvil conectado a la misma Wi-Fi. No usar `localhost` en un enlace del cuadro: en el móvil señalaría al propio teléfono. La resolución mDNS en Android/iOS y routers todavía no está validada. El identificador admite entre 1 y 128 caracteres ASCII: letra o número inicial, seguidos de letras, números, guion o guion bajo. No es una credencial. El fragmento no se incluye en la petición HTTP que obtiene la web. `app.js` lo lee al cargar o al cambiar el hash, lo guarda en `sessionStorage` de esa pestaña y lo retira de la barra de direcciones sin recargar. Las peticiones a la API lo envían como `Authorization: Bearer ...` para seleccionar el ámbito. Al cambiar de enlace se cancelan las peticiones del cuadro anterior y se limpia su estado antes de consultar el nuevo. Un identificador nuevo crea un cuadro vacío; el mismo recupera los registros existentes. Una entrada mal formada se rechaza sin activar la demo.
+El formato acordado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`; por ejemplo, `http://cuadro-sonoro-dev001.local/#token=cuadro-prueba`. En esta fase lo sirve un Mac en la LAN mediante Bonjour; en el producto lo servirá el ESP32. Debe abrirse desde un móvil conectado a la misma Wi-Fi. No usar `localhost` en un enlace del cuadro: en el móvil señalaría al propio teléfono. La resolución Bonjour/mDNS desde el móvil concreto y router del usuario todavía debe validarse. El identificador admite entre 1 y 128 caracteres ASCII: letra o número inicial, seguidos de letras, números, guion o guion bajo. No es una credencial. El fragmento no se incluye en la petición HTTP que obtiene la web. `app.js` lo lee al cargar o al cambiar el hash, lo guarda en `sessionStorage` de esa pestaña y lo retira de la barra de direcciones sin recargar. Las peticiones a la API lo envían como `Authorization: Bearer ...` para seleccionar el ámbito. Al cambiar de enlace se cancelan las peticiones del cuadro anterior y se limpia su estado antes de consultar el nuevo. Un identificador nuevo crea un cuadro vacío; el mismo recupera los registros existentes. Una entrada mal formada se rechaza sin activar la demo.
 
-La copia local apunta inicialmente a `http://127.0.0.1:8000`, de modo que el enlace de ejemplo funciona directamente cuando Compose está activo. Antes de publicar, configura la URL HTTPS pública de la API en `meta[name="sonoro-api-base"]`. Esa URL queda pública y no contiene credenciales.
+La configuración versionada en `meta[name="sonoro-api-base"]` apunta a `https://cuadro-sonoro.onrender.com`; el navegador móvil llama a Render directamente. Para prueba sin backend local, sigue [PRUEBA_WEB_LOCAL.md](../docs/PRUEBA_WEB_LOCAL.md). Esa URL es pública y no contiene credenciales.
 
 Si el fragmento no trae identificador, la interfaz permanece bloqueada hasta abrir un enlace o elegir explícitamente «Probar demostración». La URL base de API es configuración del sitio, no del usuario: no hay popup ni conexión manual en la interfaz.
 
-### Prueba local de un enlace
+### Prueba web completa desde un móvil
 
-Todos los comandos parten de la raíz del repositorio. No se necesita Firebase. Para aislar esta prueba, usa una configuración local sin URL de Firebase y SQLite temporal.
+La configuración pública de la web llama a Render, no a una API local; por eso servirla con `python -m http.server` no requiere ni inicia el backend. Para una prueba móvil con hostname Bonjour, puerto 80, QR, CORS y diagnóstico por IP, sigue [PRUEBA_WEB_LOCAL.md](../docs/PRUEBA_WEB_LOCAL.md). Para ejecutar y verificar la API por separado con SQLite local, usa [backend/README.md](../backend/README.md) y `docs/PRUEBA_API.md`.
 
-```bash
-source .venv/bin/activate
-export STATE_DB="$(mktemp -t cuadro-sonoro-link)"
-LOCAL_API_ENV="$(mktemp -t cuadro-sonoro-env)"
-cat > "$LOCAL_API_ENV" <<EOF
-STATE_DB=$STATE_DB
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-EOF
-env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCOUNT_JSON -u GOOGLE_APPLICATION_CREDENTIALS python -m uvicorn backend.main:app --env-file "$LOCAL_API_ENV" --host 127.0.0.1 --port 8000 --workers 1
-```
-
-En otra terminal, también desde la raíz:
-
-```bash
-python3 -m http.server 5173 --bind 127.0.0.1 --directory web
-```
-
-Abre el enlace directamente; la URL base local ya apunta a la API:
-
-```text
-http://127.0.0.1:5173/#token=mi-cuadro-prueba
-```
-
-Resultado esperado: la página elimina el fragmento sin recargarse, crea y muestra tres huecos vacíos, y mantiene el acceso al recargar esa pestaña. El mismo enlace recupera el registro. Para comprobar aislamiento, abre `http://127.0.0.1:5173/#token=otro-cuadro-prueba`; su estado debe ser independiente. Un identificador con `!` o más de 128 caracteres se rechaza. La demo continúa siendo una elección explícita y separada. Detén los servidores con `Ctrl+C`. Sin Firebase Storage, configurar una canción devuelve 503.
-
-La web servida por el ESP32 conservará en `meta[name="sonoro-api-base"]` la URL HTTPS pública de la API; no se introduce esa dirección en el móvil. El identificador se distribuye por QR/NFC en el fragmento de la URL local. La API en Render tendrá que permitir por CORS el origen local. El ESP32, el hostname mDNS y la generación/programación de QR/NFC siguen pendientes.
-
-Para desarrollo local, arranca API y web según [backend/README.md](../backend/README.md) y abre `http://127.0.0.1:5173/#token=mi-cuadro-prueba`. Cualquier persona puede cambiar los datos de un identificador conocido; no uses datos privados. La cuenta de servicio nunca se introduce en la web. Las importaciones siguen necesitando Firebase Storage.
+La web servida por el ESP32 conservará en `meta[name="sonoro-api-base"]` la URL HTTPS pública de la API; el navegador la utiliza directamente. El QR/NFC físico sigue pendiente; la prueba Mac incluye servidor, anuncio Bonjour y QR local. Sigue la guía de [prueba web móvil](../docs/PRUEBA_WEB_LOCAL.md). Para probar el backend nativo/Docker, consulta [backend/README.md](../backend/README.md). Cualquier persona puede cambiar los datos de un identificador conocido; no uses datos privados. La cuenta de servicio nunca se introduce en la web. Las importaciones siguen necesitando Firebase Storage.
 
 Check desde la raíz, con Node instalado:
 

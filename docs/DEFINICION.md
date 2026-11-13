@@ -1,6 +1,7 @@
 # Cuadro sonoro — Definición del proyecto
 
-**Fecha:** 12 de noviembre de 2026  
+**Fecha:** 13 de noviembre de 2026
+
 **Repositorio previsto:** `cuadro-sonoro`, público  
 **Nombre visible provisional:** Sonoro  
 **Estado:** decisiones de producto acordadas; implementación e integraciones por validar.
@@ -22,7 +23,7 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 - Cada cuadro usa un identificador de texto para relacionar su enlace, datos y dispositivo. Un identificador válido no requiere alta ni configuración previa.
 - El identificador no es una credencial ni una prueba de identidad; no hay lista de cuadros permitidos, registro de usuarios ni Firebase Auth. Quien elija/conozca uno puede consultar y cambiar ese ámbito mediante la API.
 - El ESP32 sirve los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR y el NFC habituales abren esa web desde el móvil, con acceso al cuadro correspondiente.
-- Cada dispositivo anuncia un hostname local único, preferentemente mediante mDNS, para que el enlace no dependa de una IP asignada por el router. El formato será `http://sonoro-<sufijo-unico>.local/#token=<identificador>`; el sufijo se derivará de una identidad estable del dispositivo, no de la IP. La resolución mDNS y su compatibilidad con móviles se deben validar en hardware real. Si no está disponible, se documentará una alternativa de acceso local, como una reserva DHCP o la IP mostrada por el cuadro.
+- El enlace usa `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El sufijo es configurable, válido como etiqueta DNS y estable, independiente de la IP; en el entorno de prueba del Mac es `dev001`. En el futuro se derivará de una identidad estable del ESP32. El hostname encuentra el servidor local y el fragmento identifica los datos; no cambia el identificador ni las rutas SHA-256. Bonjour/mDNS y su compatibilidad móvil se deben validar en hardware real. Si no resuelve, se puede diagnosticar por IP con CORS explícito para ese origen.
 - El navegador del móvil consume el identificador del fragmento sin incluirlo en la petición que obtiene la web y después limpia la barra de direcciones. El móvil debe estar en la misma red doméstica y conservar acceso a internet para comunicarse con Render y Firebase.
 - No se plantea un registro ni un selector de usuarios para la primera versión. Quien tenga el enlace podrá consultar y cambiar la configuración de ese cuadro.
 - Las selecciones pertenecen al cuadro y son compartidas entre quienes acceden desde distintos móviles.

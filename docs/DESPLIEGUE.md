@@ -4,7 +4,7 @@ Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar
 
 ## Web servida por el ESP32
 
-Decisión confirmada: el ESP32 servirá los archivos estáticos de `web/` por HTTP dentro de la red doméstica. El móvil abrirá un hostname local único, preferentemente mDNS, desde QR/NFC; no se usará `localhost` ni una IP fija en el enlace. El navegador del móvil ejecutará la interfaz y llamará directamente a la API HTTPS de Render. Hay que validar la resolución mDNS en Android/iOS y routers, configurar CORS para el origen local, y documentar una alternativa (reserva DHCP o IP local visible) si mDNS no funciona. La integración espera a elegir hardware/firmware; no se han validado comandos de compilación ni despliegue.
+Decisión confirmada: el enlace usa `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. Antes del ESP32, [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md) describe cómo servir `web/` desde macOS y anunciarlo con Bonjour; el navegador del móvil llama directamente a la API HTTPS de Render. Configura `ALLOWED_ORIGIN_REGEX` en Render para el hostname y reinicia el servicio. El recorrido no valida firmware; resolución y acceso móvil siguen pendientes. Si mDNS falla, la guía documenta una prueba por IP con origen CORS exacto.
 
 ## Comprobar el contenedor local
 

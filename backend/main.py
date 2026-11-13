@@ -26,7 +26,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 origins = [x.strip() for x in os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',') if x.strip()]
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=['GET', 'POST', 'DELETE'], allow_headers=['Authorization', 'Content-Type'])
+origin_regex = os.getenv('ALLOWED_ORIGIN_REGEX') or None
+app.add_middleware(CORSMiddleware, allow_origins=origins, allow_origin_regex=origin_regex, allow_methods=['GET', 'POST', 'DELETE'], allow_headers=['Authorization', 'Content-Type'])
 security = HTTPBearer(auto_error=False, description='Identificador público del cuadro (1–128 caracteres ASCII; no es una credencial).')
 
 

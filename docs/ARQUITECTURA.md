@@ -26,7 +26,7 @@ El identificador se envía a la API en `Authorization: Bearer` como selector de 
 
 La web acepta el identificador en el fragmento del enlace. El cliente de prueba de ordenador obtiene los slots y medios directamente sin llamar a la API; el firmware no existe. La API de importación sigue necesitando Render. Los objetos publicados tienen URLs directas estables sujetas a las reglas de lectura pública por URL conocida.
 
-En el producto, el móvil obtiene la web desde el servidor HTTP del ESP32 en la LAN y después llama a Render por HTTPS. El hostname local anunciado por el cuadro evita fijar su IP en QR/NFC; mDNS y la resolución desde Android/iOS siguen pendientes de validar. Render debe admitir el origen local por CORS. Una vez cargada la página, el ESP32 no participa en las operaciones de API.
+El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. En la prueba previa al hardware, un proceso Python del Mac sirve solo `web/` y Bonjour publica el hostname/IP LAN; el móvil llama directamente a Render por HTTPS. El formato del host es estable aunque cambie la IP. El anuncio se ejecuta ligado al proceso local y no cambia el nombre global del Mac. En hardware, el ESP32 ocupará ese lugar; su servidor aún no existe. La resolución y acceso desde móviles/routers reales siguen pendientes. Render permite el origen mediante `ALLOWED_ORIGIN_REGEX`; CORS no autentica el dispositivo ni vincula los dos identificadores.
 
 ## Decisiones aplazadas
 

@@ -14,7 +14,7 @@ Comprobación inicial completada en Docker local: búsqueda de YouTube, selecci�
 
 ## Fase 3 — Completar la configuración web
 
-Modularizar conservando diseño; alojar los archivos estáticos en el servidor HTTP del ESP32; acceso QR/NFC mediante hostname local único (mDNS preferido), validando resolución y CORS; Radio Browser (búsqueda y selección ya integradas); validar streams en navegador/ESP32 y preparar sugerencias revisadas; imagen decorativa con vista previa y procesamiento; limpieza de medios sin referencias incluyendo reproducciones activas. Separar demo/real y completar demo publicable. Probar móvil, teclado, errores, carga y audio local; no añadir control remoto del sonido.
+Completado en esta fase: acceso web temporal desde Mac en la LAN mediante servidor HTTP y Bonjour `cuadro-sonoro-dev001.local`, CORS regex opcional y QR local. Sigue pendiente modularizar conservando diseño; alojar archivos estáticos en firmware ESP32; validar hostname/CORS desde móviles y routers; QR/NFC físico; Radio Browser (búsqueda y selección ya integradas); validar streams en navegador/ESP32 y preparar sugerencias revisadas; imagen decorativa con vista previa y procesamiento; limpieza de medios sin referencias incluyendo reproducciones activas. Separar demo/real y completar demo publicable. Probar móvil, teclado, errores, carga y audio local; no añadir control remoto del sonido.
 
 ## Fase 4 — Hardware y firmware
 
