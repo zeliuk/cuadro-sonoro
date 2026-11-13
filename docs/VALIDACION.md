@@ -40,13 +40,19 @@ La guía de endpoints se contrastó con las ocho rutas implementadas y sus respu
 
 Se añadieron mensajes `import_checkpoint` al worker para marcar búsqueda y validación de metadatos, descarga, conversión, preparación de portada, subida a Firebase, publicación y limpieza. El fallo registra etapa, clase de excepción y detalle redactado; se sustituyen URLs, identificadores del cuadro/tarea y rutas temporales. La guía del backend y el catálogo API indican cómo localizar estos mensajes en la terminal local o en **Logs** de Render.
 
-No se ejecutaron pruebas ni se desplegó esta revisión en Render. Está pendiente comprobar que las líneas aparecen en el servicio publicado y usar el primer `result=error` para localizar la causa de la importación fallida.
+No se ejecutó la suite de pruebas para esta revisión. El código de checkpoints sí se desplegó en Render; los nuevos logs se documentan en las dos pruebas siguientes.
 
 ## Prueba local con yt-dlp prerelease — 13 de noviembre de 2026
 
 Para comprobar si había una corrección posterior al estable, la imagen Docker instaló `yt-dlp 2026.11.4.232659.dev0` y mantuvo `yt-dlp-ejs 0.8.0` con Deno 2.9.8. La consulta de metadatos de la misma selección que fallaba en Render terminó correctamente dentro de esa imagen (`duration` presente). No se descargó audio, no se subieron archivos ni se accedió a Firebase. El contenedor Compose habitual no se recreó; solo se construyó la imagen y se ejecutó un contenedor efímero sin dependencias.
 
-El resultado local indica que el prerelease puede corregir la extracción desde esta red. Render aún debe desplegar esta revisión y repetir la importación para determinar si también corrige la respuesta desde su red. La versión prerelease es temporal y no queda aprobada como versión definitiva.
+El resultado local indica que el prerelease puede corregir la extracción desde esta red, pero no desde Render. La versión prerelease fue una prueba y no queda aprobada como versión definitiva.
+
+## Prueba de yt-dlp prerelease en Render — 13 de noviembre de 2026
+
+Tras desplegar el prerelease, el intento volvió a fallar en `source_lookup`: yt-dlp registró HTTP 429 al pedir la página y varios HTTP 403 al consultar la API del reproductor. Los logs confirman que cargó `nightly@2026.11.04.232659`, EJS 0.8.0 y Deno 2.9.8. El POST de importación fue aceptado, pero no se alcanzó la descarga, conversión ni subida de medios; la limpieza terminó correctamente.
+
+La comparación local/Render demuestra que actualizar yt-dlp no basta: local obtuvo los metadatos con esa misma prerelease y Render recibió límites/prohibiciones de YouTube. Esto apunta a una restricción o limitación de solicitudes desde la red/IP de salida de Render; el log no establece su causa administrativa exacta. Se retiró la instalación automática de prereleases del Dockerfile y se conserva la versión estable indicada por `requirements.txt`.
 
 ## Límites de la evidencia
 
