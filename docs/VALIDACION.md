@@ -1,5 +1,9 @@
 # Validación de esta entrega
 
+## Decisión de alojamiento web — 13 de noviembre de 2026
+
+Carlos confirmó que el ESP32 servirá la web estática en la red doméstica; el móvil la abrirá mediante QR/NFC, preferentemente con un hostname mDNS único en lugar de una IP fija. La web seguirá llamando a Render y usando Firebase según el flujo actual. Se actualizó la definición, arquitectura y guías para reflejarlo. Es una decisión de producto/documentación, no una implementación: el firmware y hardware no existen, mDNS/CORS no se han probado y todavía no se comprobó el acceso desde móviles o routers reales.
+
 Fecha: 12 de noviembre de 2026. Entorno de comprobación: Linux, Python 3.12.14 y un entorno virtual limpio. El usuario continuará en macOS; no se ha ejecutado la instalación en su Mac.
 
 | Comprobación | Resultado |
@@ -11,7 +15,7 @@ Fecha: 12 de noviembre de 2026. Entorno de comprobación: Linux, Python 3.12.14 
 | Catálogo API frente a OpenAPI real | Coinciden las ocho operaciones; exportación en `openapi.prototype.json`. |
 | `node --check web/app.js` | Correcto. |
 | Diseño conservado | HTML, CSS y JS idénticos al ZIP original recuperado. |
-| Firebase Hosting | Retirado de `firebase.json`; web prevista en servidor propio. |
+| Firebase Hosting | Retirado de `firebase.json`; en la definición inicial la web se preveía en servidor propio. La decisión confirmada posteriormente es servirla desde el ESP32 en la LAN. |
 | Enlaces internos de documentación | Comprobados. |
 | Control básico de publicación | 56 archivos preparados sin hallazgos de sus patrones; no es una auditoría del historial. |
 

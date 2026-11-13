@@ -8,7 +8,7 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 
 - Repo `cuadro-sonoro`; Sonoro es nombre provisional de interfaz. Documentación y UI en español.
 - HTML/CSS/JavaScript organizado en módulos, sin framework y con prioridad móvil. Conservar el diseño aprobado de `web/`; separar módulos por responsabilidad sin rediseñar.
-- Web en el servidor de Carlos; Python/FastAPI, yt-dlp, FFmpeg y procesamiento de imágenes en Render/Docker; RTDB y Storage en Firebase. No Firebase Hosting.
+- Web estática servida por el ESP32 en la Wi-Fi doméstica, abierta desde el móvil mediante QR/NFC y un hostname local único; Python/FastAPI, yt-dlp, FFmpeg y procesamiento de imágenes en Render/Docker; RTDB y Storage en Firebase. No Firebase Hosting.
 - Identificador por cuadro en el enlace; no requiere alta y no es una credencial. No confundirlo con una credencial administrativa de Firebase.
 - Tres selecciones, tres pulsadores iluminados y rueda física. La web configura y permite escuchar localmente; no envía órdenes de reproducción ni volumen al ESP32.
 - Sin microSD ni canciones permanentes en el dispositivo. No autoplay al arrancar; una canción termina y se detiene.

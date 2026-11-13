@@ -21,8 +21,9 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 
 - Cada cuadro usa un identificador de texto para relacionar su enlace, datos y dispositivo. Un identificador válido no requiere alta ni configuración previa.
 - El identificador no es una credencial ni una prueba de identidad; no hay lista de cuadros permitidos, registro de usuarios ni Firebase Auth. Quien elija/conozca uno puede consultar y cambiar ese ámbito mediante la API.
-- El QR y el NFC habituales abren la web alojada en el servidor de Carlos, con acceso al cuadro correspondiente.
-- El enlace entrega el identificador mediante el fragmento existente, con formato `https://dominio/#token=<identificador>`. El navegador lo consume sin incluirlo en la petición al servidor web y después limpia la barra de direcciones.
+- El ESP32 sirve los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR y el NFC habituales abren esa web desde el móvil, con acceso al cuadro correspondiente.
+- Cada dispositivo anuncia un hostname local único, preferentemente mediante mDNS, para que el enlace no dependa de una IP asignada por el router. El formato será `http://sonoro-<sufijo-unico>.local/#token=<identificador>`; el sufijo se derivará de una identidad estable del dispositivo, no de la IP. La resolución mDNS y su compatibilidad con móviles se deben validar en hardware real. Si no está disponible, se documentará una alternativa de acceso local, como una reserva DHCP o la IP mostrada por el cuadro.
+- El navegador del móvil consume el identificador del fragmento sin incluirlo en la petición que obtiene la web y después limpia la barra de direcciones. El móvil debe estar en la misma red doméstica y conservar acceso a internet para comunicarse con Render y Firebase.
 - No se plantea un registro ni un selector de usuarios para la primera versión. Quien tenga el enlace podrá consultar y cambiar la configuración de ese cuadro.
 - Las selecciones pertenecen al cuadro y son compartidas entre quienes acceden desde distintos móviles.
 - El identificador acepta entre 1 y 128 caracteres ASCII: letra o número inicial, luego letras, números, guion o guion bajo. La API lo conserva como Bearer por compatibilidad de transporte; el SHA-256 UTF-8 solo deriva el ámbito de almacenamiento.
@@ -200,7 +201,8 @@ La configuración publicada y lo que está reproduciéndose son estados distinto
 
 ## 12. Alojamiento, coste y recuperación
 
-- La web se aloja en el servidor y dominio de Carlos. No se utiliza Firebase Hosting.
+- La web estática se sirve desde el ESP32 en la red doméstica; no se utiliza Firebase Hosting ni se requiere un servidor web público de Carlos para la configuración musical.
+- El navegador del móvil ejecuta la web y llama directamente a la API HTTPS de Render para búsquedas, importaciones y cambios. La conexión y los datos de la API siguen alojados en Render/Firebase; el ESP32 solo sirve los archivos de interfaz y no proxyfica esas operaciones.
 - API e importaciones se ejecutan externamente en Render con Docker; Firebase Functions queda como alternativa no elegida para esta base.
 - Firebase proporciona datos y almacenamiento de archivos. Sus cuotas, región y configuración de facturación se revisarán antes del despliegue. Storage requiere Blaze; no se garantiza coste cero.
 - La suspensión de Render gratuito y la ejecución fiable de trabajos son aspectos pendientes de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
@@ -253,7 +255,7 @@ La documentación debe permitir arrancar y probar cada parte desde una instalaci
 
 | Componente | Instrucciones y comandos que debe incluir |
 |---|---|
-| `web/` | Requisitos, configuración de demo y modo real, arranque del servidor local, URL que abrir, conexión con la API, comprobaciones disponibles y publicación en el servidor de Carlos. |
+| `web/` | Requisitos, configuración de demo y modo real, arranque del servidor local, URL que abrir, conexión con la API y comprobaciones disponibles. Documentar cómo se empaqueta y sirve desde el firmware. |
 | `backend/` | Versiones y dependencias, entorno virtual, instalación, plantilla de variables, arranque local y con Docker, ejecución de las tareas en segundo plano, pruebas, logs, parada, reinicio y despliegue en Render. |
 | `firebase/` | Creación/configuración de recursos, conexión desde el backend, reglas, comandos de validación y despliegue cuando corresponda, emuladores si se incorporan y verificación de acceso con un cuadro de prueba. |
 | `firmware/` | Al abordar esta fase: herramientas, preparación privada del cuadro, compilación, carga por USB, monitor serie, configuración Wi-Fi, pruebas de audio/pantalla/controles y restablecimiento Wi-Fi. |

@@ -32,7 +32,7 @@ La [definición completa](docs/DEFINICION.md) es la referencia para implementar 
 
 | Parte | Tecnología y ubicación |
 |---|---|
-| Web | HTML, CSS y JavaScript modular, en el servidor de Carlos. |
+| Web | HTML, CSS y JavaScript modular servidos por el ESP32 en la red doméstica; el móvil ejecuta la interfaz. |
 | API e importador | Python/FastAPI, yt-dlp y FFmpeg, en Render con Docker. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |

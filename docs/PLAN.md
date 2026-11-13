@@ -14,14 +14,14 @@ Comprobación inicial completada en Docker local: búsqueda de YouTube, selecci�
 
 ## Fase 3 — Completar la configuración web
 
-Modularizar conservando diseño; acceso QR/NFC; Radio Browser (búsqueda y selección ya integradas); validar streams en navegador/ESP32 y preparar sugerencias revisadas; imagen decorativa con vista previa y procesamiento; limpieza de medios sin referencias incluyendo reproducciones activas. Separar demo/real y completar demo publicable. Probar móvil, teclado, errores, carga y audio local; no añadir control remoto del sonido.
+Modularizar conservando diseño; alojar los archivos estáticos en el servidor HTTP del ESP32; acceso QR/NFC mediante hostname local único (mDNS preferido), validando resolución y CORS; Radio Browser (búsqueda y selección ya integradas); validar streams en navegador/ESP32 y preparar sugerencias revisadas; imagen decorativa con vista previa y procesamiento; limpieza de medios sin referencias incluyendo reproducciones activas. Separar demo/real y completar demo publicable. Probar móvil, teclado, errores, carga y audio local; no añadir control remoto del sonido.
 
 ## Fase 4 — Hardware y firmware
 
-Elegir placa, pantalla, audio, alimentación y conexiones. Validar streaming sin SD, botones y luces, volumen, imagen en reposo y portal Wi-Fi. Comprobar cambios durante reproducción, pérdidas de red y arranque silencioso. Añadir comandos de compilación/carga y monitor serie.
+Elegir placa, memoria flash/RAM suficientes para firmware y recursos web, pantalla, audio, alimentación y conexiones. Validar servidor web estático, hostname mDNS en móviles y routers objetivo, streaming sin SD, botones y luces, volumen, imagen en reposo y portal Wi-Fi. Comprobar cambios durante reproducción, pérdidas de red y arranque silencioso. Añadir comandos de compilación/carga y monitor serie.
 
 ## Fase 5 — Montaje y despliegue final
 
-Resolver estructura física, montaje y pruebas de uso para un familiar. Documentar hosting propio, Render, Firebase, costes observados y diagnóstico. Revisar recursos de demo y licencia antes de anunciar reutilización del código.
+Resolver estructura física, montaje y pruebas de uso para un familiar. Documentar firmware/servidor web del ESP32, Render, Firebase, hostname local, CORS, costes observados y diagnóstico. Revisar recursos de demo y licencia antes de anunciar reutilización del código.
 
 Cada fase acaba con documentación operativa, verificaciones relevantes y `ESTADO.md`/`VALIDACION.md` actualizados. La definición es destino del producto, no checklist ya completado.
