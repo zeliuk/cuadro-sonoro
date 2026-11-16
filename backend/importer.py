@@ -73,10 +73,6 @@ def execute_import(frame_key, queued_job):
                         f'RapidAPI entregó una descarga incompleta ({downloaded} de {total} bytes).'
                     )
             expected_size = download_info.get('filesize')
-            if isinstance(expected_size, (int, float)) and expected_size > 0 and downloaded != int(expected_size):
-                raise RuntimeError(
-                    f'RapidAPI anunció {int(expected_size)} bytes, pero se recibieron {downloaded}.'
-                )
             logger.info('import_checkpoint stage=%s result=complete bytes=%s expected_bytes=%s',
                         stage, downloaded, int(expected_size) if isinstance(expected_size, (int, float)) else 'unknown')
             info = {

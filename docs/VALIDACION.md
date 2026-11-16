@@ -12,7 +12,7 @@ Un reporte comunitario específico de `youtube-mp36` describe el mismo patrón 4
 
 ### Reproducción de un MP3 RapidAPI — sonido blanco
 
-Carlos reportó que el reproductor de la app entregaba ruido blanco en una importación RapidAPI y luego indicó que una prueba web del servicio reprodujo correctamente el audio. Por tanto, sigue sin estar aislado si la diferencia aparece al descargar desde el backend, al transferir/subir a Firebase, con ese vídeo concreto o en el reproductor. `ffprobe` solo confirma contenedor MP3 y duración; no verifica el contenido audible. No se inspeccionó el objeto Firebase ni se repitió una conversión que pueda consumir cuota. Se añadió una comprobación local de que el número de bytes descargados coincide con `Content-Length`; aún no se ha probado.
+Carlos reportó ruido blanco, pero aclaró que el sonido pertenece al inicio de «Chandelier» de Sia. No hay un fallo de audio confirmado. Una captura de la respuesta RapidAPI mostró que `filesize` puede diferir de los bytes descargados; por eso se deja como dato informativo y ya no bloquea la tarea. Se conservan la comprobación del `Content-Length` real y la comparación de duración. No se repitió la conversión ni se probó el cambio.
 
 ## Endpoint de web en Render y entorno local — 16 de noviembre de 2026
 

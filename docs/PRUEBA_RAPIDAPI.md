@@ -21,7 +21,7 @@ python -m uvicorn backend.main:app --env-file backend/.env --host 127.0.0.1 --po
 curl -sS http://127.0.0.1:8000/health
 ```
 
-Abre la web local y busca un tema. La búsqueda usa `POST /search`; al elegir una versión, la aplicación crea una tarea `POST /imports`. El backend consulta `GET https://youtube-mp36.p.rapidapi.com/dl?id=<ID>`, obtiene `link`, `filesize` y `duration`, descarga el MP3 y compara los bytes recibidos y la duración con la respuesta del proveedor. Después verifica formato, genera la portada y publica la selección en Firebase. Esta comprobación de integridad no acredita que el audio sea audible o corresponda a la selección. La respuesta externa y la importación deben validarse con una selección que tengas derecho a usar.
+Abre la web local y busca un tema. La búsqueda usa `POST /search`; al elegir una versión, la aplicación crea una tarea `POST /imports`. El backend consulta `GET https://youtube-mp36.p.rapidapi.com/dl?id=<ID>`, obtiene `link`, `filesize` y `duration`, descarga el MP3, comprueba el tamaño máximo y que se haya recibido todo el `Content-Length` anunciado por el servidor del archivo. `filesize` de RapidAPI se registra como referencia, pero no se trata como tamaño exacto. Después valida formato y duración, genera la portada y publica la selección en Firebase. Estas comprobaciones no acreditan por sí solas que el audio sea audible o corresponda a la selección.
 
 No se ha ejecutado esta prueba en esta variante; no se afirma que una importación real, la cuota o la compatibilidad con Raspberry Pi estén verificadas. Una solicitud real a RapidAPI puede consumir cuota. Para una primera verificación, revisa el plan y saldo en RapidAPI antes de seleccionar una canción.
 
