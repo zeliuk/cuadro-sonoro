@@ -67,3 +67,4 @@ htmlcov/
 
 # QR y ajustes locales del servidor de prueba
 artifacts/local-preview/
+artifacts/qr/

@@ -1,6 +1,6 @@
 # Probar la API paso a paso
 
-La búsqueda usa yt-dlp desde el backend. En `/imports`, la descarga usa RapidAPI y requiere `RAPIDAPI_KEY` en el backend; la búsqueda se mantiene con yt-dlp. Requiere acceso de red a RapidAPI y Firebase Storage para publicar, y puede consumir cuota. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) antes de importar con servicios reales. Las pruebas automatizadas usan proveedores simulados.
+La búsqueda usa yt-dlp desde el backend. En `/imports`, la descarga usa RapidAPI y requiere `RAPIDAPI_KEY` en el backend; la búsqueda se mantiene con yt-dlp. Requiere acceso de red a RapidAPI y Firebase Storage para publicar, y puede consumir cuota. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) antes de importar con servicios reales. Carlos comunica que el backend funciona en Render con RapidAPI; el reporte no equivale a una comprobación de Codex en esta fase. La prueba anterior en Docker local es histórica y no acredita el recorrido desde `https://sonoro.zeliuk.xyz` ni el hardware. Las pruebas automatizadas usan proveedores simulados.
 
 ## A. Comprobación local sin Firebase ni descargas
 

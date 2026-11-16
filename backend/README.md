@@ -1,6 +1,6 @@
 # API: instalar, arrancar y probar
 
-**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web versionada apunta a Render. Para probar la descarga con backend local, cambia temporalmente el meta a `http://127.0.0.1:8000`, sirve `web/` estática y arranca esta API. Ver [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md).
+**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web pública decidida es `https://sonoro.zeliuk.xyz` y llama a esta API en Render. CORS de producción debe permitir ese origen exacto en `ALLOWED_ORIGINS`; no se afirma que esté aplicado en Render. Para probar esta API local, cambia temporalmente el meta a `http://127.0.0.1:8000` y sirve `web/` estática. Ver [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md).
 
 ## Requisitos e instalación nativa
 

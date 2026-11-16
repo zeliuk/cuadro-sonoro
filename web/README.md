@@ -16,9 +16,19 @@ En una selección real, el botón play superpuesto a la portada inicia el audio 
 
 ## Acceso mediante enlace de cuadro
 
-El formato acordado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`; por ejemplo, `http://cuadro-sonoro-dev001.local/#token=cuadro-prueba`. En esta fase lo sirve un Mac en la LAN mediante Bonjour; en el producto lo servirá el ESP32. Debe abrirse desde un móvil conectado a la misma Wi-Fi. No usar `localhost` en un enlace del cuadro: en el móvil señalaría al propio teléfono. La resolución Bonjour/mDNS desde el móvil concreto y router del usuario todavía debe validarse. El identificador admite entre 1 y 128 caracteres ASCII: letra o número inicial, seguidos de letras, números, guion o guion bajo. No es una credencial. El fragmento no se incluye en la petición HTTP que obtiene la web. `app.js` lo lee al cargar o al cambiar el hash, lo guarda en `sessionStorage` de esa pestaña y lo retira de la barra de direcciones sin recargar. Las peticiones a la API lo envían como `Authorization: Bearer ...` para seleccionar el ámbito. Al cambiar de enlace se cancelan las peticiones del cuadro anterior y se limpia su estado antes de consultar el nuevo. Un identificador nuevo crea un cuadro vacío; el mismo recupera los registros existentes. Una entrada mal formada se rechaza sin activar la demo.
+El acceso habitual decidido es `https://sonoro.zeliuk.xyz/#token=cuadro-demo` (identificador ficticio). El hosting sirve los archivos estáticos de `web/`; el ESP32 no aloja la web. El móvil necesita Internet, pero no la misma Wi-Fi del cuadro. El identificador acepta entre 1 y 128 caracteres ASCII, no es una credencial, y `app.js` lo lee del fragmento, lo guarda en `sessionStorage` de esa pestaña y limpia la barra sin recargar. Las peticiones API lo envían como `Authorization: Bearer ...` para seleccionar ámbito. Al cambiar de enlace se cancelan peticiones anteriores y se limpia el estado antes de consultar el nuevo. Un identificador nuevo crea un cuadro vacío; el mismo recupera registros existentes. Una entrada mal formada se rechaza sin activar demo. El origen y recorrido público aún requieren verificación de publicación.
 
-La configuración versionada en `meta[name="sonoro-api-base"]` apunta a `https://cuadro-sonoro.onrender.com` en la configuración versionada. La búsqueda usa yt-dlp y la descarga del resultado elegido usa RapidAPI desde el backend. Para utilizar la API en Raspberry Pi desde el móvil, apunta el HTML servido allí a la dirección LAN de la API. La variante RapidAPI sigue pendiente de prueba real. Ver [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md).
+### Generar el QR público
+
+`scripts/generate_public_qr.py` genera enlaces `https://sonoro.zeliuk.xyz/#token=<id>` y guarda el ejemplo ficticio en `artifacts/qr/sonoro-cuadro-demo.png`. Requiere `qrcode[pil]`; instala la dependencia como se indica en [PRUEBA_WEB_LOCAL.md](../docs/PRUEBA_WEB_LOCAL.md). Para un ID asignado, usa una ruta de salida genérica con `--output`; el generador no imprime el enlace ni permite incluir el ID en el nombre por defecto. No compartas el PNG ni lo añadas al repositorio.
+
+```bash
+.venv-qr/bin/python scripts/generate_public_qr.py --token mi-cuadro-prueba --output artifacts/qr/cuadro.png
+```
+
+El QR/NFC del cuadro debe abrir la web pública con su ID en el fragmento. El servidor Bonjour y su generador local son herramientas de desarrollo independientes; no se usan para crear los QR del producto.
+
+`web/index.html` configura `meta[name="sonoro-api-base"]` con `https://cuadro-sonoro.onrender.com`. CORS de backend debe permitir `https://sonoro.zeliuk.xyz` mediante `ALLOWED_ORIGINS`; la documentación de esa variable no significa que ya esté aplicada en Render. La búsqueda usa yt-dlp y RapidAPI descarga el resultado seleccionado desde el backend. Carlos comunica que el backend funciona con RapidAPI en Render; no se ha verificado por Codex la web pública ni el flujo desde ella. Ver [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md).
 
 Si el fragmento no trae identificador, la interfaz permanece bloqueada hasta abrir un enlace o elegir explícitamente «Probar demostración». La URL base de API es configuración del sitio, no del usuario: no hay popup ni conexión manual en la interfaz.
 
@@ -26,7 +36,7 @@ Si el fragmento no trae identificador, la interfaz permanece bloqueada hasta abr
 
 Para la prueba local sirve `web/` en el puerto 5173 y arranca la API en el puerto 8000; ambos se ejecutan en el mismo equipo. La guía [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md) explica configuración y límites de la descarga. Para desarrollo aislado del backend, usa [backend/README.md](../backend/README.md).
 
-El endpoint versionado es la API de Render; para backend local/Docker, cambia temporalmente el meta a `http://127.0.0.1:8000`. Cuando el frontend se sirva desde ESP32, se debe volver a revisar conectividad y CORS desde móvil; el servidor/QR/NFC físicos siguen pendientes. Para probar el backend nativo/Docker, consulta [backend/README.md](../backend/README.md). Cualquier persona puede cambiar los datos de un identificador conocido; no uses datos privados. La cuenta de servicio nunca se introduce en la web. Las importaciones siguen necesitando Firebase Storage.
+El endpoint de producción es la API Render. Para backend local/Docker, cambia temporalmente el meta a `http://127.0.0.1:8000`; consulta [backend/README.md](../backend/README.md). Cualquier persona que conozca un identificador puede cambiar sus datos; no uses datos privados. La cuenta de servicio nunca se introduce en la web. Las importaciones necesitan Firebase Storage. El QR/NFC habitual abre el dominio público; el QR del portal Wi-Fi local del ESP32 tiene otra finalidad.
 
 Check desde la raíz, con Node instalado:
 
@@ -36,4 +46,4 @@ node --check web/app.js
 
 Al modificar la UI comprobar móvil, teclado abierto, modales, estados vacíos/error/carga, lectura de progreso y escucha local. El HTML de las búsquedas y los cambios de hueco se actualizan sin recargar la página. No añadir comandos al ESP32.
 
-En el producto, empaquetar los archivos de `web/` en el firmware y servirlos desde el ESP32 en la Wi-Fi doméstica. Esta integración aún no existe y depende de elegir placa y entorno de firmware; documentar instalación, actualización y comprobaciones cuando se implemente. También falta elegir una URL de API accesible desde el móvil en LAN. No se necesita publicar los archivos web en el servidor externo de Carlos.
+La publicación del producto consiste en servir el directorio estático `web/` desde `https://sonoro.zeliuk.xyz`. Esta dirección está decidida, pero publicación efectiva, HTTPS y conexión CORS requieren verificación. No se conocen proveedor, panel, credenciales o comandos de subida; consultar [DESPLIEGUE.md](../docs/DESPLIEGUE.md) sin asumirlos. El ESP32 solo tendrá su portal local de configuración/restablecimiento Wi-Fi; firmware y hardware siguen pendientes.

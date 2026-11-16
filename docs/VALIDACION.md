@@ -1,12 +1,24 @@
+# Validación de esta entrega
+
+> Las entradas fechadas siguientes son antecedentes de sus respectivas fases. Decisiones antiguas sobre alojamiento de la web, APIs y proveedores quedaron sustituidas por las actualizaciones más recientes y no son instrucciones vigentes. Para el estado actual, consultar primero [ESTADO.md](ESTADO.md), [DEFINICION.md](DEFINICION.md) y [DESPLIEGUE.md](DESPLIEGUE.md).
+
+## Actualización documental de arquitectura — 16 de noviembre de 2026
+
+Carlos decide alojar la web estática en `https://sonoro.zeliuk.xyz`; el ESP32 no la sirve. El QR/NFC habitual lleva `#token=<id-cuadro>`. El móvil necesita Internet, pero no la Wi-Fi del cuadro. El ESP32 tendrá un portal local separado para configurar/restablecer su Wi-Fi; la contraseña queda en el dispositivo. Hosting y backend no intervienen en la reproducción normal: el dispositivo leerá configuración/medios de Firebase y reproducirá desde Storage o los streams. Se actualizaron definición, arquitectura, estado, plan, despliegue, configuración, instrucciones ChatGPT y guías asociadas. Además, se añadió `scripts/generate_public_qr.py`, separado del generador Bonjour de desarrollo. Genera `https://sonoro.zeliuk.xyz/#token=<id>` y evita imprimir IDs asignados. Se reemplazaron los dos PNG anteriores ignorados por Git por QR con IDs ficticios que apuntan al dominio público; no corresponden a cuadros reales. Carlos comunica manualmente que el backend funciona en Render con RapidAPI; esto se registra como reporte del propietario y no como comprobación de Codex ni de hardware. El origen CORS requerido es `https://sonoro.zeliuk.xyz` mediante `ALLOWED_ORIGINS`, sin barra final; no se afirma que esté configurado en Render.
+
+Comprobaciones realizadas por Codex en esta fase: revisión de instrucciones, estado de Git y documentación; contraste de URL API versionada y variables CORS con `web/index.html`, `backend/main.py` y `backend/.env.example`; ejecución del generador público para producir dos QR ficticios; revisión de referencias documentales. Se ejecutó `git diff --check` y revisión estática de enlaces relativos/coherencia. No se ejecutaron pruebas funcionales, pruebas Bonjour, navegador o Docker ni llamadas a Render, RapidAPI, YouTube o Firebase; no se consumió cuota ni se cambió configuración remota. El despliegue del hosting, HTTPS, CORS efectivo desde el dominio y recorrido completo quedan pendientes. Hardware y firmware no están validados.
+
+
+
 ## Sustitución de Apify por RapidAPI — 16 de noviembre de 2026
 
 Por instrucción de Carlos, se eliminó la integración Apify y su selector de frontend. `/search` mantiene la búsqueda yt-dlp; `/imports` usa el endpoint HTTP RapidAPI YouTube MP3 con `RAPIDAPI_KEY` configurada solo en backend. Se añadieron validación HTTPS de enlaces, descarga acotada, conservación de la selección previa y documentación de instalación/operación. El MCP de Codex no se usa como runtime de la aplicación.
 
 No se ejecutaron tests, comprobaciones de sintaxis, Docker ni pruebas del navegador. No se llamó a RapidAPI, YouTube, Firebase ni Render; no se consumió cuota. La respuesta y enlace de descarga RapidAPI, permisos/cuota del plan y funcionamiento Raspberry Pi siguen pendientes de prueba real. El código se preparó tomando como contrato `GET /dl?id=<video_id>` y respuesta JSON con `status="ok"` y `link`, descritos en el material público de la API; confirmar el contrato y los límites del plan antes de importar.
 
-### Primer intento real reportado — enlace MP3 no disponible
+### Primer intento real reportado — enlace MP3 no disponible (antecedente)
 
-Carlos reporta desde Render `HTTP 404` al descargar el enlace devuelto, con el host `alpha.123tokyo.xyz`. Esto indica que la API devolvió un enlace, pero el servidor de medios no encontró el archivo; el `User-Agent` ya se había cambiado antes de este intento. No se registra el enlace completo porque puede incluir datos temporales. El fallo apunta al enlace/servidor de medios del proveedor, no a la configuración de `RAPIDAPI_KEY`. No repetir conversiones hasta confirmar con el proveedor si el host o el enlace están operativos: cada solicitud de conversión puede consumir cuota. No se ha validado importación completa.
+Carlos reporta desde Render `HTTP 404` al descargar el enlace devuelto, con el host `alpha.123tokyo.xyz`. Esto indica que la API devolvió un enlace, pero el servidor de medios no encontró el archivo; el `User-Agent` ya se había cambiado antes de este intento. No se registra el enlace completo porque puede incluir datos temporales. El fallo apunta al enlace/servidor de medios del proveedor, no a la configuración de `RAPIDAPI_KEY`. No repetir conversiones hasta confirmar con el proveedor si el host o el enlace están operativos: cada solicitud de conversión puede consumir cuota. No se había validado una importación completa en la fecha de ese reporte. Esta nota es histórica; Carlos comunica después que el backend funciona en Render con RapidAPI, sin detalles de importación incluidos aquí.
 
 Un reporte comunitario específico de `youtube-mp36` describe el mismo patrón 403/404 desde servidores cloud y atribuye el bloqueo a una verificación de usuario en el servidor del archivo; propone añadir el username RapidAPI al `User-Agent` y `X-RUN` con MD5 del username ([referencia](https://billy85276.hashnode.dev/rapidapi)). Se añadió soporte obligatorio para `RAPIDAPI_USERNAME` en el backend. Este workaround no está documentado en la página pública del proveedor ni validado todavía con una conversión real. Configurar el username en local y Render y hacer un único intento solo si se acepta el posible consumo de cuota.
 
@@ -19,8 +31,6 @@ Carlos reportó ruido blanco, pero aclaró que el sonido pertenece al inicio de 
 Se cambió el meta `sonoro-api-base` versionado para que el sitio estático llame a `https://cuadro-sonoro.onrender.com`; el frontend sigue separado y no se aloja desde ese servicio. Se adaptó el `.env` local ignorado por Git: se retiraron variables `APIFY_*` y se guardó `RAPIDAPI_KEY` desde el elemento existente del llavero macOS sin imprimirla. Las variables Firebase locales se conservaron. `render.prototype.yaml` ahora documenta las variables de clave RapidAPI y CORS.
 
 No se modificó el entorno de Render ni se desplegó. Para que el servicio remoto importe, hay que configurar allí `RAPIDAPI_KEY` como secreto y permitir el origen real de la web en `ALLOWED_ORIGINS` o `ALLOWED_ORIGIN_REGEX`; el `.env` local no configura Render. No se probaron peticiones remotas.
-
-# Validación de esta entrega
 
 ## Proveedor inicial yt-dlp — 16 de noviembre de 2026
 
@@ -55,9 +65,9 @@ Se actualizaron definición, estado, decisiones, arquitectura, configuración, g
 
 Verificaciones de esta edición: `node --check web/app.js` y `git diff --check`. No se ejecutaron tests ni pruebas de API/Docker; el daemon Docker no estaba disponible al revisar el estado. No se hicieron llamadas a Render/YouTube/Firebase ni pruebas en móvil.
 
-## Decisión de alojamiento web — 13 de noviembre de 2026
+## Decisión de alojamiento web sustituida — 13 de noviembre de 2026
 
-Carlos confirmó que el ESP32 servirá la web estática en la red doméstica; el móvil la abrirá mediante QR/NFC, preferentemente con un hostname mDNS único en lugar de una IP fija. La web seguirá llamando a Render y usando Firebase según el flujo actual. Se actualizó la definición, arquitectura y guías para reflejarlo. Es una decisión de producto/documentación, no una implementación: el firmware y hardware no existen, mDNS/CORS no se han probado y todavía no se comprobó el acceso desde móviles o routers reales.
+Decisión histórica, sustituida el 16 de noviembre de 2026: entonces se propuso que el ESP32 sirviera la web en la red doméstica mediante hostname mDNS. La decisión vigente aloja la web en `https://sonoro.zeliuk.xyz`; el ESP32 no aloja la web musical. El firmware y hardware nunca se implementaron en esa fase.
 
 Fecha: 12 de noviembre de 2026. Entorno de comprobación: Linux, Python 3.12.14 y un entorno virtual limpio. El usuario continuará en macOS; no se ha ejecutado la instalación en su Mac.
 
@@ -70,7 +80,7 @@ Fecha: 12 de noviembre de 2026. Entorno de comprobación: Linux, Python 3.12.14 
 | Catálogo API frente a OpenAPI real | Coinciden las ocho operaciones; exportación en `openapi.prototype.json`. |
 | `node --check web/app.js` | Correcto. |
 | Diseño conservado | HTML, CSS y JS idénticos al ZIP original recuperado. |
-| Firebase Hosting | Retirado de `firebase.json`; en la definición inicial la web se preveía en servidor propio. La decisión confirmada posteriormente es servirla desde el ESP32 en la LAN. |
+| Firebase Hosting | Retirado de `firebase.json`. La intención histórica de servir la web desde el ESP32 fue sustituida el 16 de noviembre de 2026 por el hosting HTTPS público de Carlos. |
 | Enlaces internos de documentación | Comprobados. |
 | Control básico de publicación | 56 archivos preparados sin hallazgos de sus patrones; no es una auditoría del historial. |
 
@@ -441,12 +451,12 @@ La API lee opcionalmente `ALLOWED_ORIGIN_REGEX` y pasa su valor (o `None`) a `CO
 | Ctrl+C/limpieza | Terminal mostró salida ordenada del servidor; el lanzador termina Bonjour y HTTP. |
 | Prueba física móvil/Render/hardware | Pendiente. No se modificó ni desplegó Render; no se hicieron llamadas de importación, cambios Firebase ni pruebas de hardware. |
 
-El siguiente paso manual es añadir en Render `ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$` sin comillas exteriores y reiniciar/redeploy la API. Luego escanear desde el móvil el QR ficticio en la misma Wi-Fi, con aislamiento de clientes desactivado y salida a internet. Si Bonjour no resuelve, probar por IP con esa URL como origen exacto en `ALLOWED_ORIGINS` de Render. Los detalles y comandos están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md). Esta fase solo comprueba acceso web local; no implementa ni emula ESP32/firmware y conserva el problema documentado de importación de YouTube desde Render.
+Siguiente paso que correspondía al experimento local de esa fecha; queda como antecedente, no como procedimiento de producción. La guía de herramientas Bonjour se conserva en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md). La arquitectura vigente requiere CORS para `https://sonoro.zeliuk.xyz`; publicación, HTTPS y CORS efectivos siguen pendientes de verificación.
 # Integración Apify simulada — 16 de noviembre de 2026
 
 Implementación local de búsqueda con `streamers/youtube-scraper` y descarga con `lurkapi/youtube-to-mp3-audio-downloader`. Se revisaron las páginas actuales de esquemas de entrada/salida y la API de runs de Apify. Las pruebas ejecutadas usan mocks y SQLite temporal: cubren búsqueda con resultados/vacía/fallo y configuración ausente; normalización/filtros; importación y conservación del contenido anterior; resultado individual fallido con run exitoso; duración no permitida, transferencia excesiva, formato incorrecto; run ID durable tras recuperación; seguimiento reencolado sin duplicar el Actor; creación ambigua sin repetir POST; cancelación remota con reintento, carrera de cancelación/creación y protección ante publicación tardía; límite global/frecuencia; CORS preflight para Authorization desde ambos orígenes localhost; diagnóstico redactado del resultado individual fallido del Actor. No se usaron credenciales ni servicios reales y no se desplegó ni generó consumo.
 
-Comprobaciones locales previas: `python -m pytest backend/tests scripts/tests -q` (63 passed), `python -m compileall -q backend scripts`, `node --check web/app.js`, `git diff --check`; `docker compose config --quiet` pasó. La construcción de imagen se inició, pero el comando no entregó progreso ni finalizó dentro de la ventana de observación; no se declara Docker build validado. Pendiente del propietario: desplegar manualmente en Render, probar Actors reales, revisar uso/coste Apify, comprobar publicación/escucha y seguir rollback en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
+Comprobaciones locales previas: `python -m pytest backend/tests scripts/tests -q` (63 passed), `python -m compileall -q backend scripts`, `node --check web/app.js`, `git diff --check`; `docker compose config --quiet` pasó. La construcción de imagen se inició, pero el comando no entregó progreso ni finalizó dentro de la ventana de observación; no se declara Docker build validado. Registro histórico del flujo Apify, ya retirado. No constituye instrucción para el proveedor vigente.
 
 ### Descarga autenticada de medios Apify
 

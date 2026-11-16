@@ -1,34 +1,49 @@
-# Despliegue: receta y condiciones previas
+# Despliegue y publicación
 
-Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar las fases de [PLAN.md](PLAN.md), especialmente validar la lectura pública por URL conocida y una importación en Firebase real, además de la ejecución recuperable. El backend ya aísla sus datos por identificador; la receta heredada `render.prototype.yaml` sigue siendo referencia del prototipo, no el blueprint final ni garantía de ejecución fiable.
+Esta guía documenta destinos y condiciones, no afirma que se haya desplegado nada en esta fase. La URL pública elegida para la web es `https://sonoro.zeliuk.xyz`; Carlos comunica que el backend funciona en Render con RapidAPI. La publicación de la web, HTTPS, CORS desde el dominio y el recorrido integrado todavía requieren comprobación con evidencias.
 
-## Web servida por el ESP32
+## Publicar la web estática
 
-El enlace del cuadro conserva `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El HTML versionado apunta a `http://127.0.0.1:8000`; la guía [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) explica cómo configurar RapidAPI en la API local o en Raspberry Pi. `RAPIDAPI_KEY` solo se configura en el backend. No se ha validado móvil ni firmware.
+El contenido que se publica es el directorio `web/` (HTML, CSS, JavaScript y recursos estáticos). Debe servirse desde el hosting HTTPS de Carlos en el origen exacto `https://sonoro.zeliuk.xyz`, sin barra final. No se conoce el proveedor, panel, método de acceso, credenciales ni ruta del servidor; por ello esta guía no inventa comandos de subida. La actualización del contenido web no requiere actualizar los dispositivos.
 
-## Comprobar el contenedor local
+El enlace habitual contiene el identificador ficticio o asignado del cuadro en el fragmento, por ejemplo:
 
-Desde la raíz, con Docker y `.env` local preparado:
-
-```bash
-docker compose config --quiet
-docker compose build api
-docker compose up -d
-docker compose ps
-docker compose logs --tail=100 api
-curl -sS http://127.0.0.1:8000/health
+```text
+https://sonoro.zeliuk.xyz/#token=cuadro-demo
 ```
 
-Logs pueden contener detalles de operación: redactar cualquier valor sensible antes de compartirlos. Parada y recreación se explican en [backend/README.md](../backend/README.md).
+La aplicación lee `#token=...`, lo guarda en `sessionStorage` de la pestaña y limpia el fragmento de la barra. `scripts/generate_public_qr.py` genera el QR para este dominio y añade el ID al fragmento. Los QR con ID asignados se guardan como archivos locales privados ignorados por Git. El ESP32 no aloja la web musical. Su portal local para configurar/restablecer Wi-Fi es un flujo distinto; la contraseña queda en el dispositivo.
 
-## API remota
+Antes de publicar, revisar que `web/index.html` use la API prevista. En el código actual `meta[name="sonoro-api-base"]` apunta a `https://cuadro-sonoro.onrender.com`. El móvil necesita Internet para cargar el hosting y comunicarse con Render/Firebase, pero no estar conectado a la Wi-Fi del cuadro.
 
-La integración RapidAPI puede ejecutarse desde una API local o alojada, pero debe configurarse `RAPIDAPI_KEY` como secreto de backend y revisarse el coste/cuota antes de importar. No se ha validado en Render ni se ha hecho un despliegue por este cambio. Consulta [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) antes de una prueba real.
+## Conexión con Render y CORS
 
-## Firebase
+La API FastAPI vive en `https://cuadro-sonoro.onrender.com`. Para que un navegador servido desde la web pública pueda leer sus respuestas, permitir el origen exacto con la variable existente `ALLOWED_ORIGINS`:
 
-Consultar [firebase/README.md](../firebase/README.md) para seleccionar proyecto, credenciales y comando de reglas. Firebase Hosting no se usa. La facturación de Storage, región y cuotas deben decidirse antes de activar recursos. No interpretar una cuota gratuita como un límite de gasto.
+```dotenv
+ALLOWED_ORIGINS=https://sonoro.zeliuk.xyz
+```
 
-## Aceptación real
+Si se conservan también los orígenes locales de desarrollo, deben añadirse a la lista separada por comas. `ALLOWED_ORIGIN_REGEX` es una opción existente para necesidades de desarrollo, pero no se necesita para el origen estable de producción. CORS no autentica al usuario ni al cuadro. Esta es la configuración requerida; no confirma que el valor esté aplicado en Render. Los secretos `RAPIDAPI_KEY`, credenciales Firebase y `RAPIDAPI_USERNAME` se configuran solo en el entorno backend correspondiente.
 
-Verificar lectura por URL conocida, separación de registros, listados/escrituras denegados; buscar y procesar una pista de prueba adecuada desde el alojamiento elegido; comprobar MP3, imagen y metadatos; escuchar desde navegador; verificar fallo/cancelación/sustitución sin pérdida; cerrar y reabrir la web; reiniciar el servicio; confirmar limpieza segura. Registrar evidencia redactada y coste observado sin incluir URLs de cuadro ni credenciales. El ESP32 se valida en su propia fase.
+Firebase Realtime Database conserva configuración/selecciones/estados y Storage conserva audio e imágenes. El ESP32 consultará su ámbito y reproducirá MP3 desde Storage o radio desde sus streams. Hosting y API no participan en el recorrido normal del audio ya preparado; no se requiere servidor doméstico ni Raspberry Pi por cuadro.
+
+## Verificación pendiente de publicación
+
+Cuando el propietario publique el contenido y confirme la configuración CORS, comprobar desde un navegador real:
+
+1. HTTPS válido y respuesta de los recursos estáticos de `https://sonoro.zeliuk.xyz`.
+2. Un enlace ficticio con `#token=cuadro-demo` carga la interfaz, conserva el valor en `sessionStorage` y retira el fragmento visible.
+3. Las peticiones al backend salen a `https://cuadro-sonoro.onrender.com` y el preflight/respuesta CORS admite exactamente el origen público.
+4. Una configuración publicada en Firebase no se interpreta como confirmación de que el ESP32 la haya recibido o aplicado.
+5. «Escuchar aquí» afecta solo al navegador. Los botones/rueda del dispositivo gobernarán reproducción/volumen cuando firmware exista.
+
+No se ha realizado esta verificación desde el dominio ni en hardware en esta fase. No hacer importaciones reales como parte de una comprobación de publicación sin autorización y presupuesto de cuota.
+
+## Backend y Firebase
+
+Para API local/Docker, instalación, variables, arranque, logs y parada, consultar [backend/README.md](../backend/README.md) y [CONFIGURACION.md](CONFIGURACION.md). RapidAPI y los límites de prueba están en [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md). La configuración Firebase está en [firebase/README.md](../firebase/README.md). La publicación efectiva de variables en Render no se deduce del `.env` local.
+
+## Hardware
+
+Firmware, placa, pantalla, amplificador, alimentación, pines y distribución física siguen pendientes. La propuesta ESP32-S3 con PSRAM es orientativa, no una selección final. La guía del firmware se actualizará cuando esa fase tenga hardware y entorno elegidos. El portal local de Wi-Fi del ESP32 se valida separado de la web musical pública.

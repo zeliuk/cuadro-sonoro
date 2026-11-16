@@ -11,7 +11,7 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 | Variable actual | Función | Ubicación |
 |---|---|---|
 | `ALLOWED_ORIGINS` | Lista separada por comas de orígenes exactos permitidos por CORS. | `backend/.env`. No autentica usuarios. |
-| `ALLOWED_ORIGIN_REGEX` | Regex opcional de origen CORS; vacío/ausente conserva solo la lista exacta. | `backend/.env`. Para hostname local ver abajo. |
+| `ALLOWED_ORIGIN_REGEX` | Regex opcional de origen CORS; vacío/ausente conserva solo la lista exacta. | `backend/.env`; se conserva para los escenarios de desarrollo que la necesiten. |
 | `FIREBASE_DATABASE_URL` | URL exacta de RTDB. Vacía: SQLite local. | `backend/.env`. |
 | `FIREBASE_STORAGE_BUCKET` | Nombre del bucket sin `gs://`. Vacía: importación no disponible. | `backend/.env`. |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Ruta al JSON privado de cuenta de servicio. | Nativo: absoluta; Compose: `/run/secrets/firebase.json`. |
@@ -36,17 +36,16 @@ En macOS, la API nativa puede conservar en `backend/.env` la ruta absoluta de cr
 
 Admin SDK usa credenciales únicamente en backend y herramientas privadas; no se entrega al dispositivo. Por decisión expresa de Carlos, las reglas Firebase permiten leer `slots` y descargar objetos individuales por URL conocida sin sesión; bloquean listados, tareas y escrituras públicas. Cualquier persona que conozca o elija un identificador puede además modificar los datos de ese espacio mediante la API. SHA-256 solo deriva la ruta; no funciona como autorización. No hay Firebase Auth.
 
-La web recibe la URL desde `meta[name="sonoro-api-base"]`. `web/index.html` apunta a `https://cuadro-sonoro.onrender.com`; para desarrollo local puede cambiarse temporalmente a `http://127.0.0.1:8000`. La búsqueda usa yt-dlp; toda descarga seleccionada usa RapidAPI con `RAPIDAPI_KEY` y `RAPIDAPI_USERNAME` guardados en el backend. Para Raspberry Pi/móvil, el HTML servido debe apuntar a la dirección LAN de la API. El backend necesita yt-dlp/yt-dlp-ejs y runtime JavaScript para buscar, además de FFmpeg/ffprobe para validar audio. La integración se describe en [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
-El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`, por ejemplo `http://cuadro-sonoro-dev001.local/#token=cuadro-prueba`. En el entorno Mac de prueba se usa Bonjour/mDNS y el puerto HTTP 80. El sufijo es una etiqueta DNS configurable (1–49 caracteres en el script) y permanece estable aunque cambie la IP; el identificador del fragmento sigue siendo el ámbito SHA-256 existente. Instrucciones completas de instalación, QR, arranque y diagnóstico están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md).
+La web pública decidida es `https://sonoro.zeliuk.xyz`, con identificador ficticio en el fragmento, por ejemplo `https://sonoro.zeliuk.xyz/#token=cuadro-demo`. `web/index.html` configura actualmente la API `https://cuadro-sonoro.onrender.com`. Para desarrollo local se puede cambiar temporalmente el meta a `http://127.0.0.1:8000`; no cambiar el origen de producción por una dirección Raspberry Pi. La web acepta el identificador en `#token`, lo guarda en `sessionStorage` y limpia la barra. El móvil necesita Internet, no estar en la Wi-Fi del cuadro. La búsqueda usa yt-dlp y la descarga seleccionada RapidAPI; `RAPIDAPI_KEY` y `RAPIDAPI_USERNAME` solo se guardan en el backend. Para requisitos del backend, consulta [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
 
-CORS contempla `http://127.0.0.1:5173`, `http://localhost:5173` y el patrón restringido de hostnames `cuadro-sonoro-*.local`; el preflight debe permitir Authorization. `127.0.0.1` no identifica al Mac desde el teléfono.
-
-La búsqueda de YouTube usa yt-dlp desde la API. La descarga del resultado seleccionado usa RapidAPI. La configuración CORS para la prueba local conserva localhost y el patrón de hostname local. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
+El backend admite `ALLOWED_ORIGINS` (lista exacta, separada por comas) y `ALLOWED_ORIGIN_REGEX` opcional. Para producción, el origen requerido es `https://sonoro.zeliuk.xyz`, sin barra final. Ejemplo de valor de configuración —no evidencia de que ya esté aplicado en Render—:
 
 ```dotenv
-ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$
+ALLOWED_ORIGINS=https://sonoro.zeliuk.xyz
 ```
 
-No añadas esta variable a un backend nuevo sin revisar su necesidad. `ALLOWED_ORIGINS` permanece vigente para orígenes exactos. El regex no admite puertos alternativos, HTTPS ni subdominios engañosos como `cuadro-sonoro-dev001.local.ejemplo.com`; para una prueba por IP o puerto alternativo añade el origen exacto (incluyendo puerto) a `ALLOWED_ORIGINS`. La opción vacía/ausente conserva el comportamiento previo. Se permiten los métodos GET/POST/DELETE y cabeceras Authorization/Content-Type.
+Conserva junto a él los orígenes exactos necesarios para desarrollo. `Authorization` y `Content-Type` ya son cabeceras permitidas por la implementación. El token del fragmento no forma parte del origen ni se envía en la petición que obtiene el HTML. CORS solo permite que el navegador lea la respuesta; no autentica ni vincula identificadores.
 
-CORS solo permite que un navegador lea respuestas desde los orígenes indicados. No autentica el hostname ni el cuadro, no vincula ambos identificadores y no sustituye al identificador Bearer. El token en `#token` no se envía como parte del origen ni en la petición que obtiene la página. El flujo móvil requiere una API alcanzable desde la LAN y salida a Internet para los servicios externos.
+La configuración versionada actual permite como orígenes de desarrollo `http://127.0.0.1:5173` y `http://localhost:5173`; `backend/.env.example` conserva además la regex `.local` para la herramienta macOS. Las variables son las existentes en el código. Los hostnames locales y Bonjour son desarrollo, no requisitos de producción. El procedimiento histórico sigue en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md).
+
+CORS solo permite que un navegador lea respuestas desde los orígenes indicados. No autentica al cuadro ni sustituye al identificador Bearer. El enlace público requiere Internet en el móvil; no depende de la LAN del ESP32. El portal local de Wi-Fi del dispositivo configura solo la conexión del cuadro y nunca envía su contraseña a web, Render o Firebase.

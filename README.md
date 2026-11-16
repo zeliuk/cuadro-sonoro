@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: búsqueda yt-dlp y descarga RapidAPI preparadas; el flujo RapidAPI no se ha validado con servicios reales.** El prototipo tuvo una importación previa validada en Docker local; esta variante no se ha probado completa. La web versionada apunta a `https://cuadro-sonoro.onrender.com`; el HTML se sirve aparte y llama a esa API. Para desarrollo local, cambia el meta a `http://127.0.0.1:8000`. `RAPIDAPI_KEY` y `RAPIDAPI_USERNAME` deben configurarse en el `.env` local y, por separado, en Render. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía RapidAPI](docs/PRUEBA_RAPIDAPI.md).
+**Estado:** Carlos confirma manualmente que el backend funciona en Render con RapidAPI. Codex no ha verificado el recorrido desde la web pública ni el hardware. La web estática está destinada a `https://sonoro.zeliuk.xyz` y llama a la API `https://cuadro-sonoro.onrender.com`; el despliegue web, HTTPS y CORS desde ese origen siguen pendientes de comprobación. La configuración RapidAPI y guías están en [estado](docs/ESTADO.md), [despliegue](docs/DESPLIEGUE.md) y [prueba](docs/PRUEBA_RAPIDAPI.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -26,19 +26,19 @@ Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración»
 - Imagen decorativa elegida en la web y optimizada por el servidor.
 - Configuración Wi-Fi local mediante QR y asistente, sin instalar una app.
 
-La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. La configuración y validación pendiente de RapidAPI está en [PRUEBA_RAPIDAPI.md](docs/PRUEBA_RAPIDAPI.md).
+La web pública decidida es `https://sonoro.zeliuk.xyz`; el QR/NFC usará `#token=<id-cuadro>`. El móvil necesita Internet, pero no la Wi-Fi del cuadro. El ESP32 tendrá un portal local separado para configurar su Wi-Fi. La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. El procedimiento y antecedentes de RapidAPI están en [PRUEBA_RAPIDAPI.md](docs/PRUEBA_RAPIDAPI.md); Carlos comunica el backend operativo, sin validación independiente de Codex en esta fase.
 
 ## Arquitectura elegida
 
 | Parte | Tecnología y ubicación |
 |---|---|
-| Web | HTML, CSS y JavaScript modular servidos por el ESP32 en la red doméstica; el móvil ejecuta la interfaz. |
-| API e importador | Python/FastAPI; búsqueda con yt-dlp y descarga mediante RapidAPI; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Flujo pendiente de prueba real con la arquitectura de destino. |
+| Web | HTML, CSS y JavaScript modular en `https://sonoro.zeliuk.xyz`; el móvil ejecuta la interfaz y accede por Internet. |
+| API e importador | Python/FastAPI en Render; búsqueda yt-dlp y descarga RapidAPI; RTDB/Storage en Firebase. Carlos comunica que funciona con RapidAPI; Codex no ha verificado la web pública ni hardware. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
 | Dispositivo | ESP32 con pantalla, audio y controles; hardware pendiente. |
 
-La web se aloja fuera de Firebase Hosting. El ESP32 recibirá el audio directamente de Storage o de la emisora; el backend no debe intervenir en cada reproducción de una canción ya preparada.
+La web se aloja fuera de Firebase Hosting y del ESP32. El ESP32 recibirá el audio directamente de Storage o de la emisora; hosting y backend no intervienen en cada reproducción de una canción ya preparada.
 
 ## Empezar a desarrollar
 

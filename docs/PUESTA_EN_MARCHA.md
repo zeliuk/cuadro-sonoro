@@ -34,7 +34,7 @@ Sigue [backend/README.md](../backend/README.md): instalación, preparación de `
 
 ## 4. Comenzar con Codex
 
-Lee y envía el encargo actualizado de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El backend ya separa datos por identificador y el cliente directo está probado con emuladores y con reglas aplicadas manualmente en Firebase real. La conexión Admin a RTDB/Storage y el estado API del cuadro de prueba también se verificaron. Falta importar una canción real, escucharla en la web y completar el firmware. No presentar esas partes pendientes como validadas.
+Lee y envía el encargo actualizado de [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md). El backend ya separa datos por identificador y el cliente directo está probado con emuladores y con reglas aplicadas manualmente en Firebase real. La conexión Admin a RTDB/Storage y el estado API del cuadro de prueba también se verificaron. Carlos comunica que el backend funciona en Render con RapidAPI; esa declaración se distingue de la importación histórica Docker/Chrome y no acredita el sitio web público o el hardware. La publicación y prueba integrada desde `https://sonoro.zeliuk.xyz`, la escucha humana y el firmware siguen pendientes. No presentar esas partes como validadas.
 
 ## Problemas habituales
 

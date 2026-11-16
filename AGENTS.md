@@ -8,11 +8,11 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 
 - Repo `cuadro-sonoro`; Sonoro es nombre provisional de interfaz. Documentación y UI en español.
 - HTML/CSS/JavaScript organizado en módulos, sin framework y con prioridad móvil. Conservar el diseño aprobado de `web/`; separar módulos por responsabilidad sin rediseñar.
-- Web estática prevista para el ESP32 en la Wi-Fi doméstica, abierta desde el móvil mediante QR/NFC y un hostname local único; API Python/FastAPI con búsqueda yt-dlp, descarga MP3 mediante RapidAPI y FFmpeg/procesamiento de imágenes; RTDB y Storage en Firebase. La integración RapidAPI está pendiente de validación. Frontend versionado apunta a `https://cuadro-sonoro.onrender.com`; no Firebase Hosting.
+- Web estática en el hosting HTTPS de Carlos, `https://sonoro.zeliuk.xyz`, abierta mediante QR/NFC con `#token=<id-cuadro>`; el ESP32 no aloja la web musical. API Python/FastAPI en `https://cuadro-sonoro.onrender.com`, búsqueda yt-dlp, descargas MP3 mediante RapidAPI y preparación de medios; RTDB y Storage en Firebase. Carlos comunica que el backend funciona en Render con RapidAPI; no equivale a verificación de Codex ni del hardware. No Firebase Hosting.
 - Identificador por cuadro en el enlace; no requiere alta y no es una credencial. No confundirlo con una credencial administrativa de Firebase.
 - Tres selecciones, tres pulsadores iluminados y rueda física. La web configura y permite escuchar localmente; no envía órdenes de reproducción ni volumen al ESP32.
 - Sin microSD ni canciones permanentes en el dispositivo. No autoplay al arrancar; una canción termina y se detiene.
-- Imagen decorativa optimizada desde la web; Wi-Fi mediante portal local y QR. Hardware y firmware van después de validar la importación real.
+- Imagen decorativa optimizada desde la web; Wi-Fi mediante portal local y QR específico del dispositivo, separado de la web musical. Hardware y firmware siguen pendientes.
 - Una importación por cuadro; conservar selección anterior ante fallos. Cambiar configuración no interrumpe la reproducción activa.
 - Modo demo identificado, separado y sin uso de servicios reales.
 

@@ -22,9 +22,9 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 
 - Cada cuadro usa un identificador de texto para relacionar su enlace, datos y dispositivo. Un identificador válido no requiere alta ni configuración previa.
 - El identificador no es una credencial ni una prueba de identidad; no hay lista de cuadros permitidos, registro de usuarios ni Firebase Auth. Quien elija/conozca uno puede consultar y cambiar ese ámbito mediante la API.
-- El ESP32 sirve los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR y el NFC habituales abren esa web desde el móvil, con acceso al cuadro correspondiente.
-- El enlace usa `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El sufijo es configurable, válido como etiqueta DNS y estable, independiente de la IP; en el entorno de prueba del Mac es `dev001`. En el futuro se derivará de una identidad estable del ESP32. El hostname encuentra el servidor local y el fragmento identifica los datos; no cambia el identificador ni las rutas SHA-256. Bonjour/mDNS y su compatibilidad móvil se deben validar en hardware real. Si no resuelve, se puede diagnosticar por IP con CORS explícito para ese origen.
-- El navegador del móvil consume el identificador del fragmento sin incluirlo en la petición que obtiene la web y después limpia la barra de direcciones. El móvil debe estar en la misma red doméstica y conservar acceso a internet para comunicarse con el backend y Firebase. El frontend de prueba apunta al backend Render; se sirve como estático local para verificar desde el ordenador. Firmware/móvil y disponibilidad real del backend requieren validación.
+- La web estática de configuración musical se publica en `https://sonoro.zeliuk.xyz`. El QR/NFC habitual abre ese origen con el identificador del cuadro en el fragmento, por ejemplo `https://sonoro.zeliuk.xyz/#token=cuadro-demo`. El ESP32 no aloja esta web; una actualización del hosting puede llegar a todos los cuadros sin actualizar sus dispositivos.
+- La web acepta el identificador del fragmento, lo conserva en `sessionStorage` de la pestaña y limpia el fragmento de la barra de direcciones. El móvil necesita Internet para comunicarse con la web, Render y Firebase, pero no necesita estar en la misma Wi-Fi que el cuadro. El hostname `.local`, Bonjour/mDNS y el servidor local del Mac no forman parte del acceso habitual.
+- El ESP32 mantiene un portal local independiente para configurar o restablecer su Wi-Fi. La contraseña se guarda en el dispositivo y no se envía al hosting, Render ni Firebase.
 - No se plantea un registro ni un selector de usuarios para la primera versión. Quien tenga el enlace podrá consultar y cambiar la configuración de ese cuadro.
 - Las selecciones pertenecen al cuadro y son compartidas entre quienes acceden desde distintos móviles.
 - El identificador acepta entre 1 y 128 caracteres ASCII: letra o número inicial, luego letras, números, guion o guion bajo. La API lo conserva como Bearer por compatibilidad de transporte; el SHA-256 UTF-8 solo deriva el ámbito de almacenamiento.
@@ -37,7 +37,7 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 4. La persona selecciona su red doméstica e introduce la contraseña.
 5. El ESP32 comprueba la conexión. Si falla, permite corregirla. Si funciona, guarda la configuración y cierra la red temporal.
 
-La contraseña Wi-Fi se conserva en el dispositivo y no se envía a Firebase. Para cambiarla, se mantiene pulsado cualquiera de los tres botones. Una cuenta atrás en pantalla permite soltarlo antes de confirmar el restablecimiento. Este proceso borra únicamente la configuración Wi-Fi y conserva el identificador, las selecciones y el volumen.
+La contraseña Wi-Fi se conserva en el dispositivo y no se envía al hosting web, Render ni Firebase. Para cambiarla, se mantiene pulsado cualquiera de los tres botones. Una cuenta atrás en pantalla permite soltarlo antes de confirmar el restablecimiento. Este proceso borra únicamente la configuración Wi-Fi y conserva el identificador, las selecciones y el volumen.
 
 El QR temporal de instalación y el QR/NFC habitual de configuración musical tienen funciones distintas. Una caída temporal de internet no borra la red guardada ni abre automáticamente el asistente de instalación.
 
@@ -97,11 +97,11 @@ Se guardan los datos de la emisora y la dirección de streaming. No se descarga 
 - Se admite cancelación y se limpian los archivos temporales y resultados que queden sin utilizar.
 - Una tarea completa solo publica una selección cuando audio, imagen y metadatos necesarios están preparados.
 
-La ejecución debe soportar interrupciones y evitar duplicar publicaciones o borrar contenido vigente al reintentar. Guardar el estado en Firebase no sustituye por sí solo un mecanismo fiable de ejecución. La descarga RapidAPI está implementada localmente pero pendiente de prueba real en su entorno de destino. El diagnóstico histórico de yt-dlp en Render registró HTTP 429/403; no predice el resultado de la búsqueda ni la disponibilidad desde una Raspberry Pi/red doméstica.
+La ejecución debe soportar interrupciones y evitar duplicar publicaciones o borrar contenido vigente al reintentar. Guardar el estado en Firebase no sustituye por sí solo un mecanismo fiable de ejecución. Carlos comunica manualmente que el backend funciona en Render con RapidAPI. Esta comunicación no acredita aquí resultados de importaciones concretas ni constituye una verificación de Codex; revisar el estado en ESTADO.md. El diagnóstico histórico HTTP 429/403 fue de descarga yt-dlp y no describe RapidAPI ni constituye un bloqueo vigente de esa descarga.
 
 ### Si el hueco está sonando durante un cambio
 
-La reproducción anterior continúa hasta que se detenga o termine la canción. Publicar la nueva selección no inicia sonido ni corta lo que estaba sonando. La pantalla conserva los datos del audio realmente activo. La nueva selección se utiliza la próxima vez que se inicie ese hueco. Pulsar el botón activo continúa significando «detener».
+La reproducción anterior continúa hasta que se detenga o termine la canción. Guardar una selección desde la web no inicia sonido ni corta lo que estaba sonando. Si el hueco está sonando, conserva el audio y sus metadatos activos; la selección nueva se utiliza la próxima vez que se active. Pulsar el botón activo continúa significando «detener».
 
 ## 6. Reproducción y escucha desde la web
 
@@ -202,11 +202,12 @@ La configuración publicada y lo que está reproduciéndose son estados distinto
 
 ## 12. Alojamiento, coste y recuperación
 
-- La web estática se sirve desde el ESP32 en la red doméstica; no se utiliza Firebase Hosting ni se requiere un servidor web público de Carlos para la configuración musical.
-- El navegador ejecuta la web y llama directamente a la API para búsquedas, importaciones y cambios. El ESP32 solo sirve los archivos de interfaz y no proxyfica esas operaciones. El proveedor de API accesible desde el móvil está pendiente.
-- El HTML versionado apunta a `https://cuadro-sonoro.onrender.com`; la web se sirve fuera de Render. Para desarrollo local o Raspberry Pi, se configura el HTML servido con la URL de la API elegida. La API usa RapidAPI para descargar y requiere `RAPIDAPI_KEY` en su entorno.
+- La web estática se aloja en `https://sonoro.zeliuk.xyz`, sin Firebase Hosting. El contenido de `web/` se publica en el hosting HTTPS de Carlos; no se conocen aquí proveedor, panel, credenciales ni comandos de subida.
+- El navegador ejecuta la web y llama a `https://cuadro-sonoro.onrender.com` para operaciones de configuración, búsqueda e importación. CORS debe permitir el origen exacto `https://sonoro.zeliuk.xyz` mediante `ALLOWED_ORIGINS` (sin barra final); los orígenes de desarrollo existentes se conservan para desarrollo. Esto documenta la configuración requerida, no confirma que Render esté configurado así.
+- RTDB conserva configuración/selecciones/estados y Storage conserva audio e imágenes. El ESP32 consulta su configuración y reproduce MP3 directamente desde Storage o emisoras desde sus streams. Hosting y Render no participan en el recorrido normal del audio preparado. No se necesita servidor doméstico ni Raspberry Pi por cuadro.
+- La integración RapidAPI requiere `RAPIDAPI_KEY` solo en backend; `RAPIDAPI_USERNAME` también permanece en backend según la implementación actual.
 - Firebase proporciona datos y almacenamiento de archivos. Sus cuotas, región y configuración de facturación se revisarán antes del despliegue. Storage requiere Blaze; no se garantiza coste cero.
-- La ejecución fiable de trabajos en varias instancias queda fuera de esta prueba; mantener una instancia y un worker. La descarga RapidAPI está pendiente de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
+- La ejecución fiable de trabajos en varias instancias queda fuera de esta prueba; mantener una instancia y un worker. Carlos comunica que el backend funciona en Render con RapidAPI, sin que esta fase documental verifique la ejecución remota o el recorrido desde el dominio web. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
 - Cada reproducción desde Storage genera tráfico de salida, aunque solo existan tres selecciones y se limpie contenido antiguo.
 
 | Incidencia | Comportamiento acordado |
@@ -256,7 +257,7 @@ La documentación debe permitir arrancar y probar cada parte desde una instalaci
 
 | Componente | Instrucciones y comandos que debe incluir |
 |---|---|
-| `web/` | Requisitos, configuración de demo y modo real, arranque del servidor local, URL que abrir, conexión con la API y comprobaciones disponibles. Documentar cómo se empaqueta y sirve desde el firmware. |
+| `web/` | Requisitos, demo, publicación estática HTTPS, URL pública con identificador, conexión con la API y comprobaciones disponibles. Los servidores locales son herramientas de desarrollo. |
 | `backend/` | Versiones y dependencias, entorno virtual, instalación, plantilla de variables, arranque local y con Docker, ejecución de las tareas en segundo plano, pruebas, logs y parada. El alojamiento externo queda por elegir. |
 | `firebase/` | Creación/configuración de recursos, conexión desde el backend, reglas, comandos de validación y despliegue cuando corresponda, emuladores si se incorporan y verificación de acceso con un cuadro de prueba. |
 | `firmware/` | Al abordar esta fase: herramientas, preparación privada del cuadro, compilación, carga por USB, monitor serie, configuración Wi-Fi, pruebas de audio/pantalla/controles y restablecimiento Wi-Fi. |
@@ -289,7 +290,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 ### Orden de validación
 
 1. Consolidar esta definición en la documentación y preparar una base coherente de repositorio.
-2. Validar el recorrido real: buscar, elegir, procesar desde la API alojada, subir audio e imagen a Firebase y escuchar el MP3 desde el navegador.
+2. Validar el recorrido real desde `https://sonoro.zeliuk.xyz`: buscar, elegir, procesar desde la API alojada, publicar medios en Firebase y escuchar la prueba en el navegador.
 3. Completar la web dinámica conectada a tareas reales, incluyendo progreso, reintentos, sustitución y limpieza; validar búsqueda y escucha de Radio Browser en navegador y después en ESP32.
 4. Elegir hardware y validar reproducción de MP3 y radio por Wi-Fi, controles físicos y volumen.
 5. Integrar pantalla, imagen decorativa, luces y asistente Wi-Fi; comprobar recuperación y cambios durante reproducción.
@@ -299,7 +300,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 
 - Placa, memoria, pantalla, audio, alimentación, ruedas/pulsadores, pines y medidas.
 - Lectura autónoma del ESP32 y reglas de acceso directo a Firebase.
-- Ejecución y recuperación de tareas, coordinación entre workers y validación de la descarga RapidAPI desde el alojamiento elegido. La búsqueda directa yt-dlp en Render tuvo errores históricos HTTP 429/403; no se ha probado en Raspberry Pi ni en una red doméstica.
+- Ejecución y recuperación de tareas, coordinación entre workers y verificación independiente y detallada del flujo RapidAPI desde el origen web público. Carlos comunica que el backend funciona en Render. La búsqueda yt-dlp en Render tuvo errores históricos HTTP 429/403; no se ha probado en Raspberry Pi ni en una red doméstica.
 - Duración máxima de canciones, tiempos máximos de tareas, calidad MP3 y límites de subida de imágenes.
 - Resolución y formato de imágenes, brillo de pantalla y duración exacta de pulsación para restablecer Wi-Fi.
 - Conservación local de la imagen decorativa y comportamiento de pantalla sin red.

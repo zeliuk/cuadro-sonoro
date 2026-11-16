@@ -1,3 +1,5 @@
+> **Herramienta de desarrollo heredada.** Esta guía conserva el servidor local HTTP/Bonjour y su procedimiento como antecedente y utilidad para probar estáticos desde móvil en una LAN. No describe el acceso habitual ni el producto: la web musical se alojará en `https://sonoro.zeliuk.xyz`, no en el ESP32, y el QR/NFC de producción usará ese dominio. La compatibilidad del script con la nueva configuración no implica que el origen público o CORS estén validados. El portal local del ESP32 para Wi-Fi será independiente.
+
 # Prueba frontend local contra Render
 
 La prueba de integración usa estáticos locales y la API remota indicada en `web/index.html`; no hace falta levantar Python/FastAPI en el ordenador. Ejecuta desde la raíz:
@@ -36,7 +38,7 @@ En una terminal, desde la raíz:
 python3 scripts/serve_local_preview.py
 ```
 
-El comando genera el QR ficticio `artifacts/local-preview/cuadro-sonoro-dev001.png` y después detecta la interfaz de la ruta por defecto, obtiene su IPv4 LAN, sirve únicamente `web/` por HTTP en `0.0.0.0:80` y ejecuta `dns-sd -P` para publicar el nombre local y el servicio HTTP. Servidor y anuncio permanecen ligados a esa terminal; sus logs salen ahí. `Ctrl+C` termina solamente esos dos procesos hijos iniciados por el script.
+El comando invoca el generador con `--local` y crea el QR de desarrollo `artifacts/local-preview/cuadro-sonoro-dev001.png`; después detecta la interfaz de la ruta por defecto, obtiene su IPv4 LAN, sirve únicamente `web/` por HTTP en `0.0.0.0:80` y ejecuta `dns-sd -P` para publicar el nombre local y el servicio HTTP. Servidor y anuncio permanecen ligados a esa terminal; sus logs salen ahí. `Ctrl+C` termina solamente esos dos procesos hijos iniciados por el script.
 
 El enlace de ejemplo es:
 
@@ -56,7 +58,7 @@ El sufijo admite minúsculas ASCII, números y guiones como etiqueta DNS, de 1 a
 python3 scripts/serve_local_preview.py --token '<ID_DEL_CUADRO>'
 ```
 
-También se puede indicar el nombre del PNG con `--qr-output artifacts/local-preview/mi-qr.png`. No publiques QR ni enlaces que contengan un ID real.
+También se puede indicar el nombre del PNG local con `--qr-output artifacts/local-preview/mi-qr.png`. No publiques QR ni enlaces que contengan un ID real. Para generar el QR público, usa `scripts/generate_public_qr.py`; las instrucciones están en [web/README.md](../web/README.md).
 
 Para elegir otra interfaz (por ejemplo Wi-Fi `en0`):
 

@@ -15,14 +15,14 @@ La [definición](DEFINICION.md) contiene el detalle acordado el 12 de noviembre 
 | Imagen | Decorativa independiente elegida en web; procesamiento servidor y sin original permanente. |
 | Sustitución | Preparar antes de publicar; preservar el audio activo y limpiar cuando deje de utilizarse. |
 | Tareas | Una importación por cuadro y estado recuperable al volver a la web. |
-| Hosting e importador | La web estática de prueba apunta al backend configurado; yt-dlp busca candidatos y RapidAPI prepara el audio elegido. La integración de descarga sigue pendiente de validación real. RTDB/Storage siguen en Firebase. No Firebase Hosting. |
+| Hosting e importador | Web pública en `https://sonoro.zeliuk.xyz`; API en `https://cuadro-sonoro.onrender.com`; RTDB/Storage en Firebase. yt-dlp busca y RapidAPI prepara el audio elegido. No Firebase Hosting ni web alojada en ESP32. |
 | Portfolio | Repo público `cuadro-sonoro`, secretos excluidos, demo identificada sin servicios reales. |
 
-Pendientes: prueba real de RapidAPI, escucha humana, firmware/hardware, QR/NFC físicos, operación de cola bajo el requisito de una instancia/worker, límites/calidades, imagen local sin red, limpieza con referencias activas, reanudación tras caída de audio y licencia. La importación previa con yt-dlp en Render falló con HTTP 429/403; esta limitación histórica no predice resultados con RapidAPI ni una Raspberry Pi. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md). La primera importación real y reproducción en Chrome Headless están registradas en [VALIDACION.md](VALIDACION.md).
+Pendientes: verificación independiente y detallada del servicio Render/RapidAPI y del recorrido desde la web pública, escucha humana, firmware/hardware, QR/NFC físicos, operación de cola bajo el requisito de una instancia/worker, límites/calidades, imagen local sin red, limpieza con referencias activas, reanudación tras caída de audio y licencia. Carlos comunica que el backend funciona en Render con RapidAPI; no se aportan aquí logs, métricas ni resultados de recuperación/cancelación. La importación anterior con yt-dlp en Render falló con HTTP 429/403; es antecedente y no bloqueo vigente de descarga mediante RapidAPI. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md). La primera importación real y reproducción en Chrome Headless están registradas en [VALIDACION.md](VALIDACION.md).
 
-## Alojamiento de la web — 13 de noviembre de 2026
+## Alojamiento de la web — 16 de noviembre de 2026
 
-Carlos confirma que el ESP32 servirá los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR/NFC abrirá la página en el móvil usando un hostname local único, preferentemente mDNS, para no depender de la IP del router. La API local y el uso de RapidAPI quedan pendientes de validación real. La implementación no se ha desplegado ni validado en servicios reales. Hardware, firmware y acceso desde hostname doméstico siguen pendientes.
+Carlos decide alojar los estáticos de `web/` en `https://sonoro.zeliuk.xyz`. QR/NFC habituales abrirán ese origen con `#token=<id-cuadro>`. El móvil requiere Internet, pero no la misma Wi-Fi que el cuadro. El ESP32 no aloja la web musical y conserva un portal local separado para configurar/restablecer Wi-Fi. La API permanece en `https://cuadro-sonoro.onrender.com`; `ALLOWED_ORIGINS` permite documentar el origen exacto `https://sonoro.zeliuk.xyz` (sin barra final). El valor no se afirma aplicado en Render. Hosting y backend no intervienen en la reproducción normal: el ESP32 leerá configuración/medios de Firebase y reproducirá audio desde Storage o streams. No se necesita servidor doméstico ni Raspberry Pi por cuadro. Se conservan servidor Bonjour y pruebas locales solo como herramientas de desarrollo. La dirección y flujo están decididos; despliegue, HTTPS, CORS integrado y hardware siguen sin verificación.
 
 ## Decisión técnica — 12 de noviembre de 2026
 
@@ -34,3 +34,7 @@ En cada cambio de decisión registrar fecha, problema, decisión y efecto sobre 
 ## Búsqueda yt-dlp y descarga RapidAPI — 16 de noviembre de 2026
 
 Carlos solicita mantener la búsqueda yt-dlp y sustituir Apify por RapidAPI YouTube MP3 para descargar el resultado elegido. Efecto: `POST /search` consulta `ytsearch5`; `POST /imports` recibe el ID seleccionado y RapidAPI devuelve el enlace MP3. La clave RapidAPI queda solo en backend. El frontend ya no expone selector de proveedor y apunta a `https://cuadro-sonoro.onrender.com`; la web se sirve por separado. El secreto RapidAPI y CORS deben configurarse independientemente en Render. No se ha llamado al endpoint ni validado la cuota/descarga real.
+
+## Estado comunicado del backend en Render — 16 de noviembre de 2026
+
+Carlos confirma que el backend funciona en Render con RapidAPI. Se registra como validación manual comunicada por el propietario; esta fase documental no hizo llamadas a Render, RapidAPI, YouTube o Firebase ni recibió métricas o logs para verificar detalles de importación, recuperación, cancelación o estabilidad. El firmware no existe. Los fallos históricos HTTP 429/403 pertenecen a descargas anteriores con yt-dlp y no deben describirse como bloqueo vigente de RapidAPI.
