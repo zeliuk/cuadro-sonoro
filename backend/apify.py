@@ -213,7 +213,13 @@ def download_result(run):
         raise ApifyError('El Actor terminó sin resultados de descarga.')
     result = items[0]
     if str(result.get('status', '')).casefold() != 'success' or result.get('error'):
-        raise ApifyError('Apify no pudo descargar el vídeo seleccionado.')
+        logging.getLogger('uvicorn.error').warning(
+            'apify_download_item_failed run_succeeded=true status_success=%s error_present=%s audio_url_present=%s',
+            str(result.get('status', '')).casefold() == 'success',
+            bool(result.get('error')),
+            bool(result.get('audioFileUrl')),
+        )
+        raise ApifyError('El run de Apify terminó, pero falló la descarga individual. Revisa el run en Apify; los vídeos privados o restringidos por edad no se pueden descargar.')
     result['audioFileUrl'] = validate_public_url(result.get('audioFileUrl'))
     thumbnail = result.get('thumbnailFileUrl') or result.get('thumbnailYoutubeUrl')
     result['thumbnailFileUrl'] = validate_public_url(thumbnail) if thumbnail else None

@@ -228,6 +228,16 @@ def test_apify_downloader_documented_success_casing_and_actor_path(monkeypatch):
     assert apify._actor_path('streamers/youtube-scraper')=='/acts/streamers~youtube-scraper'
 
 
+def test_failed_dataset_item_reports_stage_without_logging_provider_error(monkeypatch, caplog):
+    monkeypatch.setenv('APIFY_TOKEN','fake')
+    monkeypatch.setattr(apify,'dataset_items',lambda dataset:[{'status':'Video is age restricted','error':'private provider detail','audioFileUrl':None}])
+    with pytest.raises(apify.ApifyError, match='falló la descarga individual'):
+        apify.download_result({'status':'SUCCEEDED','defaultDatasetId':'dataset'})
+    assert 'status_success=False' in caplog.text
+    assert 'error_present=True' in caplog.text
+    assert 'private provider detail' not in caplog.text
+
+
 def test_run_poll_retries_temporary_api_failure_with_bounded_backoff(monkeypatch):
     calls=[]
     def get_run(run_id):

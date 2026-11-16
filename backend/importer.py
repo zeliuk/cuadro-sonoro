@@ -175,7 +175,8 @@ def execute_import(frame_key, queued_job):
                       message='Apify sigue trabajando; se retomará el seguimiento automáticamente.')
             return
         message = str(exc)
-        known = ('duración máxima', 'emisión en directo', 'tamaño permitido', 'generado el archivo')
+        known = ('duración máxima', 'emisión en directo', 'tamaño permitido', 'generado el archivo',
+                 'falló la descarga individual')
         safe = message if any(x in message for x in known) else 'La fuente no ha permitido completar la importación. Puedes reintentar o elegir otra versión.'
         def finish(state):
             current = state['jobs'].get(job_id)

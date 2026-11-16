@@ -56,6 +56,8 @@ Abre [http://127.0.0.1:5173/#token=cuadro-prueba-apify](http://127.0.0.1:5173/#t
 6. Para probar preservación: con una selección previa, inicia una canción no disponible o que falle el Actor. Espera el estado de error y confirma que la selección anterior sigue ahí. Cancelar debe impedir publicación tardía.
 7. Revisa las ejecuciones y el uso/coste en Apify. Registra el resultado sin tokens, IDs privados ni URLs de Storage.
 
+Si aparece «falló la descarga individual», el run pudo terminar `SUCCEEDED` y aun así devolver el registro del vídeo con estado de fallo. Abre ese run en Apify y revisa el campo `status`/`error`: el Actor informa que vídeos privados o restringidos por edad no son descargables y que YouTube puede bloquear los intentos. No reintentes ese mismo vídeo automáticamente; confirma la causa en Apify y elige otra versión autorizada si corresponde. La interfaz de logs del backend solo registra categorías redactadas (`status_success`, `error_present` y `audio_url_present`), no el detalle privado del Actor.
+
 Si el navegador bloquea CORS, revisa el origen exacto y el preflight. Se conservan `http://127.0.0.1:5173`, `http://localhost:5173` y hostnames locales `cuadro-sonoro-*.local`; Authorization debe aparecer en `Access-Control-Allow-Headers`.
 
 ## 5. Volver a la versión anterior
