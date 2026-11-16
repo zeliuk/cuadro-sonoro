@@ -88,6 +88,7 @@ def test_cloud_ensure_transaction_persists_and_reuses_initial_state(monkeypatch)
 def test_validate_id_slot_and_duplicate_jobs(monkeypatch):
     monkeypatch.setenv('FIREBASE_STORAGE_BUCKET','test-bucket')
     monkeypatch.setenv('RAPIDAPI_KEY','synthetic-test-key')
+    monkeypatch.setenv('RAPIDAPI_USERNAME','synthetic-test-user')
     monkeypatch.setenv('IMPORT_MIN_INTERVAL_SECONDS','0')
     base={'slot':0,'source_id':'BaW_jenozKc','title':'Test','artist':'Test'}
     assert client.post('/imports',headers=AUTH,json={**base,'source_id':'https://internal/'}).status_code == 422

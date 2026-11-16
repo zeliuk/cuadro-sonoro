@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: búsqueda yt-dlp y descarga RapidAPI preparadas; el flujo RapidAPI no se ha validado con servicios reales.** El prototipo tuvo una importación previa validada en Docker local; esta variante no se ha probado completa. La web versionada apunta a `https://cuadro-sonoro.onrender.com`; el HTML se sirve aparte y llama a esa API. Para desarrollo local, cambia el meta a `http://127.0.0.1:8000`. `RAPIDAPI_KEY` debe configurarse tanto en el `.env` del backend local como, por separado, en los secretos de Render. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía RapidAPI](docs/PRUEBA_RAPIDAPI.md).
+**Estado: búsqueda yt-dlp y descarga RapidAPI preparadas; el flujo RapidAPI no se ha validado con servicios reales.** El prototipo tuvo una importación previa validada en Docker local; esta variante no se ha probado completa. La web versionada apunta a `https://cuadro-sonoro.onrender.com`; el HTML se sirve aparte y llama a esa API. Para desarrollo local, cambia el meta a `http://127.0.0.1:8000`. `RAPIDAPI_KEY` y `RAPIDAPI_USERNAME` deben configurarse en el `.env` local y, por separado, en Render. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía RapidAPI](docs/PRUEBA_RAPIDAPI.md).
 
 ## Prueba la interfaz sin credenciales
 

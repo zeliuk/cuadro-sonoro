@@ -1,5 +1,6 @@
 """HTTP client for the RapidAPI YouTube MP3 endpoint."""
 import ipaddress
+import hashlib
 import json
 import os
 import socket
@@ -36,8 +37,13 @@ class _SafeRedirect(HTTPRedirectHandler):
 
 def open_public_media(url, timeout=45):
     _public_https_url(url)
+    username = os.getenv('RAPIDAPI_USERNAME', '').strip()
+    if not username:
+        raise RapidAPIError('Configura RAPIDAPI_USERNAME en el backend para descargar el MP3.')
+    username_hash = hashlib.md5(username.encode('utf-8')).hexdigest()
     request = Request(url, headers={
-        'User-Agent': 'CuadroSonoro/0.1 (+https://github.com/cturmo/cuadro-sonoro)',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36; ' + username,
+        'X-RUN': username_hash,
         'Accept': 'audio/mpeg,application/octet-stream,*/*;q=0.8',
     })
     try:

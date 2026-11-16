@@ -19,6 +19,7 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 | `STATE_DB` | SQLite local de desarrollo. El archivo no se versiona. | `.env`; valor inicial en `/tmp`. |
 | `PORT` | Puerto del proceso Docker; por defecto 8000. | Entorno de ejecución. |
 | `RAPIDAPI_KEY` | Clave privada para preparar el MP3 seleccionado mediante RapidAPI; exclusivamente backend. | Secreto, nunca web/firmware/logs. |
+| `RAPIDAPI_USERNAME` | Username del perfil RapidAPI. El backend lo añade al `User-Agent` y calcula el `X-RUN` requerido por el host de medios. | Backend local y Render; no es la clave API. |
 | `IMPORT_MIN_INTERVAL_SECONDS` | Enfriamiento global entre importaciones. | Límite backend. |
 | `IMPORT_MAX_ACTIVE` | Número máximo de importaciones globales activas. | Límite backend. |
 
@@ -35,7 +36,7 @@ En macOS, la API nativa puede conservar en `backend/.env` la ruta absoluta de cr
 
 Admin SDK usa credenciales únicamente en backend y herramientas privadas; no se entrega al dispositivo. Por decisión expresa de Carlos, las reglas Firebase permiten leer `slots` y descargar objetos individuales por URL conocida sin sesión; bloquean listados, tareas y escrituras públicas. Cualquier persona que conozca o elija un identificador puede además modificar los datos de ese espacio mediante la API. SHA-256 solo deriva la ruta; no funciona como autorización. No hay Firebase Auth.
 
-La web recibe la URL desde `meta[name="sonoro-api-base"]`. `web/index.html` apunta a `https://cuadro-sonoro.onrender.com`; para desarrollo local puede cambiarse temporalmente a `http://127.0.0.1:8000`. La búsqueda usa yt-dlp; toda descarga seleccionada usa RapidAPI con `RAPIDAPI_KEY` guardada en el backend. Para Raspberry Pi/móvil, el HTML servido debe apuntar a la dirección LAN de la API. El backend necesita yt-dlp/yt-dlp-ejs y runtime JavaScript para buscar, además de FFmpeg/ffprobe para validar audio. La integración se describe en [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
+La web recibe la URL desde `meta[name="sonoro-api-base"]`. `web/index.html` apunta a `https://cuadro-sonoro.onrender.com`; para desarrollo local puede cambiarse temporalmente a `http://127.0.0.1:8000`. La búsqueda usa yt-dlp; toda descarga seleccionada usa RapidAPI con `RAPIDAPI_KEY` y `RAPIDAPI_USERNAME` guardados en el backend. Para Raspberry Pi/móvil, el HTML servido debe apuntar a la dirección LAN de la API. El backend necesita yt-dlp/yt-dlp-ejs y runtime JavaScript para buscar, además de FFmpeg/ffprobe para validar audio. La integración se describe en [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
 El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`, por ejemplo `http://cuadro-sonoro-dev001.local/#token=cuadro-prueba`. En el entorno Mac de prueba se usa Bonjour/mDNS y el puerto HTTP 80. El sufijo es una etiqueta DNS configurable (1–49 caracteres en el script) y permanece estable aunque cambie la IP; el identificador del fragmento sigue siendo el ámbito SHA-256 existente. Instrucciones completas de instalación, QR, arranque y diagnóstico están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md).
 
 CORS contempla `http://127.0.0.1:5173`, `http://localhost:5173` y el patrón restringido de hostnames `cuadro-sonoro-*.local`; el preflight debe permitir Authorization. `127.0.0.1` no identifica al Mac desde el teléfono.

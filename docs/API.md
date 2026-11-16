@@ -87,7 +87,7 @@ Respuesta 200: `{"results":[{"stationuuid":"id-radio","name":"Radio Nacional","c
 
 ## POST /imports
 
-Crea una tarea, sin esperar a que termine. Requiere `RAPIDAPI_KEY` en el backend y Firebase Storage accesible. Al procesarla, el backend solicita el enlace MP3 de `youtube-mp36.p.rapidapi.com` con el ID seleccionado, descarga el audio y valida formato MP3, duración máxima de 15 minutos y tamaño máximo de 40 MiB. `RAPIDAPI_KEY` nunca se envía al navegador. La conversión puede consumir cuota según el plan RapidAPI. La búsqueda se mantiene en yt-dlp. La integración con la API de RapidAPI y Firebase real no se ha probado en esta variante.
+Crea una tarea, sin esperar a que termine. Requiere `RAPIDAPI_KEY`, `RAPIDAPI_USERNAME` y Firebase Storage accesible en backend. Al procesarla, el backend solicita el enlace MP3 de `youtube-mp36.p.rapidapi.com` con el ID seleccionado, descarga el audio con los encabezados `X-RUN` (MD5 del username) y `User-Agent`, y valida formato MP3, duración máxima de 15 minutos y tamaño máximo de 40 MiB. La clave y username nunca se envían al navegador. La conversión puede consumir cuota según el plan RapidAPI. La búsqueda se mantiene en yt-dlp. La integración con la API de RapidAPI y Firebase real no se ha probado en esta variante.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
@@ -111,7 +111,7 @@ Forma de respuesta 202:
 {"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","id":"id-de-tarea","status":"queued","percent":null,"message":"Esperando turno","created_at":1700000000.0}
 ```
 
-Errores: 503 si falta `RAPIDAPI_KEY` o Firebase Storage; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones; 429 si se alcanza la frecuencia/concurrencia global. RapidAPI puede rechazar o no encontrar una conversión; en ese caso la tarea termina en error y la selección anterior se mantiene. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una nueva conversión y consumir cuota.
+Errores: 503 si falta `RAPIDAPI_KEY`, `RAPIDAPI_USERNAME` o Firebase Storage; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones; 429 si se alcanza la frecuencia/concurrencia global. RapidAPI puede rechazar o no encontrar una conversión; en ese caso la tarea termina en error y la selección anterior se mantiene. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una nueva conversión y consumir cuota.
 La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo. `attempts` cuenta ejecuciones iniciadas; `recoveries` cuenta recuperaciones tras caída (máximo dos).
 
 En caso de `error`, la API devuelve un mensaje general para la interfaz. Para identificar la causa técnica, consulta los logs de Uvicorn o `docker compose logs -f api` y busca `import_checkpoint`. Los detalles se redactan para omitir URLs e identificadores del cuadro. La guía del backend describe cada etapa.

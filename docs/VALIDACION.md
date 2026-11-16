@@ -4,6 +4,12 @@ Por instrucción de Carlos, se eliminó la integración Apify y su selector de f
 
 No se ejecutaron tests, comprobaciones de sintaxis, Docker ni pruebas del navegador. No se llamó a RapidAPI, YouTube, Firebase ni Render; no se consumió cuota. La respuesta y enlace de descarga RapidAPI, permisos/cuota del plan y funcionamiento Raspberry Pi siguen pendientes de prueba real. El código se preparó tomando como contrato `GET /dl?id=<video_id>` y respuesta JSON con `status="ok"` y `link`, descritos en el material público de la API; confirmar el contrato y los límites del plan antes de importar.
 
+### Primer intento real reportado — enlace MP3 no disponible
+
+Carlos reporta desde Render `HTTP 404` al descargar el enlace devuelto, con el host `alpha.123tokyo.xyz`. Esto indica que la API devolvió un enlace, pero el servidor de medios no encontró el archivo; el `User-Agent` ya se había cambiado antes de este intento. No se registra el enlace completo porque puede incluir datos temporales. El fallo apunta al enlace/servidor de medios del proveedor, no a la configuración de `RAPIDAPI_KEY`. No repetir conversiones hasta confirmar con el proveedor si el host o el enlace están operativos: cada solicitud de conversión puede consumir cuota. No se ha validado importación completa.
+
+Un reporte comunitario específico de `youtube-mp36` describe el mismo patrón 403/404 desde servidores cloud y atribuye el bloqueo a una verificación de usuario en el servidor del archivo; propone añadir el username RapidAPI al `User-Agent` y `X-RUN` con MD5 del username ([referencia](https://billy85276.hashnode.dev/rapidapi)). Se añadió soporte obligatorio para `RAPIDAPI_USERNAME` en el backend. Este workaround no está documentado en la página pública del proveedor ni validado todavía con una conversión real. Configurar el username en local y Render y hacer un único intento solo si se acepta el posible consumo de cuota.
+
 ## Endpoint de web en Render y entorno local — 16 de noviembre de 2026
 
 Se cambió el meta `sonoro-api-base` versionado para que el sitio estático llame a `https://cuadro-sonoro.onrender.com`; el frontend sigue separado y no se aloja desde ese servicio. Se adaptó el `.env` local ignorado por Git: se retiraron variables `APIFY_*` y se guardó `RAPIDAPI_KEY` desde el elemento existente del llavero macOS sin imprimirla. Las variables Firebase locales se conservaron. `render.prototype.yaml` ahora documenta las variables de clave RapidAPI y CORS.

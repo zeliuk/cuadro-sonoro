@@ -4,7 +4,7 @@
 
 ## Requisitos e instalación nativa
 
-Python 3.12. La búsqueda usa yt-dlp y requiere salida a YouTube; la extracción necesita un runtime JavaScript compatible (Deno en Docker) y `yt-dlp-ejs`. La descarga del resultado elegido usa RapidAPI (`RAPIDAPI_KEY`, solo en backend) y requiere además FFmpeg/ffprobe y Firebase Storage para publicar.
+Python 3.12. La búsqueda usa yt-dlp y requiere salida a YouTube; la extracción necesita un runtime JavaScript compatible (Deno en Docker) y `yt-dlp-ejs`. La descarga del resultado elegido usa RapidAPI (`RAPIDAPI_KEY` y `RAPIDAPI_USERNAME`, solo en backend) y requiere además FFmpeg/ffprobe y Firebase Storage para publicar.
 
 ```bash
 python3.12 -m venv .venv
@@ -14,7 +14,7 @@ python scripts/setup_local.py
 python scripts/check_project.py
 ```
 
-El script crea `backend/.env` a partir de la plantilla. Añade allí `RAPIDAPI_KEY`; se envía únicamente desde el backend. La llamada RapidAPI prepara un enlace MP3 y el backend descarga el medio a almacenamiento temporal, valida formato y duración y lo publica en Firebase. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
+El script crea `backend/.env` a partir de la plantilla. Añade allí `RAPIDAPI_KEY` y el username de RapidAPI (`RAPIDAPI_USERNAME`); solo se usan desde el backend. La llamada RapidAPI prepara un enlace MP3 y el backend descarga el medio a almacenamiento temporal, valida formato y duración y lo publica en Firebase. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
 
 ## Arranque nativo
 

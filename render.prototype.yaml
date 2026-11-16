@@ -13,6 +13,8 @@ services:
         sync: false
       - key: RAPIDAPI_KEY
         sync: false
+      - key: RAPIDAPI_USERNAME
+        sync: false
       - key: FIREBASE_DATABASE_URL
         sync: false
       - key: FIREBASE_STORAGE_BUCKET

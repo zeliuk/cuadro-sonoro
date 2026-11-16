@@ -122,11 +122,13 @@ def search_stations(body: StationSearch, _frame_key: str = Depends(identify_fram
         raise HTTPException(502, 'No se pudo consultar Radio Browser. Vuelve a intentarlo más tarde.') from None
 
 
-@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta RAPIDAPI_KEY o Firebase Storage.'}})
+@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta RAPIDAPI_KEY, RAPIDAPI_USERNAME o Firebase Storage.'}})
 def create_import(body: Import, frame_key: str = Depends(identify_frame)):
     global last_import_at
     if not os.getenv('RAPIDAPI_KEY', '').strip():
         raise HTTPException(503, 'Configura RAPIDAPI_KEY en el backend antes de importar.')
+    if not os.getenv('RAPIDAPI_USERNAME', '').strip():
+        raise HTTPException(503, 'Configura RAPIDAPI_USERNAME en el backend antes de importar.')
     if any(j['status'] in ACTIVE for j in store.read(frame_key)['jobs'].values()):
         raise HTTPException(409, 'Este cuadro ya tiene una importación en curso.')
     if not os.getenv('FIREBASE_STORAGE_BUCKET'):
