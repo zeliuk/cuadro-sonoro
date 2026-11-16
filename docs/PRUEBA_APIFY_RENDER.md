@@ -58,6 +58,8 @@ Abre [http://127.0.0.1:5173/#token=cuadro-prueba-apify](http://127.0.0.1:5173/#t
 
 Si aparece «falló la descarga individual», el run pudo terminar `SUCCEEDED` y aun así devolver el registro del vídeo con estado de fallo. Abre ese run en Apify y revisa el campo `status`/`error`: el Actor informa que vídeos privados o restringidos por edad no son descargables y que YouTube puede bloquear los intentos. No reintentes ese mismo vídeo automáticamente; confirma la causa en Apify y elige otra versión autorizada si corresponde. La interfaz de logs del backend solo registra categorías redactadas (`status_success`, `error_present` y `audio_url_present`), no el detalle privado del Actor.
 
+Si el resultado figura `Success` y su `audioFileUrl` es un registro de `https://api.apify.com/v2/key-value-stores/...`, la descarga de ese archivo requiere autenticación. El backend envía `APIFY_TOKEN` como cabecera Bearer únicamente a `api.apify.com`; nunca lo añade a hosts de medios externos ni a la URL. Si el host devuelve `insufficient-permissions`, confirma que el token de Render pertenece a la cuenta que ejecutó el Actor y puede leer sus almacenamientos de ejecución. Un token sin restricciones debería poder leerlos; no amplíes permisos de cuenta innecesariamente.
+
 Si el navegador bloquea CORS, revisa el origen exacto y el preflight. Se conservan `http://127.0.0.1:5173`, `http://localhost:5173` y hostnames locales `cuadro-sonoro-*.local`; Authorization debe aparecer en `Access-Control-Allow-Headers`.
 
 ## 5. Volver a la versión anterior

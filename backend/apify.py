@@ -199,10 +199,19 @@ class _ApifyRedirect(HTTPRedirectHandler):
 
 
 def open_media(request, timeout=30):
-    """Fetch public HTTPS media while validating every redirect and sending no Apify token."""
+    """Fetch media safely; Apify key-value-store records require backend authentication."""
     url = request.full_url if isinstance(request, Request) else str(request)
     validate_public_url(url)
-    return build_opener(_SafeRedirect()).open(request, timeout=timeout)
+    parsed = urlparse(url)
+    headers = dict(request.header_items()) if isinstance(request, Request) else {}
+    # Never forward caller-supplied credentials to media hosts. Apify's output
+    # points to private run key-value-store records, which require API auth.
+    headers.pop('Authorization', None)
+    headers.pop('Proxy-Authorization', None)
+    if parsed.hostname == 'api.apify.com':
+        headers['Authorization'] = f'Bearer {configured()}'
+    media_request = Request(url, headers=headers)
+    return build_opener(_SafeRedirect()).open(media_request, timeout=timeout)
 
 
 def download_result(run):

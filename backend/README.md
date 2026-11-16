@@ -26,7 +26,7 @@ Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso.
 
 ### Diagnosticar importaciones
 
-Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Docker local consulta `docker compose logs -f api`; en Render usa el panel Logs. Busca etapas `source_download`, `audio_validation`, `cover_processing`, `firebase_upload` y `publish`. La credencial Apify no se registra. La limpieza puede fallar después de una importación completada sin revertir la publicación.
+Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Docker local consulta `docker compose logs -f api`; en Render usa el panel Logs. Busca etapas `source_download`, `audio_validation`, `cover_processing`, `firebase_upload` y `publish`. La credencial Apify no se registra: para URLs de medios bajo `api.apify.com` se envía solo como cabecera Bearer del backend, nunca a otros hosts ni en la URL. La limpieza puede fallar después de una importación completada sin revertir la publicación.
 
 La tarjeta de la web seguirá mostrando un mensaje general para los fallos de importación. Usa el detalle de los logs del backend para localizar la etapa; no compartas capturas o registros sin revisar que no contengan datos privados.
 

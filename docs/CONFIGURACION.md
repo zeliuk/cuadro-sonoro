@@ -18,7 +18,7 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | Alternativa al archivo: JSON completo como secreto. | Entorno backend; dejar vacío si se usa archivo. |
 | `STATE_DB` | SQLite local de desarrollo. El archivo no se versiona. | `.env`; valor inicial en `/tmp`. |
 | `PORT` | Puerto del proceso Docker; por defecto 8000. | Entorno de ejecución. |
-| `APIFY_TOKEN` | Token privado para ejecutar Actors/leer sus runs/datasets; exclusivamente backend. | **Secreto**, nunca web/firmware/logs. |
+| `APIFY_TOKEN` | Token privado para ejecutar Actors, leer sus runs/datasets y descargar medios de sus key-value stores; exclusivamente backend. | **Secreto**, nunca web/firmware/logs. |
 | `APIFY_SEARCH_ACTOR` | Actor de búsqueda; predeterminado `streamers/youtube-scraper`. | Configuración backend. |
 | `APIFY_DOWNLOAD_ACTOR` | Actor de audio; predeterminado `lurkapi/youtube-to-mp3-audio-downloader`. | Configuración backend. |
 | `APIFY_SEARCH_TIMEOUT_SECONDS` / `APIFY_RUN_TIMEOUT_SECONDS` | Espera acotada de búsqueda/ciclo de seguimiento. | Límites backend. |

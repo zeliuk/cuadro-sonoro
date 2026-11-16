@@ -228,6 +228,27 @@ def test_apify_downloader_documented_success_casing_and_actor_path(monkeypatch):
     assert apify._actor_path('streamers/youtube-scraper')=='/acts/streamers~youtube-scraper'
 
 
+def test_media_download_authenticates_only_apify_key_value_store(monkeypatch):
+    monkeypatch.setenv('APIFY_TOKEN', 'server-secret')
+    monkeypatch.setattr(apify, 'validate_public_url', lambda url: url)
+    opened = []
+
+    class Opener:
+        def open(self, request, timeout):
+            opened.append((request, timeout))
+            return 'response'
+
+    monkeypatch.setattr(apify, 'build_opener', lambda *handlers: Opener())
+    original = apify.Request('https://api.apify.com/v2/key-value-stores/store/records/audio.mp3')
+    original.add_header('Authorization', 'Bearer caller-secret')
+    assert apify.open_media(original) == 'response'
+    assert opened[-1][0].get_header('Authorization') == 'Bearer server-secret'
+    assert original.get_header('Authorization') == 'Bearer caller-secret'
+
+    apify.open_media('https://audio.example/audio.mp3')
+    assert opened[-1][0].get_header('Authorization') is None
+
+
 def test_failed_dataset_item_reports_stage_without_logging_provider_error(monkeypatch, caplog):
     monkeypatch.setenv('APIFY_TOKEN','fake')
     monkeypatch.setattr(apify,'dataset_items',lambda dataset:[{'status':'Video is age restricted','error':'private provider detail','audioFileUrl':None}])
