@@ -72,12 +72,12 @@ Se mantiene la propuesta estética de un color cálido; el brillo y el modelo de
 
 1. Abrir un hueco vacío o cambiar el contenido de uno ocupado.
 2. Seleccionar «Canción» e introducir artista y título.
-3. El backend usa yt-dlp para buscar y devuelve hasta cinco resultados con título, canal, miniatura y duración. Al elegir el resultado, la persona escoge descargarlo con Apify o con yt-dlp ejecutado en el servidor de la API.
+3. El backend usa yt-dlp para buscar y devuelve hasta cinco resultados con título, canal, miniatura y duración. Al elegir el resultado, el backend solicita a RapidAPI YouTube MP3 que prepare el audio del ID seleccionado.
 4. La persona elige el resultado; no se importa automáticamente la primera coincidencia.
 5. Se crea una tarea de importación. El servicio obtiene y prepara el audio, la imagen y los metadatos.
 6. La web muestra su progreso. Cuando termina correctamente, la selección queda disponible.
 
-No se utiliza la API de Spotify. Ambas opciones preparan un MP3 a 128 kbps y FFmpeg/ffprobe valida el archivo en backend. Apify sigue disponible y requiere `APIFY_TOKEN`; la opción yt-dlp descarga directamente en la máquina que ejecuta la API y requiere yt-dlp, runtime JavaScript, FFmpeg y acceso a YouTube. La persona elige el proveedor por importación y la tarea conserva esa elección para recuperación/reintento. Ninguna ruta se da por validada en el entorno de alojamiento objetivo; procedimientos en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) y [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md).
+No se utiliza la API de Spotify. La API RapidAPI prepara el MP3 tras la selección; FFmpeg/ffprobe valida el archivo en backend. `RAPIDAPI_KEY` se configura solo en el backend. yt-dlp se conserva para búsqueda, no para descargar audio. La importación RapidAPI debe validarse en el entorno elegido y puede consumir cuota; véase [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
 
 ### Añadir una emisora
 
@@ -97,7 +97,7 @@ Se guardan los datos de la emisora y la dirección de streaming. No se descarga 
 - Se admite cancelación y se limpian los archivos temporales y resultados que queden sin utilizar.
 - Una tarea completa solo publica una selección cuando audio, imagen y metadatos necesarios están preparados.
 
-La ejecución debe soportar interrupciones y evitar duplicar publicaciones o borrar contenido vigente al reintentar. Guardar el estado en Firebase no sustituye por sí solo un mecanismo fiable de ejecución. La elección Apify/yt-dlp está implementada localmente, pero ambas rutas siguen pendientes de prueba real en su entorno de destino. El diagnóstico histórico de descargas yt-dlp en Render registró HTTP 429/403; no predice el resultado en una Raspberry Pi o red doméstica.
+La ejecución debe soportar interrupciones y evitar duplicar publicaciones o borrar contenido vigente al reintentar. Guardar el estado en Firebase no sustituye por sí solo un mecanismo fiable de ejecución. La descarga RapidAPI está implementada localmente pero pendiente de prueba real en su entorno de destino. El diagnóstico histórico de yt-dlp en Render registró HTTP 429/403; no predice el resultado de la búsqueda ni la disponibilidad desde una Raspberry Pi/red doméstica.
 
 ### Si el hueco está sonando durante un cambio
 
@@ -188,7 +188,7 @@ Durante una sustitución pueden coexistir temporalmente la versión anterior y l
 |---|---|
 | Web | HTML, CSS y JavaScript en módulos, manteniendo el diseño aprobado. |
 | API | Python con FastAPI. |
-| Importador | Búsqueda yt-dlp; descarga elegible por tarea mediante Apify o yt-dlp local; FFmpeg/ffprobe y procesamiento de imágenes en backend. |
+| Importador | Búsqueda yt-dlp; descarga MP3 mediante RapidAPI; FFmpeg/ffprobe y procesamiento de imágenes en backend. |
 | Backend externo | Docker; alojamiento público por decidir. En desarrollo local se usa Docker en el Mac. |
 | Datos | Firebase Realtime Database. |
 | Audio e imágenes | Firebase Storage. |
@@ -204,9 +204,9 @@ La configuración publicada y lo que está reproduciéndose son estados distinto
 
 - La web estática se sirve desde el ESP32 en la red doméstica; no se utiliza Firebase Hosting ni se requiere un servidor web público de Carlos para la configuración musical.
 - El navegador ejecuta la web y llama directamente a la API para búsquedas, importaciones y cambios. El ESP32 solo sirve los archivos de interfaz y no proxyfica esas operaciones. El proveedor de API accesible desde el móvil está pendiente.
-- El HTML versionado apunta a `http://127.0.0.1:8000` para uso en el mismo equipo. Para servirlo desde una Raspberry Pi/ESP32 y acceder desde el móvil, se debe configurar la dirección LAN del host de API. Cada importación permite seleccionar Apify o yt-dlp en ese host; la compatibilidad depende de la red/proveedor y requiere validación manual.
+- El HTML versionado apunta a `https://cuadro-sonoro.onrender.com`; la web se sirve fuera de Render. Para desarrollo local o Raspberry Pi, se configura el HTML servido con la URL de la API elegida. La API usa RapidAPI para descargar y requiere `RAPIDAPI_KEY` en su entorno.
 - Firebase proporciona datos y almacenamiento de archivos. Sus cuotas, región y configuración de facturación se revisarán antes del despliegue. Storage requiere Blaze; no se garantiza coste cero.
-- La ejecución fiable de trabajos en varias instancias queda fuera de esta prueba; mantener una instancia y un worker. La combinación Apify/Render está pendiente de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
+- La ejecución fiable de trabajos en varias instancias queda fuera de esta prueba; mantener una instancia y un worker. La descarga RapidAPI está pendiente de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
 - Cada reproducción desde Storage genera tráfico de salida, aunque solo existan tres selecciones y se limpie contenido antiguo.
 
 | Incidencia | Comportamiento acordado |
@@ -299,7 +299,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 
 - Placa, memoria, pantalla, audio, alimentación, ruedas/pulsadores, pines y medidas.
 - Lectura autónoma del ESP32 y reglas de acceso directo a Firebase.
-- Ejecución y recuperación de tareas, coordinación entre workers y validación de descargas desde el alojamiento elegido. La descarga directa con yt-dlp desde Render tuvo errores históricos HTTP 429/403; no se ha probado en Raspberry Pi ni en una red doméstica. Apify se conserva como opción alternativa y ambas deben validarse.
+- Ejecución y recuperación de tareas, coordinación entre workers y validación de la descarga RapidAPI desde el alojamiento elegido. La búsqueda directa yt-dlp en Render tuvo errores históricos HTTP 429/403; no se ha probado en Raspberry Pi ni en una red doméstica.
 - Duración máxima de canciones, tiempos máximos de tareas, calidad MP3 y límites de subida de imágenes.
 - Resolución y formato de imágenes, brillo de pantalla y duración exacta de pulsación para restablecer Wi-Fi.
 - Conservación local de la imagen decorativa y comportamiento de pantalla sin red.

@@ -1,6 +1,6 @@
 # Probar la API paso a paso
 
-La búsqueda usa yt-dlp desde el backend. En `/imports`, el campo `provider` permite escoger `apify` (predeterminado; puede generar consumo) o `yt_dlp` (descarga en la máquina de la API). Ambos dependen del acceso a YouTube en su entorno correspondiente y requieren Storage para publicar. Sigue [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) o [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) antes de importar con servicios reales. Las pruebas automatizadas usan proveedores simulados.
+La búsqueda usa yt-dlp desde el backend. En `/imports`, la descarga usa RapidAPI y requiere `RAPIDAPI_KEY` en el backend; la búsqueda se mantiene con yt-dlp. Requiere acceso de red a RapidAPI y Firebase Storage para publicar, y puede consumir cuota. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) antes de importar con servicios reales. Las pruebas automatizadas usan proveedores simulados.
 
 ## A. Comprobación local sin Firebase ni descargas
 

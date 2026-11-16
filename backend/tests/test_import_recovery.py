@@ -66,22 +66,26 @@ def test_clearing_slot_cancels_durable_job_across_recovery():
 
 def test_late_upload_completion_cannot_publish_after_cancel():
     import json
+    from io import BytesIO
+    from PIL import Image
+    image_buffer=BytesIO()
+    Image.new('RGB',(2,2),'blue').save(image_buffer,format='JPEG')
     previous = {'id': 'old-track', 'kind': 'station', 'title': 'Anterior'}
     job = seed('queued')
     store.mutate(FRAME, lambda state: state['slots'].update({'slot-0': previous}))
     class Response:
         headers={'Content-Length':'3'}
+        def __init__(self, content): self.content=content; self.done=False
         def __enter__(self): return self
         def __exit__(self,*args): pass
         def geturl(self): return 'https://audio.example/a.mp3'
         def read(self,size=-1):
-            if not hasattr(self,'done'): self.done=True; return b'mp3'
-            return b''
-    with patch.object(importer.apify,'create_run',return_value={'id':'remote'}), \
-         patch.object(importer.apify,'wait_run',return_value={'id':'remote','status':'SUCCEEDED'}), \
-         patch.object(importer.apify,'download_result',return_value={'videoId':'BaW_jenozKc','duration':20,'audioFileUrl':'https://audio.example/a.mp3','thumbnailFileUrl':None}), \
-         patch.object(importer.apify,'validate_public_url',side_effect=lambda url:url), \
-         patch.object(importer.apify,'open_media',return_value=Response()), \
+            if self.done:return b''
+            self.done=True
+            return self.content[:size]
+    responses=[Response(b'mp3'),Response(image_buffer.getvalue())]
+    with patch.object(importer.rapidapi,'download_link',return_value='https://audio.example/a.mp3'), \
+         patch.object(importer.rapidapi,'open_public_media',side_effect=lambda *args,**kwargs:responses.pop(0)), \
          patch.object(importer.subprocess,'run',return_value=type('Probe',(),{'stdout':json.dumps({'format':{'duration':'20','format_name':'mp3'}})})()), \
          patch.object(importer, 'persist_media') as upload:
         def finish_upload(*args, **kwargs):

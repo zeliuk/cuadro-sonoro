@@ -9,6 +9,10 @@ services:
         generateValue: true
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: ALLOWED_ORIGIN_REGEX
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
       - key: FIREBASE_DATABASE_URL
         sync: false
       - key: FIREBASE_STORAGE_BUCKET

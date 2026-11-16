@@ -6,11 +6,11 @@ La prueba de integración usa estáticos locales y la API remota indicada en `we
 python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 ```
 
-Abre `http://127.0.0.1:5173/#token=cuadro-prueba-local`. Con el valor versionado, DevTools → Network debe mostrar API en `http://127.0.0.1:8000`; esa dirección solo funciona en el mismo ordenador. Para probar desde el móvil, configura el HTML para apuntar a una API accesible por LAN (por ejemplo, una Raspberry Pi) y ajusta CORS. La prueba remota Apify/Render requiere cambiar temporalmente el meta de la copia local; sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Se conserva también el servidor Bonjour/macOS descrito más abajo para las pruebas de acceso desde móviles.
+Abre `http://127.0.0.1:5173/#token=cuadro-prueba-local`. Con el valor versionado, DevTools → Network debe mostrar API en `http://127.0.0.1:8000`; esa dirección solo funciona en el mismo ordenador. Para probar desde el móvil, configura el HTML para apuntar a una API accesible por LAN (por ejemplo, una Raspberry Pi) y ajusta CORS. La descarga RapidAPI siempre se invoca desde el backend; para usar un backend remoto, apunta allí la copia local de la web y revisa [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md). Se conserva también el servidor Bonjour/macOS descrito más abajo para las pruebas de acceso desde móviles.
 
 # Prueba web local desde un móvil
 
-Para la prueba Apify/Render desde el ordenador, sigue los pasos arriba: sirve `web/` estática y el navegador llamará a Render. La receta Bonjour/macOS de este documento es una prueba de acceso a estáticos desde móvil; no representa por sí sola la API remota ni hardware.
+Para probar con un backend remoto, sirve `web/` estática y configura su URL en el meta antes de abrirla. La receta Bonjour/macOS de este documento es una prueba de acceso a estáticos desde móvil; no representa por sí sola hardware.
 
 ## Requisitos y preparación inicial
 

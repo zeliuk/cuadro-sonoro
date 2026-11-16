@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: la web permite elegir Apify o yt-dlp en el servidor de API; la nueva ruta yt-dlp no está validada.** El prototipo tuvo una importación previa validada en Docker local; las variantes actuales no se han probado completas. La web apunta ahora a `http://127.0.0.1:8000`, la API local. Para ejecutar la variante yt-dlp en una Raspberry Pi, la web debe apuntar a la API instalada allí. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md), [guía yt-dlp local](docs/PRUEBA_YTDLP_LOCAL.md) y [guía Apify/Render](docs/PRUEBA_APIFY_RENDER.md).
+**Estado: búsqueda yt-dlp y descarga RapidAPI preparadas; el flujo RapidAPI no se ha validado con servicios reales.** El prototipo tuvo una importación previa validada en Docker local; esta variante no se ha probado completa. La web versionada apunta a `https://cuadro-sonoro.onrender.com`; el HTML se sirve aparte y llama a esa API. Para desarrollo local, cambia el meta a `http://127.0.0.1:8000`. `RAPIDAPI_KEY` debe configurarse tanto en el `.env` del backend local como, por separado, en los secretos de Render. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía RapidAPI](docs/PRUEBA_RAPIDAPI.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -26,14 +26,14 @@ Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración»
 - Imagen decorativa elegida en la web y optimizada por el servidor.
 - Configuración Wi-Fi local mediante QR y asistente, sin instalar una app.
 
-La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. La prueba manual de Apify, su configuración segura y rollback están en [PRUEBA_APIFY_RENDER.md](docs/PRUEBA_APIFY_RENDER.md).
+La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. La configuración y validación pendiente de RapidAPI está en [PRUEBA_RAPIDAPI.md](docs/PRUEBA_RAPIDAPI.md).
 
 ## Arquitectura elegida
 
 | Parte | Tecnología y ubicación |
 |---|---|
 | Web | HTML, CSS y JavaScript modular servidos por el ESP32 en la red doméstica; el móvil ejecuta la interfaz. |
-| API e importador | Python/FastAPI; búsqueda con yt-dlp y elección de descarga mediante Apify o yt-dlp en el servidor; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Ambas rutas pendientes de prueba real con la arquitectura de destino. |
+| API e importador | Python/FastAPI; búsqueda con yt-dlp y descarga mediante RapidAPI; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Flujo pendiente de prueba real con la arquitectura de destino. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
 | Dispositivo | ESP32 con pantalla, audio y controles; hardware pendiente. |

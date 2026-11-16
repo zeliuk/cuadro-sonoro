@@ -45,7 +45,7 @@ Respuesta 200 sin nube:
 
 ## POST /search
 
-Busca hasta cinco resultados mediante `yt-dlp` (`ytsearch5`) a partir de artista y título. Devuelve candidatos planos con ID, título, canal, duración y miniatura; filtra IDs inválidos, emisiones en directo y duraciones superiores a 15 minutos. No descarga audio ni modifica huecos. No requiere `APIFY_TOKEN` ni crea ejecuciones de Apify. La extracción depende del acceso de red del backend a YouTube; fallo o timeout: 502. En Docker se instala Deno y `yt-dlp-ejs` para la extracción JavaScript. Las pruebas automatizadas sustituyen yt-dlp.
+Busca hasta cinco resultados mediante `yt-dlp` (`ytsearch5`) a partir de artista y título. Devuelve candidatos planos con ID, título, canal, duración y miniatura; filtra IDs inválidos, emisiones en directo y duraciones superiores a 15 minutos. No descarga audio ni modifica huecos. No descarga audio ni requiere la clave RapidAPI. La extracción depende del acceso de red del backend a YouTube; fallo o timeout: 502. En Docker se instala Deno y `yt-dlp-ejs` para la extracción JavaScript. Las pruebas automatizadas sustituyen yt-dlp.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
@@ -87,7 +87,7 @@ Respuesta 200: `{"results":[{"stationuuid":"id-radio","name":"Radio Nacional","c
 
 ## POST /imports
 
-Crea una tarea, sin esperar a que termine. Requiere Firebase Storage y estado accesibles. `provider` selecciona `apify` (predeterminado y requiere `APIFY_TOKEN`) o `yt_dlp` (descarga y convierte en la máquina que ejecuta la API; requiere yt-dlp, runtime JavaScript, FFmpeg/ffprobe y acceso a YouTube). Ambos usan los límites globales de concurrencia/frecuencia y el mismo procesamiento, validación, subida y publicación atómica. Apify conserva su run ID para recuperarse tras reinicio; yt-dlp reanuda la tarea desde cero, sujeto al límite habitual de recuperaciones. La selección previa se conserva ante fallos. La ruta yt-dlp local y Apify/Render están pendientes de prueba completa con servicios reales.
+Crea una tarea, sin esperar a que termine. Requiere `RAPIDAPI_KEY` en el backend y Firebase Storage accesible. Al procesarla, el backend solicita el enlace MP3 de `youtube-mp36.p.rapidapi.com` con el ID seleccionado, descarga el audio y valida formato MP3, duración máxima de 15 minutos y tamaño máximo de 40 MiB. `RAPIDAPI_KEY` nunca se envía al navegador. La conversión puede consumir cuota según el plan RapidAPI. La búsqueda se mantiene en yt-dlp. La integración con la API de RapidAPI y Firebase real no se ha probado en esta variante.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
@@ -95,7 +95,6 @@ Crea una tarea, sin esperar a que termine. Requiere Firebase Storage y estado ac
 | `source_id` | string | ID del resultado, exactamente 11 caracteres de letras, números, `_` o `-`. |
 | `title` | string | Entre 1 y 200 caracteres. |
 | `artist` | string | Entre 1 y 200 caracteres. |
-| `provider` | string | `apify` o `yt_dlp`; opcional, valor predeterminado `apify`. |
 
 El siguiente ID es sintético: sustituirlo por uno seleccionado realmente en `/search` antes de ejecutar una importación real.
 
@@ -103,20 +102,19 @@ El siguiente ID es sintético: sustituirlo por uno seleccionado realmente en `/s
 curl -sS "$API_BASE/imports" \
   -H "Authorization: Bearer $FRAME_ID" \
   -H 'Content-Type: application/json' \
-  -d '{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","provider":"yt_dlp"}'
+  -d '{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido"}'
 ```
 
 Forma de respuesta 202:
 
 ```json
-{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","provider":"yt_dlp","id":"id-de-tarea","status":"queued","percent":null,"message":"Esperando turno","created_at":1700000000.0}
+{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","id":"id-de-tarea","status":"queued","percent":null,"message":"Esperando turno","created_at":1700000000.0}
 ```
 
-Errores: 503 si falta configuración Storage o `APIFY_TOKEN` cuando `provider=apify`; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones; 429 si se alcanza la frecuencia/concurrencia global. `provider=yt_dlp` no requiere token Apify. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una tarea nueva.
-
+Errores: 503 si falta `RAPIDAPI_KEY` o Firebase Storage; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones; 429 si se alcanza la frecuencia/concurrencia global. RapidAPI puede rechazar o no encontrar una conversión; en ese caso la tarea termina en error y la selección anterior se mantiene. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una nueva conversión y consumir cuota.
 La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo. `attempts` cuenta ejecuciones iniciadas; `recoveries` cuenta recuperaciones tras caída (máximo dos).
 
-En caso de `error`, la API devuelve un mensaje general para la interfaz. Para identificar la causa técnica, consulta los logs de Uvicorn o `docker compose logs -f api` y busca `import_checkpoint`; durante la prueba diagnóstica también `yt_dlp_diagnostic`. Se registran etapas y detalles redactados sin URLs ni identificadores del cuadro. La guía del backend describe cada etapa.
+En caso de `error`, la API devuelve un mensaje general para la interfaz. Para identificar la causa técnica, consulta los logs de Uvicorn o `docker compose logs -f api` y busca `import_checkpoint`. Los detalles se redactan para omitir URLs e identificadores del cuadro. La guía del backend describe cada etapa.
 
 ## GET /state
 

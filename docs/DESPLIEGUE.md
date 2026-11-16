@@ -4,7 +4,7 @@ Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar
 
 ## Web servida por el ESP32
 
-El enlace del cuadro conserva `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El HTML versionado apunta a `http://127.0.0.1:8000`; la guía [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) explica cómo configurar una Raspberry Pi/API local en LAN para ejecutar allí yt-dlp. La opción Apify requiere `APIFY_TOKEN`. Para la prueba remota de Apify/Render sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). No se ha validado móvil ni firmware.
+El enlace del cuadro conserva `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El HTML versionado apunta a `http://127.0.0.1:8000`; la guía [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) explica cómo configurar RapidAPI en la API local o en Raspberry Pi. `RAPIDAPI_KEY` solo se configura en el backend. No se ha validado móvil ni firmware.
 
 ## Comprobar el contenedor local
 
@@ -21,9 +21,9 @@ curl -sS http://127.0.0.1:8000/health
 
 Logs pueden contener detalles de operación: redactar cualquier valor sensible antes de compartirlos. Parada y recreación se explican en [backend/README.md](../backend/README.md).
 
-## Prueba de API en Render con Apify
+## API remota
 
-Para la prueba remota autorizada, cambia temporalmente el `meta[name="sonoro-api-base"]` de la copia local a la URL Render indicada en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md); el valor versionado ahora es `http://127.0.0.1:8000`. La opción Apify sustituye el acceso de descarga a YouTube desde Render, pero la integración no está validada hasta ejecutar la prueba manual. La guía detalla variables, límites, despliegue, logs y rollback. No despliegues ni generes consumo automáticamente.
+La integración RapidAPI puede ejecutarse desde una API local o alojada, pero debe configurarse `RAPIDAPI_KEY` como secreto de backend y revisarse el coste/cuota antes de importar. No se ha validado en Render ni se ha hecho un despliegue por este cambio. Consulta [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) antes de una prueba real.
 
 ## Firebase
 

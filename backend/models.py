@@ -16,7 +16,6 @@ class Import(BaseModel):
     source_id: str = Field(pattern=r'^[A-Za-z0-9_-]{11}$')
     title: str = Field(min_length=1, max_length=200)
     artist: str = Field(min_length=1, max_length=200)
-    provider: str = Field(default='apify', pattern=r'^(apify|yt_dlp)$')
 
 
 class Station(BaseModel):

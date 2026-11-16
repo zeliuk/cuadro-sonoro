@@ -150,7 +150,7 @@
             "description": "Límite global de frecuencia o concurrencia."
           },
           "503": {
-            "description": "Falta Apify o Firebase Storage."
+            "description": "Falta RAPIDAPI_KEY o Firebase Storage."
           },
           "422": {
             "description": "Validation Error",

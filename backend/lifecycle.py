@@ -7,21 +7,9 @@ from .config import ACTIVE
 from .importer import execute_import
 from .media import delete_orphaned_media
 from .state import store
-from . import apify
 
 MAX_RECOVERIES = 2
 CLEANUP_INTERVAL_SECONDS = 300
-
-
-def retry_pending_apify_cancellations():
-    for frame_key, state in store.read_all().items():
-        for job in state['jobs'].values():
-            if job.get('apify_cancel_pending') and job.get('apify_run_id'):
-                try:
-                    apify.abort_run(job['apify_run_id'])
-                    store.mutate(frame_key, lambda current, job_id=job['id']: current['jobs'][job_id].update(apify_cancel_pending=False))
-                except apify.ApifyError:
-                    pass
 
 
 def recover_interrupted_jobs():
@@ -45,7 +33,6 @@ def recover_interrupted_jobs():
 async def work_loop():
     last_cleanup = time.monotonic()
     while True:
-        await asyncio.to_thread(retry_pending_apify_cancellations)
         queued = sorted(
             ((frame_key, job) for frame_key, state in store.read_all().items() for job in state['jobs'].values() if job.get('status') == 'queued'),
             key=lambda item: item[1].get('created_at', 0),

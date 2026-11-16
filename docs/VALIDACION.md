@@ -1,3 +1,15 @@
+## Sustitución de Apify por RapidAPI — 16 de noviembre de 2026
+
+Por instrucción de Carlos, se eliminó la integración Apify y su selector de frontend. `/search` mantiene la búsqueda yt-dlp; `/imports` usa el endpoint HTTP RapidAPI YouTube MP3 con `RAPIDAPI_KEY` configurada solo en backend. Se añadieron validación HTTPS de enlaces, descarga acotada, conservación de la selección previa y documentación de instalación/operación. El MCP de Codex no se usa como runtime de la aplicación.
+
+No se ejecutaron tests, comprobaciones de sintaxis, Docker ni pruebas del navegador. No se llamó a RapidAPI, YouTube, Firebase ni Render; no se consumió cuota. La respuesta y enlace de descarga RapidAPI, permisos/cuota del plan y funcionamiento Raspberry Pi siguen pendientes de prueba real. El código se preparó tomando como contrato `GET /dl?id=<video_id>` y respuesta JSON con `status="ok"` y `link`, descritos en el material público de la API; confirmar el contrato y los límites del plan antes de importar.
+
+## Endpoint de web en Render y entorno local — 16 de noviembre de 2026
+
+Se cambió el meta `sonoro-api-base` versionado para que el sitio estático llame a `https://cuadro-sonoro.onrender.com`; el frontend sigue separado y no se aloja desde ese servicio. Se adaptó el `.env` local ignorado por Git: se retiraron variables `APIFY_*` y se guardó `RAPIDAPI_KEY` desde el elemento existente del llavero macOS sin imprimirla. Las variables Firebase locales se conservaron. `render.prototype.yaml` ahora documenta las variables de clave RapidAPI y CORS.
+
+No se modificó el entorno de Render ni se desplegó. Para que el servicio remoto importe, hay que configurar allí `RAPIDAPI_KEY` como secreto y permitir el origen real de la web en `ALLOWED_ORIGINS` o `ALLOWED_ORIGIN_REGEX`; el `.env` local no configura Render. No se probaron peticiones remotas.
+
 # Validación de esta entrega
 
 ## Proveedor inicial yt-dlp — 16 de noviembre de 2026

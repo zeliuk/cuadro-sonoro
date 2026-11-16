@@ -129,7 +129,6 @@ function render() {
   $('access-error').textContent=accessMessage;$('access-error').hidden=!accessMessage;
   $('demo-note').hidden=!demoMode;
   $('picker-demo').hidden=!demoMode;
-  $('provider-control').hidden=demoMode;
   $('count').textContent=String(Object.keys(state.slots||{}).length).padStart(2,'0')+' / 03 espacios ocupados';
   $('slots').innerHTML=[0,1,2].map(i=>{
     const item=state.slots?.['slot-'+i], job=slotJob(i), number=String(i+1).padStart(2,'0');
@@ -162,8 +161,7 @@ $('slots').addEventListener('error',event=>{
   event.target.remove();art?.classList.remove('station-art');
 },true);
 function setTab(type){const song=type==='song';$('song-tab').setAttribute('aria-selected',song);$('radio-tab').setAttribute('aria-selected',!song);$('search-form').hidden=!song;$('radio-form').hidden=song;$('results').replaceChildren();showError('search-error','');$('search-status').hidden=true;searchController?.abort();searchVersion++;}
-function openPicker(i){currentSlot=i;$('slot-label').textContent='ESPACIO '+String(i+1).padStart(2,'0');$('search-form').reset();$('import-provider').value=load(localStorage,'sonoro-import-provider-v2','yt_dlp')==='apify'?'apify':'yt_dlp';$('radio-form').reset();setTab('song');$('picker').showModal();setTimeout(()=>$('artist').focus(),30);}
-$('import-provider').onchange=()=>localStorage.setItem('sonoro-import-provider-v2',$('import-provider').value);
+function openPicker(i){currentSlot=i;$('slot-label').textContent='ESPACIO '+String(i+1).padStart(2,'0');$('search-form').reset();$('radio-form').reset();setTab('song');$('picker').showModal();setTimeout(()=>$('artist').focus(),30);}
 $('song-tab').onclick=()=>setTab('song');$('radio-tab').onclick=()=>setTab('station');
 $('picker').addEventListener('close',()=>{searchController?.abort();searchVersion++;$('search-button').disabled=false;});
 $('search-form').onsubmit=async event=>{
@@ -187,10 +185,10 @@ $('search-form').onsubmit=async event=>{
   }catch(error){if(version===searchVersion&&error.name!=='AbortError')showError('search-error',error.message);}
   finally{if(version===searchVersion){$('search-button').disabled=false;$('search-status').hidden=true;}}
 };
-async function importSong(result,slot=currentSlot,provider=result.provider||$('import-provider').value){
+async function importSong(result,slot=currentSlot){
   if(config.mode==='demo'){startDemo(result,slot);return;}
   const generation=frameGeneration;
-  const job=await api('/imports',{method:'POST',body:JSON.stringify({slot,source_id:result.id,title:result.title,artist:result.artist,provider})});
+  const job=await api('/imports',{method:'POST',body:JSON.stringify({slot,source_id:result.id,title:result.title,artist:result.artist})});
   if(generation!==frameGeneration)return;
   state.jobs[job.id]=job;render();
 }
@@ -239,7 +237,7 @@ $('slots').onclick=async event=>{
   const button=event.target.closest('button[data-action]');if(!button)return;const generation=frameGeneration,i=Number(button.dataset.slot),action=button.dataset.action,job=slotJob(i);
   try{
     if(action==='add'||action==='edit')return openPicker(i);
-    if(action==='retry'){await importSong({id:job.source_id,title:job.title,artist:job.artist,provider:job.provider||'apify'},i);return;}
+    if(action==='retry'){await importSong({id:job.source_id,title:job.title,artist:job.artist},i);return;}
     if(action==='cancel'){
       if(config.mode==='demo'){(demoTimers.get(job.id)||[]).forEach(clearTimeout);demoTimers.delete(job.id);job.status='cancelled';saveDemo();}
       else{await api('/jobs/'+job.id+'/cancel',{method:'POST'});if(generation!==frameGeneration)return;await refresh(generation);}if(generation!==frameGeneration)return;render();return;

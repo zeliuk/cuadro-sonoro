@@ -15,14 +15,14 @@ La [definición](DEFINICION.md) contiene el detalle acordado el 12 de noviembre 
 | Imagen | Decorativa independiente elegida en web; procesamiento servidor y sin original permanente. |
 | Sustitución | Preparar antes de publicar; preservar el audio activo y limpiar cuando deje de utilizarse. |
 | Tareas | Una importación por cuadro y estado recuperable al volver a la web. |
-| Hosting e importador | La web estática de prueba apunta al backend configurado; yt-dlp busca candidatos y Apify descarga el resultado elegido. La integración de descarga sigue pendiente de validación real. RTDB/Storage siguen en Firebase. No Firebase Hosting. |
+| Hosting e importador | La web estática de prueba apunta al backend configurado; yt-dlp busca candidatos y RapidAPI prepara el audio elegido. La integración de descarga sigue pendiente de validación real. RTDB/Storage siguen en Firebase. No Firebase Hosting. |
 | Portfolio | Repo público `cuadro-sonoro`, secretos excluidos, demo identificada sin servicios reales. |
 
-Pendientes: prueba real Apify/Render, escucha humana, firmware/hardware, QR/NFC físicos, operación de cola bajo el requisito de una instancia/worker, límites/calidades, imagen local sin red, limpieza con referencias activas, reanudación tras caída de audio y licencia. La importación previa con yt-dlp en Render falló con HTTP 429/403; esta limitación histórica no valida ni invalida por sí sola Apify. Sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). La primera importación real y reproducción en Chrome Headless están registradas en [VALIDACION.md](VALIDACION.md).
+Pendientes: prueba real de RapidAPI, escucha humana, firmware/hardware, QR/NFC físicos, operación de cola bajo el requisito de una instancia/worker, límites/calidades, imagen local sin red, limpieza con referencias activas, reanudación tras caída de audio y licencia. La importación previa con yt-dlp en Render falló con HTTP 429/403; esta limitación histórica no predice resultados con RapidAPI ni una Raspberry Pi. Sigue [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md). La primera importación real y reproducción en Chrome Headless están registradas en [VALIDACION.md](VALIDACION.md).
 
 ## Alojamiento de la web — 13 de noviembre de 2026
 
-Carlos confirma que el ESP32 servirá los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR/NFC abrirá la página en el móvil usando un hostname local único, preferentemente mDNS, para no depender de la IP del router. El 16 de noviembre se autorizó preparar una prueba de Apify desde Render; la URL de web apunta a ese backend para la prueba. La implementación no se ha desplegado ni validado en servicios reales. Hardware, firmware y acceso desde hostname doméstico siguen pendientes.
+Carlos confirma que el ESP32 servirá los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR/NFC abrirá la página en el móvil usando un hostname local único, preferentemente mDNS, para no depender de la IP del router. La API local y el uso de RapidAPI quedan pendientes de validación real. La implementación no se ha desplegado ni validado en servicios reales. Hardware, firmware y acceso desde hostname doméstico siguen pendientes.
 
 ## Decisión técnica — 12 de noviembre de 2026
 
@@ -31,6 +31,6 @@ Decisión nueva de Carlos (12 de noviembre de 2026): cualquier identificador vá
 En cada cambio de decisión registrar fecha, problema, decisión y efecto sobre código/documentación. El propietario puede modificar estas decisiones mediante instrucciones nuevas; actualizar la definición para que no quede una contradicción.
 
 
-## Búsqueda rápida y descarga Apify — 16 de noviembre de 2026
+## Búsqueda yt-dlp y descarga RapidAPI — 16 de noviembre de 2026
 
-Carlos pide recuperar la búsqueda inicial con yt-dlp por su rapidez y reservar Apify para descargar el MP3 después de seleccionar un resultado. Efecto: `POST /search` consulta `ytsearch5` sin `APIFY_TOKEN`; `POST /imports` recibe el ID de YouTube seleccionado y usa el Actor configurado. La búsqueda desde Render no está validada: los errores históricos ocurrieron durante `source_lookup` de una importación, no en una prueba aislada de `/search`.
+Carlos solicita mantener la búsqueda yt-dlp y sustituir Apify por RapidAPI YouTube MP3 para descargar el resultado elegido. Efecto: `POST /search` consulta `ytsearch5`; `POST /imports` recibe el ID seleccionado y RapidAPI devuelve el enlace MP3. La clave RapidAPI queda solo en backend. El frontend ya no expone selector de proveedor y apunta a `https://cuadro-sonoro.onrender.com`; la web se sirve por separado. El secreto RapidAPI y CORS deben configurarse independientemente en Render. No se ha llamado al endpoint ni validado la cuota/descarga real.

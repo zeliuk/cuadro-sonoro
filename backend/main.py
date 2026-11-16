@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import ACTIVE, MAX_DURATION
-from . import apify
 from .identity import frame_key_for
 from .lifecycle import lifespan
 from .media import delete_orphaned_media
@@ -51,7 +50,7 @@ def health():
 
 
 def search_youtube(artist, title, max_duration):
-    """Return flat YouTube candidates; Apify is only used after selection."""
+    """Return flat YouTube candidates; audio is prepared by RapidAPI after selection."""
     import yt_dlp
 
     query = f'{artist} {title} official audio'
@@ -123,23 +122,23 @@ def search_stations(body: StationSearch, _frame_key: str = Depends(identify_fram
         raise HTTPException(502, 'No se pudo consultar Radio Browser. Vuelve a intentarlo más tarde.') from None
 
 
-@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta el proveedor seleccionado o Firebase Storage.'}})
+@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta RAPIDAPI_KEY o Firebase Storage.'}})
 def create_import(body: Import, frame_key: str = Depends(identify_frame)):
     global last_import_at
-    if body.provider == 'apify' and not os.getenv('APIFY_TOKEN', '').strip():
-        raise HTTPException(503, 'Configura APIFY_TOKEN en el backend antes de importar.')
+    if not os.getenv('RAPIDAPI_KEY', '').strip():
+        raise HTTPException(503, 'Configura RAPIDAPI_KEY en el backend antes de importar.')
     if any(j['status'] in ACTIVE for j in store.read(frame_key)['jobs'].values()):
         raise HTTPException(409, 'Este cuadro ya tiene una importación en curso.')
     if not os.getenv('FIREBASE_STORAGE_BUCKET'):
         raise HTTPException(503, 'Configura Firebase Storage antes de importar.')
     with import_lock:
         now = time.monotonic()
-        cooldown = float(os.getenv('IMPORT_MIN_INTERVAL_SECONDS', os.getenv('APIFY_IMPORT_MIN_INTERVAL_SECONDS', '10')))
+        cooldown = float(os.getenv('IMPORT_MIN_INTERVAL_SECONDS', '10'))
         if now - last_import_at < cooldown:
             raise HTTPException(429, 'Importación limitada temporalmente; espera antes de generar otra ejecución.')
         last_import_at = now
     total_active = sum(j['status'] in ACTIVE for frame in store.read_all().values() for j in frame['jobs'].values())
-    if total_active >= int(os.getenv('IMPORT_MAX_ACTIVE', os.getenv('APIFY_MAX_ACTIVE_IMPORTS', '1'))):
+    if total_active >= int(os.getenv('IMPORT_MAX_ACTIVE', '1')):
         raise HTTPException(429, 'Se alcanzó el límite global de importaciones. Inténtalo más tarde.')
     job = {**body.model_dump(), 'id': secrets.token_hex(12), 'status': 'queued', 'percent': None, 'message': 'Esperando turno', 'created_at': time.time()}
     def add(state):
@@ -169,17 +168,8 @@ def cancel(job_id: str, frame_key: str = Depends(identify_frame)):
             current = state['jobs'].get(job_id)
             if current and current['status'] in ACTIVE:
                 current.update(status='cancelled', percent=None, message='Importación cancelada', updated_at=time.time())
-                if current.get('apify_run_id'):
-                    current['apify_cancel_pending'] = True
                 current.pop('execution_id', None)
         store.mutate(frame_key, cancel_job)
-        current = store.read(frame_key)['jobs'].get(job_id, {})
-        if current.get('apify_cancel_pending'):
-            try:
-                apify.abort_run(current['apify_run_id'])
-                store.mutate(frame_key, lambda state: state['jobs'][job_id].update(apify_cancel_pending=False))
-            except apify.ApifyError:
-                pass  # durable marker is retained for operational retry
     return {'ok': True}
 
 

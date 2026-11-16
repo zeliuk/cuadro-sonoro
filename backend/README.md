@@ -1,10 +1,10 @@
 # API: instalar, arrancar y probar
 
-**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web versionada apunta a `http://127.0.0.1:8000`. Para probar o usar yt-dlp en este equipo, sirve `web/` estática y arranca esta API local. Ver [PRUEBA_YTDLP_LOCAL.md](../docs/PRUEBA_YTDLP_LOCAL.md).
+**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web versionada apunta a Render. Para probar la descarga con backend local, cambia temporalmente el meta a `http://127.0.0.1:8000`, sirve `web/` estática y arranca esta API. Ver [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md).
 
 ## Requisitos e instalación nativa
 
-Python 3.12. Búsqueda y descarga local usan yt-dlp y requieren salida a YouTube; la extracción de YouTube necesita un runtime JavaScript compatible (Deno en Docker), `yt-dlp-ejs` y FFmpeg/ffprobe. El selector de la web permite elegir Apify (requiere `APIFY_TOKEN`, solo en backend) o yt-dlp en el servidor local (sin token Apify). Ambos requieren Firebase Storage para publicar una selección.
+Python 3.12. La búsqueda usa yt-dlp y requiere salida a YouTube; la extracción necesita un runtime JavaScript compatible (Deno en Docker) y `yt-dlp-ejs`. La descarga del resultado elegido usa RapidAPI (`RAPIDAPI_KEY`, solo en backend) y requiere además FFmpeg/ffprobe y Firebase Storage para publicar.
 
 ```bash
 python3.12 -m venv .venv
@@ -14,7 +14,7 @@ python scripts/setup_local.py
 python scripts/check_project.py
 ```
 
-El script crea `backend/.env` a partir de la plantilla y deja vacíos los valores Firebase. Buscar no necesita `APIFY_TOKEN`; solo se requiere al seleccionar Apify como proveedor de descarga. yt-dlp se ejecuta dentro del proceso backend y descarga en almacenamiento temporal antes de procesar/subir el audio. No sobrescribe un archivo existente. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
+El script crea `backend/.env` a partir de la plantilla. Añade allí `RAPIDAPI_KEY`; se envía únicamente desde el backend. La llamada RapidAPI prepara un enlace MP3 y el backend descarga el medio a almacenamiento temporal, valida formato y duración y lo publica en Firebase. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
 
 ## Arranque nativo
 
@@ -26,7 +26,7 @@ Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso.
 
 ### Diagnosticar importaciones
 
-Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Docker local consulta `docker compose logs -f api`; en Render usa el panel Logs. Busca etapas `source_download`, `audio_validation`, `cover_processing`, `firebase_upload` y `publish`. La credencial Apify no se registra: para URLs de medios bajo `api.apify.com` se envía solo como cabecera Bearer del backend, nunca a otros hosts ni en la URL. La limpieza puede fallar después de una importación completada sin revertir la publicación.
+Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Docker local consulta `docker compose logs -f api`; en Render usa el panel Logs. Busca etapas `source_download`, `audio_validation`, `cover_processing`, `firebase_upload` y `publish`. La clave RapidAPI no se registra ni se entrega al navegador. La limpieza puede fallar después de una importación completada sin revertir la publicación.
 
 La tarjeta de la web seguirá mostrando un mensaje general para los fallos de importación. Usa el detalle de los logs del backend para localizar la etapa; no compartas capturas o registros sin revisar que no contengan datos privados.
 
@@ -105,4 +105,4 @@ Las pruebas usan identificadores sintéticos y SQLite temporal, simulando descar
 
 Para una prueba real, usar recursos dedicados y completar el entorno según [CONFIGURACION.md](../docs/CONFIGURACION.md). Nativo: ruta absoluta de la cuenta de servicio en `GOOGLE_APPLICATION_CREDENTIALS`. Compose: archivo privado `secrets/firebase.json` y ruta `/run/secrets/firebase.json`, dejando vacía la alternativa JSON.
 
-El despliegue de prueba Apify/Render se documenta en [PRUEBA_APIFY_RENDER.md](../docs/PRUEBA_APIFY_RENDER.md); sigue pendiente ejecutarlo y validar sus servicios reales. El acceso desde firmware y la migración manual de datos antiguos dedicados quedan para fases posteriores. No usar varios workers/réplicas todavía. El inicio de API y el vaciado de un hueco eliminan objetos de Storage que ya no estén referenciados por una selección; fallos quedan pendientes para el siguiente intento.
+La configuración e importación RapidAPI están descritas en [PRUEBA_RAPIDAPI.md](../docs/PRUEBA_RAPIDAPI.md); la integración no se ha probado con cuota ni servicios Firebase reales en esta variante. El acceso desde firmware y la migración manual de datos antiguos dedicados quedan para fases posteriores. No usar varios workers/réplicas todavía. El inicio de API y el vaciado de un hueco eliminan objetos de Storage que ya no estén referenciados por una selección; fallos quedan pendientes para el siguiente intento.

@@ -10,7 +10,7 @@ git --version
 python3 scripts/check_project.py
 ```
 
-Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; búsqueda y descarga local usan yt-dlp, yt-dlp-ejs, un runtime JavaScript (Deno en Docker) y FFmpeg/ffprobe. Apify requiere además `APIFY_TOKEN` solo en backend; yt-dlp local no. Para arrancar nativamente, instala Deno 2.3 o posterior y asegúrate de que `deno` esté en `PATH`:
+Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; la búsqueda usa yt-dlp, yt-dlp-ejs y un runtime JavaScript (Deno en Docker); descargar requiere `RAPIDAPI_KEY` solo en backend y FFmpeg/ffprobe para validar el MP3. Para arrancar nativamente, instala Deno 2.3 o posterior y asegúrate de que `deno` esté en `PATH`:
 
 ```bash
 curl -fsSL https://deno.land/install.sh | sh
@@ -18,7 +18,7 @@ export PATH="$HOME/.deno/bin:$PATH"
 deno --version
 ```
 
-La búsqueda no consume Actors ni necesita token Apify. Node permite el check JS; Docker es una alternativa de ejecución. Si faltan herramientas en tu Mac, pide a Codex que compruebe las existentes antes de instalar. No instalar paquetes del proyecto en el Python del sistema.
+La búsqueda no llama a RapidAPI ni necesita su clave. Node permite el check JS; Docker es una alternativa de ejecución. Si faltan herramientas en tu Mac, pide a Codex que compruebe las existentes antes de instalar. No instalar paquetes del proyecto en el Python del sistema.
 
 ## 2. Ver la web sin API ni credenciales
 
@@ -30,7 +30,7 @@ Abre [la web](http://127.0.0.1:5173). Sin un enlace de cuadro aparece el acceso 
 
 ## 3. API
 
-Sigue [backend/README.md](../backend/README.md): instalación, preparación de `.env`, arranque nativo o Docker, comprobación HTTP, logs y parada. Sigue [PRUEBA_API.md](PRUEBA_API.md) para los contratos, [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) para descargar en el equipo de la API, o [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) para la ruta Apify en Render.
+Sigue [backend/README.md](../backend/README.md): instalación, preparación de `.env`, arranque nativo o Docker, comprobación HTTP, logs y parada. Sigue [PRUEBA_API.md](PRUEBA_API.md) para los contratos y [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md) para configurar la descarga RapidAPI.
 
 ## 4. Comenzar con Codex
 
