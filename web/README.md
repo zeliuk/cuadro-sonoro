@@ -8,6 +8,24 @@ python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 
 Abre [la interfaz](http://127.0.0.1:5173). `Ctrl+C` detiene el servidor y sus logs se ven en esa terminal. No hay instalación npm, bundler ni variables secretas de frontend. No abrir `index.html` como archivo local: usar HTTP para los módulos.
 
+## Maqueta del objeto
+
+La página independiente está en `web/maqueta/`; al usar el servidor anterior, ábrela en [http://127.0.0.1:5173/maqueta/](http://127.0.0.1:5173/maqueta/). No depende de npm, framework ni variables de entorno. El servidor HTTP de Python sirve el HTML, CSS, JavaScript y la imagen de referencia; sus logs aparecen en la misma terminal y `Ctrl+C` lo detiene.
+
+El objeto ocupa el 90 % del lado más corto de la ventana: 90vh en orientación horizontal y 90vw en vertical. El encabezado y el estado de carga quedan encima, fuera del ancho de la imagen.
+
+Elige el identificador en el enlace, por ejemplo `http://127.0.0.1:5173/maqueta/#token=cuadro-demo`; también se admite `?token=cuadro-demo`. No hay formulario para cambiarlo. Al abrir la página se lee el token de la URL, se conserva en `sessionStorage` de esa pestaña y se limpia el fragmento visible, igual que la interfaz principal. `cuadro-demo` es solo un ejemplo y un identificador válido puede abrir o crear un ámbito vacío. La página consulta `GET /state` y, al activar una selección con portada, `GET /media/{slot}` en la URL de API configurada en su `meta[name="sonoro-api-base"]`. Incluye el identificador como `Authorization: Bearer` por compatibilidad con la API. No es una credencial.
+
+La consulta usa la API, que leerá Firebase si esa instancia está configurada con RTDB/Storage; si no, puede responder desde el almacenamiento local configurado. La maqueta no lleva credenciales de Firebase ni Admin SDK en el navegador. El API debe estar disponible y permitir CORS para el origen que sirve la página; para la prueba anterior es `http://127.0.0.1:5173`. Las respuestas y errores se muestran junto al cuadro; los detalles técnicos se pueden consultar en la consola del navegador y los logs de la API.
+
+La página actualiza el estado cada tres segundos y carga una portada de canción desde `image_url`, o el favicon de una emisora cuando está disponible. Si los tres huecos están vacíos, el QR de ese ID queda fijo en la pantalla hasta que se publique una selección. Al cargar el estado resuelve también los enlaces de medios de las selecciones para que el navegador pueda iniciar el audio directamente desde el toque del usuario. Los tres pulsadores sobre la imagen cambian la selección y reproducen su audio en este navegador; no hay panel de controles lateral. La imagen base nueva tiene los tres anillos ámbar iguales y el mismo estilo de halo programado resalta cualquiera de los botones activos. Mantener el botón 1 durante 2 s muestra el QR en la pantalla durante 20 s, sin interrumpir la escucha. La imagen del objeto sirve de fondo y la portada se superpone sobre su pantalla; no hace falta una imagen transparente. El audio y la rueda de volumen solo afectan a este navegador: no envían órdenes de reproducción ni volumen al ESP32 ni escriben en Firebase. La combinación 2+3 simula la cuenta atrás cancelable del restablecimiento Wi-Fi, pero no cambia datos. La reproducción del cuadro físico no se conoce desde la configuración publicada.
+
+La cabecera, el logo y los colores de fondo y acento coinciden con los de la página principal (`web/style.css`).
+
+El generador QR se incluye localmente en `qrcode.js` con su licencia MIT en `LICENSE-qrcode-generator`; no se envía el identificador a un servicio externo para producir el código. Usa extensión `.js` para que el hosting Nginx sirva el módulo con un tipo MIME de JavaScript reconocido por los navegadores.
+
+Para publicar la sección, incluye `web/maqueta/` junto al resto del contenido estático de `web/`, bajo `/maqueta/`, en el mismo hosting HTTPS. El proveedor y los comandos de publicación siguen siendo los de [DESPLIEGUE.md](../docs/DESPLIEGUE.md); no se inventa un procedimiento de subida.
+
 `index.html`, `style.css` y `app.js` conservan el diseño aprobado. Hoy JS está concentrado en un archivo: modularizar sin rediseñar, separando componentes, estado y servicios. La demo usa localStorage, no Firebase; se activa explícitamente con «Probar demostración».
 
 En «Emisora», la web busca Radio Browser por nombre y país opcional, permite elegir un resultado y conserva la entrada manual de URL HTTPS como alternativa. Si Radio Browser proporciona un logo HTTPS, se muestra centrado en la portada; si falta o no carga, la tarjeta conserva el nombre y el diseño habitual. Los resultados pueden estar caídos o usar formatos que el navegador/ESP32 no soporta; la búsqueda no los prueba. La escucha local confirma solo el navegador utilizado.

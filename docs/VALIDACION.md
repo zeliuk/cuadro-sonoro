@@ -471,3 +471,53 @@ Comprobaciones locales previas: `python -m pytest backend/tests scripts/tests -q
 La captura del run mostró `Success` y un `audioFileUrl` bajo `api.apify.com/v2/key-value-stores/...`; ese registro privado requiere autorización. `open_media` ahora adjunta `APIFY_TOKEN` como cabecera Bearer únicamente para el host exacto `api.apify.com`, eliminando cabeceras de autorización recibidas para no reenviarlas a otros hosts. Una prueba simulada comprueba ambos casos y que el token original no se modifica.
 
 El catálogo de Apify marcaba como obsoleto `lurkapi/youtube-video-downloader`, por lo que no se recomienda configurarlo. Se añadió en local un adaptador optativo para `johnvc/youtube-download-api`: traduce la entrada/salida de su esquema publicado y conserva los límites locales. El 16 de noviembre el propietario ejecutó ese Actor en Apify Console con un vídeo público; un run devolvió `YOUTUBE_BLOCKED` tras seis rutas, con 0 archivos y `$0.000020` total; otro entregó 1 archivo MP3 de 2.7 MB tras cinco intentos, 4 minutos de audio y `$0.000064` total. Un run posterior, iniciado desde el backend con límite remoto de 240 s, fue abortado por timeout después de cuatro rutas bloqueadas; no completó la recuperación. El límite remoto predeterminado del código y la plantilla pasa a 600 s; una variable explícita de Render prevalece y debe actualizarse allí. Añadida prueba del timeout predeterminado y del override. Suite aislada: **66 passed**; `compileall`, `node --check web/app.js` y `git diff --check` correctos. No se ha validado una importación completa a Firebase desde Render.
+
+## Maqueta interactiva del objeto — 16 de noviembre de 2026
+
+Se añadió una página aislada en `web/maqueta/` que presenta el objeto a partir de la imagen facilitada, acepta un identificador de cuadro y consulta `GET /state` y `GET /media/{slot}` usando la API configurada en el HTML. Los pulsadores seleccionan un hueco y reproducen el audio en el navegador. El botón 1 mantenido durante 2 s muestra en la pantalla un QR real del enlace del cuadro durante 20 s sin detener el audio; el generador local está distribuido con licencia MIT. La portada se superpone a la pantalla de la referencia. El control de volumen afecta al audio del navegador, y el restablecimiento Wi-Fi solo simula el gesto. No se envían órdenes al dispositivo ni escrituras al backend.
+
+Comprobaciones: `node --check web/maqueta/maqueta.js`, `node --check web/maqueta/qrcode.mjs`, `node --check web/app.js` y `git diff --check` correctos. El generador creó SVG QR de 33×33 y 53×53 módulos para IDs de 11 y 128 caracteres. El servidor estático local respondió HTTP 200 y entregó HTML, CSS, JavaScript y WebP completos en el puerto 5174; el puerto 5173 ya estaba ocupado. La imagen de referencia se convirtió de PNG de 2,0 MB a WebP de 91,6 kB. El halo base del segundo pulsador se atenúa mediante CSS para separar el estado inactivo del activo; pendiente revisión visual en navegador/móvil. No se llamó a la API, Firebase, servicios remotos o hardware. La prueba integrada requiere una API disponible, CORS para el origen de la página y Firebase configurado en el backend si se quieren leer datos reales de RTDB/Storage. No se incluyen credenciales Firebase en frontend.
+
+## Ajuste de interacción de la maqueta — 17 de noviembre de 2026
+
+Los tres pulsadores del objeto activan la pista y la escucha local. El QR ahora ocupa el área de pantalla del cuadro, se genera con el ID indicado y tiene cuenta atrás de 20 s; el audio conserva el estado durante el QR. El botón central recibe una capa CSS para bajar su brillo cuando está inactivo. Se comprobaron sintaxis JS y carga HTTP local; sigue pendiente validar reproducción desde API/Firebase y revisión visual en navegador móvil.
+
+## Retirada del panel lateral — 17 de noviembre de 2026
+
+Se quitó de la maqueta el panel de estado/lista/volumen señalado por el usuario. El audio se activa desde los pulsadores del objeto y el volumen desde la rueda interactiva. El identificador se recibe desde la URL y no aparece un formulario selector.
+
+Comprobaciones: `node --check web/maqueta/maqueta.js`, recuento de referencias DOM sin IDs faltantes y GET HTTP 200 para HTML, CSS, JS, módulo QR e imagen WebP en el servidor estático local. No se comprobó visualmente en navegador/móvil ni se accedió a Firebase.
+
+## Token por URL en la maqueta — 17 de noviembre de 2026
+
+Se eliminó el formulario selector del ID. La maqueta carga el token desde `#token=` o `?token=`, lo valida, lo guarda en `sessionStorage` y limpia el fragmento, siguiendo el acceso habitual del producto. Sin token, muestra una instrucción para abrir la URL correcta.
+
+Comprobaciones: `node --check` para `maqueta.js` y `qrcode.mjs`; HTML, CSS, JS y módulo QR respondieron HTTP 200 en local; no hay IDs DOM referenciados que falten ni elementos del formulario token. `git diff --check` correcto.
+
+## Imagen de botones con tono igual — 17 de noviembre de 2026
+
+Se sustituyó la imagen de referencia por la versión facilitada con los tres anillos ámbar iguales, optimizada a WebP de 74 kB. Se quitó el ajuste CSS exclusivo del botón 2; los tres conservan la misma base y el estado activo usa el mismo halo programado. No se verificó visualmente en navegador/móvil.
+
+Comprobaciones: sintaxis de `maqueta.js` y `qrcode.mjs`, `git diff --check` y carga HTTP 200 de la página, CSS e imagen WebP en servidor local. La imagen nueva ocupa 76.172 bytes.
+
+## Escala del objeto según la ventana — 17 de noviembre de 2026
+
+El ancho de la imagen se calcula con `90vw` y un máximo de `90vh` (o `90dvh` donde está disponible), por lo que usa el 90 % de la dimensión menor tanto en portrait como en landscape. La sección ocupa el ancho de la ventana independientemente del ancho del encabezado. La regla CSS se comprobó estáticamente; pendiente revisar el encuadre final en un navegador móvil.
+
+## QR persistente e identidad de la maqueta — 17 de noviembre de 2026
+
+La pantalla mantiene el QR del ID cuando una respuesta correcta de `/state` confirma que los tres huecos están vacíos. En cuanto existe al menos una selección, vuelve a la portada decorativa o al contenido que corresponda. Mantener el pulsador 1 sigue mostrando el QR durante 20 s. Se alinearon color de fondo, paleta, logotipo y dimensiones del encabezado con los estilos de `web/`; no se cambió `web/index.html`, `web/style.css` ni `web/app.js`.
+
+Comprobaciones: `node --check` para `maqueta.js`, `qrcode.mjs` y `web/app.js`; `git diff --check`; referencias de IDs DOM; carga HTTP local de HTML, CSS, JS, módulo QR e imagen. No se abrió un navegador para verificar visualmente la disposición y no se consultaron API, Firebase ni hardware. La comprobación del QR persistente al recibir estados vacíos/publicados queda pendiente en una sesión integrada.
+
+## Inicio de audio desde Firebase en producción — 17 de noviembre de 2026
+
+Para diagnosticar la falta de música se consultó el sitio publicado y el backend configurado por la maqueta. La página y sus recursos devolvieron HTTP 200. La API devolvió `/health`, `/state` y `/media/{slot}` con HTTP 200 para el ID indicado por el usuario; CORS permitió `https://sonoro.zeliuk.xyz` y el preflight de `Authorization`. Las URLs de Storage respondieron con contenido de audio e imagen; el enlace de emisora respondió como audio AAC. No se imprimieron títulos, identificadores internos ni URLs de medios.
+
+La maqueta ahora resuelve anticipadamente los datos de `/media/{slot}` al cargar el estado, para reducir la espera tras el toque y conservar el gesto del usuario para iniciar audio. `node --check web/maqueta/maqueta.js`, `node --check web/maqueta/qrcode.mjs` y `git diff --check` pasaron. No se automatizó la reproducción audible en navegador. Esta corrección requiere publicar `web/maqueta/maqueta.js`; no se desplegó ningún servicio.
+
+## Error de carga del token en hosting — 17 de noviembre de 2026
+
+La página pública, `maqueta.js`, `maqueta.css` y los datos de la API estaban disponibles. La API devolvió el estado y las URLs de medios; CORS permitió el origen y Storage respondió al solicitar audio. La diferencia encontrada fue que Nginx servía `qrcode.mjs` sin `Content-Type`; los navegadores bloquean ese módulo por MIME estricto, impidiendo que el script principal se ejecute y procese `#token`.
+
+Se renombró el módulo a `qrcode.js` y se versionaron las URLs de módulo en HTML/JS para invalidar posibles cachés largas. La maqueta local pasó sintaxis JavaScript y `git diff --check`. Falta publicar el nuevo contenido y confirmar en navegador de producción que desaparece el fragmento y carga el estado; no se desplegó el hosting.

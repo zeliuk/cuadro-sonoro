@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f4f1e9">
+  <meta name="sonoro-api-base" content="https://cuadro-sonoro.onrender.com">
+  <title>Maqueta interactiva — Sonoro</title>
+  <link rel="stylesheet" href="maqueta.css">
+</head>
+<body>
+  <main class="layout">
+    <header class="topbar">
+      <a class="brand" href="../" aria-label="Sonoro, inicio"><span class="brand-icon" aria-hidden="true">◉</span> sonoro<span class="coral">.</span></a>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">OBJETO INTERACTIVO · DEMOSTRACIÓN</p>
+      <h1 id="page-title">Así podría <em>sonar</em><br>tu cuadro.</h1>
+      <p>Las selecciones y sus portadas se consultan para el ID indicado. Pulsa sus botones para escuchar aquí; la maqueta no manda órdenes al ESP32.</p>
+    </section>
+
+    <p id="connection-status" class="connection-status" role="status" aria-live="polite">Abre esta maqueta desde un enlace con el ID del cuadro.</p>
+
+    <section class="demo" aria-label="Maqueta interactiva del cuadro sonoro">
+      <div class="object-wrap" id="object-wrap">
+        <img class="object-image" src="assets/cuadro-infrasoinuak.webp" alt="Cuadro sonoro de marco negro con una portada y tres pulsadores iluminados junto a una rueda de volumen">
+        <div class="screen-content" id="screen-content" aria-live="polite" aria-label="Pantalla del cuadro">
+          <div class="screen-idle" id="screen-idle">SONORO<span>.</span><small id="screen-message">Conecta un cuadro para cargar su portada</small></div>
+          <img id="album-cover" alt="Portada de la selección activa" hidden>
+          <div class="device-qr" id="device-qr" hidden role="status" aria-live="polite">
+            <div class="qr-symbol" id="qr-symbol" aria-label="QR para abrir la configuración musical"></div>
+            <strong>Escanea para elegir tu música</strong>
+            <span id="qr-countdown" hidden>20 s</span>
+          </div>
+        </div>
+        <button class="hotspot slot-button" data-slot="0" aria-label="Pulsador 1, selección uno" title="Pulsador 1 · mantener 2 s para mostrar el QR">
+          <span class="hold-meter" aria-hidden="true"></span>
+        </button>
+        <button class="hotspot slot-button" data-slot="1" aria-label="Pulsador 2, selección dos" title="Pulsador 2 · mantener junto al 3 para restablecer la Wi-Fi">
+          <span class="hold-meter" aria-hidden="true"></span>
+        </button>
+        <button class="hotspot slot-button" data-slot="2" aria-label="Pulsador 3, selección tres" title="Pulsador 3 · mantener junto al 2 para restablecer la Wi-Fi">
+          <span class="hold-meter" aria-hidden="true"></span>
+        </button>
+        <button class="hotspot knob" id="knob" aria-label="Rueda de volumen. Usa las flechas para ajustar" title="Rueda de volumen">
+          <span aria-hidden="true"></span>
+        </button>
+        <span class="knob-value" id="knob-value" hidden>42%</span>
+
+        <div class="reset-overlay" id="reset-overlay" hidden role="status" aria-live="polite"></div>
+      </div>
+
+    </section>
+
+    <footer><span>MAQUETA INTERACTIVA · AUDIO LOCAL</span><span>Sin conexión de control al ESP32</span></footer>
+  </main>
+  <audio id="preview-audio" hidden preload="none"></audio>
+  <script type="module" src="maqueta.js?v=20261117-2"></script>
+</body>
+</html>

@@ -7,6 +7,7 @@ Actualización: 16 de noviembre de 2026. Carlos comunica manualmente que el back
 | Área | Existe ahora | Pendiente para el producto |
 |---|---|---|
 | Interfaz | HTML/CSS/JS dinámico; acepta identificadores de 1–128 caracteres desde `#token=...`, los conserva en `sessionStorage` y limpia el fragmento. Búsqueda Radio Browser y yt-dlp; RapidAPI fija para descargar resultado elegido. El dominio público decidido es `https://sonoro.zeliuk.xyz`; `web/index.html` apunta a la API Render. Demo separada. | Publicar `web/` en el hosting HTTPS y verificar el origen; comprobar CORS y recorrido desde navegador público; QR/NFC físico. La web no se aloja en el ESP32. |
+| Maqueta del objeto | Apartado estático separado en `web/maqueta/`. Recibe el ID por `#token=` (o `?token=`) en la URL, sin formulario selector, y consulta `GET /state`; al pulsar un botón carga el audio y la portada con `GET /media/{slot}`. Refresca el estado cada 3 s. La nueva imagen base muestra los tres anillos con el mismo tono; una capa común aumenta el brillo del botón activo. Si una respuesta válida de `/state` confirma que los tres huecos están vacíos, mantiene en pantalla un QR real para abrir la web pública; cuando hay selecciones se retira. Mantener el botón 1 durante 2 s también muestra el QR durante 20 s sin interrumpir el audio. El encabezado, logotipo y fondo siguen la paleta de `web/`. El volumen solo afecta a la escucha local; el reinicio Wi-Fi es simulado. No envía órdenes ni escribe datos. | Revisar el recorte visual de portadas en navegador/móvil; validar CORS, lecturas API y almacenamiento Firebase en el entorno que se vaya a publicar. No indica la reproducción física real. |
 | QR | El generador de producto `scripts/generate_public_qr.py` crea QR para `https://sonoro.zeliuk.xyz/#token=<id>`. Se generaron dos ejemplos ficticios bajo `artifacts/qr/`, ignorados por Git. El script Bonjour queda separado como herramienta de desarrollo. | Usar el ID asignado al preparar cada cuadro; QR/NFC físicos pendientes. No usar QR `.local` en producto. |
 | Demo | Datos en localStorage, resultados y progreso identificados como simulados. | Audio/recursos de ejemplo publicables y completar el flujo final; las tareas de demo no continúan al cerrar la página. |
 | API | Nueve operaciones; incluye `POST /stations/search` como proxy acotado a Radio Browser, filtrado de URL no HTTPS y metadatos de identidad/país/códec. El identificador Bearer selecciona un ámbito pero no autentica. `/media` devuelve URLs directas sin firma temporal. | Prueba de acceso/reproducción del stream y compatibilidad por navegador y ESP32; sugerencias revisadas, imagen decorativa y otras funciones. |
@@ -24,6 +25,34 @@ Los límites de 15 minutos, 40 MiB y la carátula 320×320 son valores del proto
 La conexión Firebase real previa y el identificador se guardan fuera de Git. Las reglas aplicadas manualmente permiten lectura de slots y medios por URL conocida y bloquean listados/escrituras públicas. La importación anterior en Docker y Chrome Headless está registrada en [VALIDACION.md](VALIDACION.md); no acredita hardware. El fallo histórico HTTP 429/403 fue una descarga yt-dlp desde Render; yt-dlp se conserva hoy para búsqueda y RapidAPI para descarga. Carlos comunica que el backend funciona en Render con RapidAPI. Codex no ha comprobado la web en `sonoro.zeliuk.xyz`, CORS ni el recorrido completo desde ella.
 
 Consultar [validaciones](VALIDACION.md), [plan](PLAN.md) y [definición](DEFINICION.md). La decisión de web pública no certifica despliegue, HTTPS o CORS. No desplegar el prototipo como producto listo: faltan verificar el flujo desde el dominio, terminar firmware/hardware e integrar QR/NFC. La confirmación manual de Carlos sobre Render se mantiene diferenciada de las verificaciones documentadas por Codex.
+
+## Maqueta interactiva del objeto — 16 de noviembre de 2026
+
+Se añadió `web/maqueta/` como página estática independiente, con la imagen aportada del cuadro y controles superpuestos. Acepta el identificador por `#token=` o `?token=` en la URL, sin formulario; consulta estado y medios mediante la API ya configurada, que solo accederá a Firebase si su instancia tiene RTDB/Storage configurados. Los pulsadores seleccionan hueco y reproducen el medio en el navegador. Mantener el botón 1 durante 2 s muestra en la pantalla del cuadro un QR real al enlace del ID durante 20 s sin interrumpir el audio. El QR se genera localmente en navegador con `qrcode.js` y no utiliza un generador remoto. El volumen afecta solo al audio del navegador; el reinicio Wi-Fi es simulado. La maqueta no envía órdenes al ESP32 ni escribe en Firebase y no requiere una portada transparente: usa `object-fit` sobre el área de pantalla de la referencia.
+
+La lectura integrada desde la web pública, CORS de esa ruta, la configuración Firebase que use la instancia, la apariencia del recorte en móvil y el comportamiento en hardware real no se verificaron en este cambio. El detalle de arranque y límites está en [web/README.md](../web/README.md).
+
+## Ajuste de controles de la maqueta — 17 de noviembre de 2026
+
+Los botones del objeto reproducen la selección correspondiente en el navegador; mantener el primero 2 s muestra dentro de la pantalla el QR escaneable del enlace durante 20 s y no interrumpe el audio. Se retiró el panel lateral y el formulario para elegir ID: la maqueta recibe `#token=` desde su URL y conserva el valor en la sesión. Los mandos del objeto son los controles de la maqueta. La escucha y el volumen siguen limitados al navegador.
+
+## Imagen base con anillos iguales — 17 de noviembre de 2026
+
+Se sustituyó la referencia por la nueva imagen aportada, que deja los tres botones con el mismo tono de retroiluminación. Se eliminó el oscurecimiento CSS especial del botón central; los tres usan la misma iluminación inicial y el mismo halo programado al seleccionar. El objeto se escala al 90 % del lado corto de la ventana: 90vh en landscape y 90vw en portrait.
+
+## QR para cuadros sin selecciones e identidad visual — 17 de noviembre de 2026
+
+Tras cargar correctamente el estado desde la API, si los tres huecos están vacíos, la pantalla de la maqueta muestra de forma fija el QR del ID recibido para abrir la página musical y elegir contenido. Al publicarse cualquier selección desaparece; el gesto de mantener el pulsador 1 durante 2 s conserva su función de mostrarlo 20 s. Se igualaron fondo, colores, logotipo y medidas del encabezado con la identidad CSS de `web/`; el sitio principal no se modificó.
+
+La lógica se revisó estáticamente. La validación de ejecución con respuesta real de API/Firebase y la inspección visual en navegador/móvil quedan pendientes.
+
+## Preparación de reproducción en la maqueta — 17 de noviembre de 2026
+
+Al recibir el estado, la maqueta resuelve en segundo plano los metadatos de medios de las selecciones publicadas. Esto evita esperar a la petición de `/media` después de tocar el pulsador y mejora el inicio de audio manteniendo el gesto del usuario. La descarga/reproducción sigue siendo local al navegador.
+
+## Compatibilidad de módulos en hosting — 17 de noviembre de 2026
+
+La investigación del sitio publicado encontró que Nginx entrega `qrcode.mjs` sin `Content-Type`, mientras `maqueta.js` se sirve como JavaScript. Los navegadores bloquean una importación ES de módulo sin tipo MIME JavaScript; por ello el script fallaba antes de leer el fragmento `#token`. El módulo QR cambió a extensión `.js` y se añadió un parámetro de versión al script y a su importación para eludir cachés prolongadas del hosting.
 
 
 ## Sustitución del proveedor de descarga (16 de noviembre de 2026)
