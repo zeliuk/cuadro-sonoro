@@ -56,7 +56,7 @@ def open_public_media(url, timeout=45):
         ) from None
 
 
-def download_link(video_id):
+def download_info(video_id):
     key = os.getenv('RAPIDAPI_KEY', '').strip()
     if not key:
         raise RapidAPIError('Configura RAPIDAPI_KEY en el backend antes de importar.')
@@ -70,5 +70,6 @@ def download_link(video_id):
         raise RapidAPIError('RapidAPI no pudo preparar el audio. Vuelve a intentarlo.') from None
     if not isinstance(data, dict) or data.get('status') != 'ok' or not data.get('link'):
         raise RapidAPIError('RapidAPI no pudo preparar este vídeo. Elige otra versión.')
-    return _public_https_url(data['link'])
+    data['link'] = _public_https_url(data['link'])
+    return data
 

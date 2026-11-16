@@ -10,6 +10,10 @@ Carlos reporta desde Render `HTTP 404` al descargar el enlace devuelto, con el h
 
 Un reporte comunitario específico de `youtube-mp36` describe el mismo patrón 403/404 desde servidores cloud y atribuye el bloqueo a una verificación de usuario en el servidor del archivo; propone añadir el username RapidAPI al `User-Agent` y `X-RUN` con MD5 del username ([referencia](https://billy85276.hashnode.dev/rapidapi)). Se añadió soporte obligatorio para `RAPIDAPI_USERNAME` en el backend. Este workaround no está documentado en la página pública del proveedor ni validado todavía con una conversión real. Configurar el username en local y Render y hacer un único intento solo si se acepta el posible consumo de cuota.
 
+### Reproducción de un MP3 RapidAPI — sonido blanco
+
+Carlos reportó que el reproductor de la app entregaba ruido blanco en una importación RapidAPI y luego indicó que una prueba web del servicio reprodujo correctamente el audio. Por tanto, sigue sin estar aislado si la diferencia aparece al descargar desde el backend, al transferir/subir a Firebase, con ese vídeo concreto o en el reproductor. `ffprobe` solo confirma contenedor MP3 y duración; no verifica el contenido audible. No se inspeccionó el objeto Firebase ni se repitió una conversión que pueda consumir cuota. Se añadió una comprobación local de que el número de bytes descargados coincide con `Content-Length`; aún no se ha probado.
+
 ## Endpoint de web en Render y entorno local — 16 de noviembre de 2026
 
 Se cambió el meta `sonoro-api-base` versionado para que el sitio estático llame a `https://cuadro-sonoro.onrender.com`; el frontend sigue separado y no se aloja desde ese servicio. Se adaptó el `.env` local ignorado por Git: se retiraron variables `APIFY_*` y se guardó `RAPIDAPI_KEY` desde el elemento existente del llavero macOS sin imprimirla. Las variables Firebase locales se conservaron. `render.prototype.yaml` ahora documenta las variables de clave RapidAPI y CORS.

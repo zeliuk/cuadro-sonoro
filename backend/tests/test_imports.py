@@ -111,7 +111,7 @@ def test_failing_import_preserves_old_track_and_never_marks_ready():
         state['slots']['slot-0']=old
         state['jobs']['test']=job
     m.store.mutate(KEY_A, seed)
-    with patch.object(worker.rapidapi, 'download_link', side_effect=RuntimeError('SECRET=do-not-expose')):
+    with patch.object(worker.rapidapi, 'download_info', side_effect=RuntimeError('SECRET=do-not-expose')):
         worker.execute_import(KEY_A, job)
     state=m.store.read(KEY_A)
     assert state['slots']['slot-0']==old
@@ -128,23 +128,20 @@ def test_progress_pipeline_only_commits_after_upload():
     image_buffer=BytesIO()
     Image.new('RGB',(2,2),'red').save(image_buffer,format='JPEG')
     class Response:
-        def __init__(self,content=b'12345',length=None):
+        def __init__(self,content=b'12345',length=None,chunks=None):
             self.headers={'Content-Length':str(length if length is not None else len(content))}
-            self.content=content
-            self.done=False
+            self.chunks=list(chunks) if chunks is not None else [content]
         def __enter__(self): return self
         def __exit__(self,*args): pass
         def geturl(self): return 'https://audio.example/a.mp3'
         def read(self,size=-1):
-            if self.done:return b''
-            self.done=True
-            return self.content[:size]
-    responses=[Response(length=10),Response(image_buffer.getvalue())]
+            return self.chunks.pop(0) if self.chunks else b''
+    responses=[Response(length=10,chunks=[b'12345',b'67890']),Response(image_buffer.getvalue())]
     def check_progress(url, timeout=45):
         if url.endswith('.mp3'):
             return responses.pop(0)
         return responses.pop(0)
-    with patch.object(worker.rapidapi,'download_link',return_value='https://audio.example/a.mp3'), \
+    with patch.object(worker.rapidapi,'download_info',return_value={'link':'https://audio.example/a.mp3','filesize':10,'duration':30}), \
          patch.object(worker.rapidapi,'open_public_media',side_effect=check_progress), \
          patch.object(worker.subprocess,'run',return_value=type('Probe',(),{'stdout':json.dumps({'format':{'duration':'30','format_name':'mp3'}})})()), \
          patch.object(worker,'persist_media') as upload:
@@ -160,7 +157,7 @@ def test_cancel_before_download_and_station_validation():
     job={'id':'cancel','slot':2,'source_id':'BaW_jenozKc','title':'Test','artist':'Test','status':'queued','created_at':0}
     m.store.mutate(KEY_A, lambda state: state['jobs'].update(cancel=job))
     m.store.mutate(KEY_A, lambda state: state['jobs']['cancel'].update(status='cancelled'))
-    with patch.object(worker.rapidapi, 'download_link') as download:
+    with patch.object(worker.rapidapi, 'download_info') as download:
         worker.execute_import(KEY_A, job)
         download.assert_not_called()
     assert m.store.read(KEY_A)['jobs']['cancel']['status']=='cancelled'

@@ -49,7 +49,8 @@ def execute_import(frame_key, queued_job):
             audio = base / 'audio.mp3'
             patch_job(frame_key, job_id, run_id, status='processing', percent=None,
                       message='Preparando MP3 con RapidAPI')
-            link = rapidapi.download_link(job['source_id'])
+            download_info = rapidapi.download_info(job['source_id'])
+            link = download_info['link']
             with rapidapi.open_public_media(link, timeout=45) as response, audio.open('wb') as output:
                 rapidapi._public_https_url(response.geturl())
                 length = response.headers.get('Content-Length')
@@ -67,7 +68,21 @@ def execute_import(frame_key, queued_job):
                     percent = min(99, int(downloaded * 100 / total)) if total else None
                     patch_job(frame_key, job_id, run_id, status='downloading', percent=percent,
                               estimated=not bool(total), message='Descargando MP3 preparado por RapidAPI')
-            info = {'thumbnailFileUrl': 'https://i.ytimg.com/vi/' + job['source_id'] + '/mqdefault.jpg'}
+                if total is not None and downloaded != total:
+                    raise RuntimeError(
+                        f'RapidAPI entregó una descarga incompleta ({downloaded} de {total} bytes).'
+                    )
+            expected_size = download_info.get('filesize')
+            if isinstance(expected_size, (int, float)) and expected_size > 0 and downloaded != int(expected_size):
+                raise RuntimeError(
+                    f'RapidAPI anunció {int(expected_size)} bytes, pero se recibieron {downloaded}.'
+                )
+            logger.info('import_checkpoint stage=%s result=complete bytes=%s expected_bytes=%s',
+                        stage, downloaded, int(expected_size) if isinstance(expected_size, (int, float)) else 'unknown')
+            info = {
+                'duration': download_info.get('duration'),
+                'thumbnailFileUrl': 'https://i.ytimg.com/vi/' + job['source_id'] + '/mqdefault.jpg',
+            }
             stage = 'audio_validation'
             probe = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration,format_name', '-of', 'json', str(audio)], capture_output=True, text=True, timeout=20, check=True)
             measured = json.loads(probe.stdout).get('format', {})
@@ -76,6 +91,13 @@ def execute_import(frame_key, queued_job):
             real_duration = float(measured.get('duration', 0))
             if not real_duration or real_duration > MAX_DURATION:
                 raise RuntimeError('La duración máxima es de 15 minutos.')
+            expected_duration = info.get('duration')
+            if isinstance(expected_duration, (int, float)) and expected_duration > 0:
+                tolerance = max(2.0, expected_duration * 0.01)
+                if abs(real_duration - expected_duration) > tolerance:
+                    raise RuntimeError('La duración del MP3 descargado no coincide con la respuesta de RapidAPI.')
+            logger.info('import_checkpoint stage=%s result=complete duration=%.3f expected_duration=%s',
+                        stage, real_duration, expected_duration if isinstance(expected_duration, (int, float)) else 'unknown')
             patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando imagen y metadatos')
             logger.info('import_checkpoint stage=%s result=complete', stage)
             check_cancel(frame_key, job_id, run_id)
