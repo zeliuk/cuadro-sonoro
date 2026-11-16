@@ -1,6 +1,6 @@
 # Probar la API paso a paso
 
-La nueva búsqueda real de canciones usa Apify y puede generar consumo. No ejecutes las llamadas de `/search` o `/imports` con credenciales reales hasta revisar límites/uso y seguir el procedimiento de [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Las pruebas de pytest usan proveedores simulados.
+La búsqueda de canciones usa yt-dlp desde el backend y no consume Actors de Apify; puede estar sujeta a límites de YouTube según la red de salida. `/imports` usa Apify y puede generar consumo. Antes de importar con credenciales reales, revisa límites/uso y sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Las pruebas de pytest usan proveedores simulados.
 
 ## A. Comprobación local sin Firebase ni descargas
 

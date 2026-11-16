@@ -15,7 +15,7 @@ La [definición](DEFINICION.md) contiene el detalle acordado el 12 de noviembre 
 | Imagen | Decorativa independiente elegida en web; procesamiento servidor y sin original permanente. |
 | Sustitución | Preparar antes de publicar; preservar el audio activo y limpiar cuando deje de utilizarse. |
 | Tareas | Una importación por cuadro y estado recuperable al volver a la web. |
-| Hosting e importador | La web estática de prueba apunta a `https://cuadro-sonoro.onrender.com`; búsqueda y descarga usan Actors Apify desde backend. Esta integración es experimental y queda pendiente de validación real. RTDB/Storage siguen en Firebase. No Firebase Hosting. |
+| Hosting e importador | La web estática de prueba apunta al backend configurado; yt-dlp busca candidatos y Apify descarga el resultado elegido. La integración de descarga sigue pendiente de validación real. RTDB/Storage siguen en Firebase. No Firebase Hosting. |
 | Portfolio | Repo público `cuadro-sonoro`, secretos excluidos, demo identificada sin servicios reales. |
 
 Pendientes: prueba real Apify/Render, escucha humana, firmware/hardware, QR/NFC físicos, operación de cola bajo el requisito de una instancia/worker, límites/calidades, imagen local sin red, limpieza con referencias activas, reanudación tras caída de audio y licencia. La importación previa con yt-dlp en Render falló con HTTP 429/403; esta limitación histórica no valida ni invalida por sí sola Apify. Sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). La primera importación real y reproducción en Chrome Headless están registradas en [VALIDACION.md](VALIDACION.md).
@@ -29,3 +29,8 @@ Carlos confirma que el ESP32 servirá los archivos estáticos de la web dentro d
 Decisión nueva de Carlos (12 de noviembre de 2026): cualquier identificador válido de 1–128 caracteres ASCII puede crear/recuperar un cuadro sin aprovisionamiento. El identificador no es una credencial; el Bearer se conserva solo como transporte para seleccionar el ámbito. API y cliente Firebase calculan SHA-256 sobre sus bytes UTF-8 para usar `frames/{sha256}`, `frame_states` y `private/frames/{sha256}/...`, conservando las selecciones y medios existentes. No hay usuarios, Firebase Auth ni lista de identificadores autorizados. Cualquier persona que conozca o elija un identificador puede leer y cambiar ese ámbito mediante API. Las reglas públicas Firebase no cambian: RTDB deja leer `slots` y Storage objetos individuales por URL, y bloquean listados y escrituras públicas. Credenciales Admin quedan en backend/herramientas privadas.
 
 En cada cambio de decisión registrar fecha, problema, decisión y efecto sobre código/documentación. El propietario puede modificar estas decisiones mediante instrucciones nuevas; actualizar la definición para que no quede una contradicción.
+
+
+## Búsqueda rápida y descarga Apify — 16 de noviembre de 2026
+
+Carlos pide recuperar la búsqueda inicial con yt-dlp por su rapidez y reservar Apify para descargar el MP3 después de seleccionar un resultado. Efecto: `POST /search` consulta `ytsearch5` sin `APIFY_TOKEN`; `POST /imports` recibe el ID de YouTube seleccionado y usa el Actor configurado. La búsqueda desde Render no está validada: los errores históricos ocurrieron durante `source_lookup` de una importación, no en una prueba aislada de `/search`.

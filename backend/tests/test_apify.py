@@ -24,40 +24,57 @@ def reset():
         main.store.conn.commit()
 
 
-def test_search_success_empty_failure_and_missing_configuration(monkeypatch):
-    monkeypatch.setenv('APIFY_TOKEN', 'fake-secret')
-    monkeypatch.setattr(main.apify, 'search', lambda artist, title, maximum: [{'id':'BaW_jenozKc','title':'Song','artist':'Artist','duration':120,'image':'https://example.test/a.jpg'}])
+def test_search_success_empty_and_failure_without_apify_configuration(monkeypatch):
+    monkeypatch.delenv('APIFY_TOKEN', raising=False)
+    monkeypatch.setattr(main, 'search_youtube', lambda artist, title, maximum: [{'id':'BaW_jenozKc','title':'Song','artist':'Artist','duration':120,'image':'https://example.test/a.jpg'}])
     assert client.post('/search', headers=AUTH, json={'artist':'Artist','title':'Song'}).json()['results'][0]['id'] == 'BaW_jenozKc'
-    monkeypatch.setattr(main.apify, 'search', lambda *args: [])
+    monkeypatch.setattr(main, 'search_youtube', lambda *args: [])
     assert client.post('/search', headers=AUTH, json={'artist':'Artist','title':'Missing'}).json() == {'results': []}
-    monkeypatch.setattr(main.apify, 'search', lambda *args: (_ for _ in ()).throw(apify.ApifyError('provider failed')))
+    monkeypatch.setattr(main, 'search_youtube', lambda *args: (_ for _ in ()).throw(RuntimeError('provider failed')))
     assert client.post('/search', headers=AUTH, json={'artist':'Artist','title':'Bad'}).status_code == 502
-    monkeypatch.setenv('APIFY_TOKEN', '')
-    monkeypatch.setattr(main.apify, 'search', apify.search)
-    assert client.post('/search', headers=AUTH, json={'artist':'Artist','title':'Bad'}).status_code == 503
 
 
-def test_search_normalizes_schema_and_filters_invalid_live_and_long(monkeypatch):
+def test_search_uses_flat_yt_dlp_and_filters_invalid_live_and_long(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    calls = {}
+    entries = [
+        {'id':'BaW_jenozKc','title':'Ok','channel':'Channel','duration':260},
+        {'id':'bad','title':'Bad'},
+        {'id':'aaaaaaaaaaa','title':'Long','duration':901},
+        {'id':'bbbbbbbbbbb','title':'Live','is_live':True},
+        {'id':'ccccccccccc','title':'No duration'},
+    ]
+    class YoutubeDL:
+        def __init__(self, options): calls['options'] = options
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def extract_info(self, query, download):
+            calls.update(query=query, download=download)
+            return {'entries': entries}
+    monkeypatch.setitem(sys.modules, 'yt_dlp', SimpleNamespace(YoutubeDL=YoutubeDL))
+    results = main.search_youtube('Artist', 'Title', 900)
+    assert calls['query'] == 'ytsearch5:Artist Title official audio'
+    assert calls['download'] is False
+    assert calls['options']['extract_flat'] == 'in_playlist'
+    assert results == [
+        {'id':'BaW_jenozKc','title':'Ok','artist':'Channel','duration':260,'image':'https://i.ytimg.com/vi/BaW_jenozKc/mqdefault.jpg'},
+        {'id':'ccccccccccc','title':'No duration','artist':'Artist','duration':None,'image':'https://i.ytimg.com/vi/ccccccccccc/mqdefault.jpg'},
+    ]
+
+
+def test_create_run_uses_longer_remote_timeout_by_default_but_respects_override(monkeypatch):
+    from urllib.parse import parse_qs, urlsplit
+    calls = []
     monkeypatch.setenv('APIFY_TOKEN', 'fake')
-    monkeypatch.setattr(apify, 'create_run', lambda *args: {'id':'search-run'})
-    monkeypatch.setattr(apify, 'wait_run', lambda *args: {'status':'SUCCEEDED','defaultDatasetId':'ds'})
-    monkeypatch.setattr(apify, 'dataset_items', lambda *args: [
-        {'id':'BaW_jenozKc','title':'Ok','channelName':'Channel','duration':'00:04:20','type':'video','thumbnailUrl':'https://img.test/a'},
-        {'id':'bad','duration':'00:01:00','type':'video'},
-        {'id':'aaaaaaaaaaa','duration':'00:20:00','type':'video'},
-        {'id':'bbbbbbbbbbb','duration':'00:01:00','type':'shorts'},
-    ])
-    results = apify.search('Artist', 'Title', 900)
-    assert results == [{'id':'BaW_jenozKc','title':'Ok','artist':'Channel','duration':260,'image':'https://img.test/a'}]
+    monkeypatch.delenv('APIFY_ACTOR_TIMEOUT_SECONDS', raising=False)
+    monkeypatch.setattr(apify, '_request', lambda path, **kwargs: (calls.append(path) or {'data': {'id': 'run'}}))
+    apify.create_run('johnvc/youtube-download-api', {})
+    assert parse_qs(urlsplit(calls[-1]).query)['timeout'] == ['600']
 
-
-def test_search_global_cooldown_is_enforced_without_starting_an_actor(monkeypatch):
-    monkeypatch.setenv('APIFY_TOKEN','fake')
-    monkeypatch.setenv('APIFY_SEARCH_MIN_INTERVAL_SECONDS','100')
-    apify._cache.clear()
-    monkeypatch.setattr(apify,'_last_search',1e20)
-    with pytest.raises(apify.ApifyRateLimit):
-        apify.search('Artist','Title',900)
+    monkeypatch.setenv('APIFY_ACTOR_TIMEOUT_SECONDS', '240')
+    apify.create_run('johnvc/youtube-download-api', {})
+    assert parse_qs(urlsplit(calls[-1]).query)['timeout'] == ['240']
 
 
 def seed_job(job_id='job', run_id=None):
@@ -225,7 +242,6 @@ def test_apify_downloader_documented_success_casing_and_actor_path(monkeypatch):
     monkeypatch.setattr(apify,'dataset_items',lambda dataset:[{'status':'Success','videoId':'BaW_jenozKc','audioFileUrl':'https://api.apify.com/file','thumbnailFileUrl':'https://api.apify.com/image'}])
     monkeypatch.setattr(apify,'validate_public_url',lambda url:url)
     assert apify.download_result({'status':'SUCCEEDED','defaultDatasetId':'dataset'})['audioFileUrl']=='https://api.apify.com/file'
-    assert apify._actor_path('streamers/youtube-scraper')=='/acts/streamers~youtube-scraper'
 
 
 def test_johnvc_downloader_adapter_matches_documented_input_and_output(monkeypatch):

@@ -26,7 +26,7 @@ El identificador se envía a la API en `Authorization: Bearer` como selector de 
 
 La web acepta el identificador en el fragmento del enlace. El cliente de prueba de ordenador obtiene los slots y medios directamente sin llamar a la API; el firmware no existe. La prueba actual sirve el frontend desde el ordenador y usa la URL Render del meta. Apify solo se comunica desde el backend. Los objetos publicados tienen URLs directas estables sujetas a las reglas de lectura pública por URL conocida.
 
-El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. En la prueba previa al hardware, un proceso Python del Mac sirve solo `web/` y Bonjour publica el hostname/IP LAN. El `meta` apunta a `https://cuadro-sonoro.onrender.com`. El navegador nunca conoce la credencial Apify. El diagnóstico histórico de yt-dlp en Render devolvió HTTP 429/403; la ruta nueva Apify aún debe verificarse. En hardware, el ESP32 ocupará el lugar del servidor web; su servidor aún no existe.
+El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. En la prueba previa al hardware, un proceso Python del Mac sirve solo `web/` y Bonjour publica el hostname/IP LAN. El `meta` apunta a `https://cuadro-sonoro.onrender.com`. El navegador nunca conoce la credencial Apify. yt-dlp resuelve la búsqueda en el backend y Apify solo descarga el ID seleccionado. El diagnóstico histórico durante una importación con yt-dlp en Render devolvió HTTP 429/403; la búsqueda independiente no se ha verificado allí. En hardware, el ESP32 ocupará el lugar del servidor web; su servidor aún no existe.
 
 ## Decisiones aplazadas
 

@@ -3,6 +3,7 @@ import os
 import secrets
 import time
 import json
+import re
 import threading
 from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
@@ -49,16 +50,46 @@ def health():
     return {'ok': True, 'storage_configured': bool(os.getenv('FIREBASE_STORAGE_BUCKET')), 'durable_state': store.cloud}
 
 
-@app.post('/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 429: {'description': 'Límite global de frecuencia.'}, 502: {'description': 'Falló la búsqueda en Apify.'}, 503: {'description': 'Falta APIFY_TOKEN.'}})
+def search_youtube(artist, title, max_duration):
+    """Return flat YouTube candidates; Apify is only used after selection."""
+    import yt_dlp
+
+    query = f'{artist} {title} official audio'
+    options = {
+        'quiet': True, 'no_warnings': True, 'extract_flat': 'in_playlist',
+        'skip_download': True, 'socket_timeout': 20, 'retries': 1,
+    }
+    with yt_dlp.YoutubeDL(options) as ydl:
+        result = ydl.extract_info('ytsearch5:' + query, download=False)
+    candidates = []
+    for item in (result or {}).get('entries') or []:
+        video_id = item.get('id') or ''
+        raw_duration = item.get('duration')
+        try:
+            duration = int(raw_duration) if raw_duration is not None else None
+        except (TypeError, ValueError, OverflowError):
+            duration = None
+        if (not re.fullmatch(r'[A-Za-z0-9_-]{11}', video_id)
+                or item.get('is_live') or item.get('live_status') in {'is_live', 'is_upcoming'}
+                or (duration is not None and duration > max_duration)):
+            continue
+        candidates.append({
+            'id': video_id,
+            'title': (item.get('title') or 'Sin título')[:200],
+            'artist': (item.get('channel') or item.get('uploader') or artist)[:200],
+            'duration': duration,
+            'image': f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg',
+        })
+    return candidates[:5]
+
+
+@app.post('/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 502: {'description': 'Falló la búsqueda en YouTube.'}})
 def search(body: Search, _frame_key: str = Depends(identify_frame)):
-    if not os.getenv('APIFY_TOKEN', '').strip():
-        raise HTTPException(503, 'Configura APIFY_TOKEN en el backend antes de buscar.')
     try:
         with search_lock:
-            return {'results': apify.search(body.artist, body.title, MAX_DURATION)}
-    except apify.ApifyError as exc:
-        status = 429 if isinstance(exc, apify.ApifyRateLimit) else 503 if 'APIFY_TOKEN' in str(exc) else 502
-        raise HTTPException(status, str(exc)) from None
+            return {'results': search_youtube(body.artist, body.title, MAX_DURATION)}
+    except Exception:
+        raise HTTPException(502, 'No se pudo buscar en YouTube. Vuelve a intentarlo.') from None
 
 
 @app.post('/stations/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 502: {'description': 'Radio Browser no está disponible.'}})

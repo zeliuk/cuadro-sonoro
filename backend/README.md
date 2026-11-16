@@ -4,7 +4,7 @@
 
 ## Requisitos e instalación nativa
 
-Python 3.12. Para importar audio real, también FFmpeg/ffprobe y `APIFY_TOKEN` configurado solo en backend. No se usa yt-dlp ni Deno. Para revisar endpoints, OpenAPI y tests con proveedores simulados no hacen falta credenciales reales.
+Python 3.12. La búsqueda usa yt-dlp y requiere salida a YouTube; la imagen Docker incluye Deno para la extracción JavaScript. Para importar audio se requieren FFmpeg/ffprobe y `APIFY_TOKEN`, solo en backend. Para revisar endpoints, OpenAPI y tests con proveedores simulados no hacen falta credenciales reales.
 
 ```bash
 python3.12 -m venv .venv
@@ -14,7 +14,7 @@ python scripts/setup_local.py
 python scripts/check_project.py
 ```
 
-El script crea `backend/.env` a partir de la plantilla y deja vacíos los valores Firebase. No sobrescribe un archivo existente. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. La API deriva su clave SHA-256, crea el estado al primer GET y lo recupera en peticiones posteriores. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
+El script crea `backend/.env` a partir de la plantilla y deja vacíos los valores Firebase. Buscar no necesita `APIFY_TOKEN`; Apify se usa después de elegir un resultado. No sobrescribe un archivo existente. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. La API deriva su clave SHA-256, crea el estado al primer GET y lo recupera en peticiones posteriores. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
 
 ## Arranque nativo
 

@@ -19,11 +19,10 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 | `STATE_DB` | SQLite local de desarrollo. El archivo no se versiona. | `.env`; valor inicial en `/tmp`. |
 | `PORT` | Puerto del proceso Docker; por defecto 8000. | Entorno de ejecución. |
 | `APIFY_TOKEN` | Token privado para ejecutar Actors, leer sus runs/datasets y descargar medios de sus key-value stores; exclusivamente backend. | **Secreto**, nunca web/firmware/logs. |
-| `APIFY_SEARCH_ACTOR` | Actor de búsqueda; predeterminado `streamers/youtube-scraper`. | Configuración backend. |
 | `APIFY_DOWNLOAD_ACTOR` | Actor de audio; predeterminado `lurkapi/youtube-to-mp3-audio-downloader`. Hay un adaptador compatible sin validar en real para `johnvc/youtube-download-api`; revisa su precio y esquema antes de seleccionarlo. | Configuración backend. |
-| `APIFY_SEARCH_TIMEOUT_SECONDS` / `APIFY_RUN_TIMEOUT_SECONDS` | Espera acotada de búsqueda/ciclo de seguimiento. | Límites backend. |
-| `APIFY_ACTOR_TIMEOUT_SECONDS` | Límite del run remoto enviado en la API de Apify. | Límite backend. |
-| `APIFY_SEARCH_CACHE_SECONDS` / `APIFY_SEARCH_MIN_INTERVAL_SECONDS` | Retención de resultados y enfriamiento global de búsquedas. | Límites backend. |
+| `APIFY_RUN_TIMEOUT_SECONDS` | Espera acotada del ciclo de seguimiento de descarga. | Límites backend. |
+| `APIFY_ACTOR_TIMEOUT_SECONDS` | Límite del run remoto enviado a Apify; predeterminado `600` s. | Límite backend. |
+
 | `APIFY_IMPORT_MIN_INTERVAL_SECONDS` / `APIFY_MAX_ACTIVE_IMPORTS` | Enfriamiento y concurrencia global de nuevas descargas. | Límites backend. |
 
 Las selecciones antiguas que ya están bajo el hash del identificador continúan en la misma ruta; no se cambia el algoritmo ni se migra el nodo existente. Los datos de la antigua colección global `state` no se asignan a un cuadro porque su identidad no puede deducirse.
@@ -44,7 +43,7 @@ El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cu
 
 CORS contempla `http://127.0.0.1:5173`, `http://localhost:5173` y el patrón restringido de hostnames `cuadro-sonoro-*.local`; el preflight debe permitir Authorization. `127.0.0.1` no identifica al Mac desde el teléfono.
 
-Para la prueba de Render se mantienen los dos orígenes exactos de localhost y el patrón restringido de hostname local. La configuración completa de Apify y del servicio está en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
+La búsqueda de YouTube usa yt-dlp desde la API y no requiere variables Apify; si el backend está en Render, su acceso a YouTube puede estar limitado por la red de salida. Para la prueba de descarga con Apify se mantienen los dos orígenes exactos de localhost y el patrón restringido de hostname local. La configuración completa de Apify y del servicio está en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
 
 ```dotenv
 ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$

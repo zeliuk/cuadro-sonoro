@@ -4,7 +4,7 @@
 |---|---|
 | Frontend | HTML, CSS y JavaScript ES Modules, sin React ni bundler obligatorio. |
 | API | Python 3.12, FastAPI y Uvicorn. |
-| Importación | Actors Apify configurables; FFmpeg/ffprobe y Pillow en backend. No se usa yt-dlp/Deno. |
+| Importación | yt-dlp para búsqueda de YouTube; Apify solo para descargar audio tras seleccionar resultado; FFmpeg/ffprobe, Deno y Pillow en backend. |
 | Imágenes | Pillow en el servidor. |
 | Nube | Firebase Admin SDK, Realtime Database y Storage. |
 | Entorno backend | Docker local y prueba de integración en Render con Apify; la ejecución real sigue pendiente de validar. |

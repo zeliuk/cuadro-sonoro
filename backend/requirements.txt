@@ -3,3 +3,5 @@ uvicorn[standard]>=0.34,<1
 firebase-admin>=6.6,<8
 google-resumable-media>=2.7,<3
 Pillow>=11,<13
+yt-dlp[default]>=2026.10.26,<2026.11
+yt-dlp-ejs>=0.8,<1

@@ -4,19 +4,13 @@ import json
 import logging
 import os
 import socket
-import threading
 import time
-from urllib.parse import urlencode
-from collections import OrderedDict
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 API = 'https://api.apify.com/v2'
 JOHNVC_DOWNLOAD_ACTOR = 'johnvc/youtube-download-api'
-_lock = threading.Lock()
-_cache = OrderedDict()
-_last_search = 0.0
 
 
 class ApifyError(RuntimeError):
@@ -54,7 +48,7 @@ def _actor_path(actor):
 
 
 def create_run(actor, payload):
-    actor_timeout = int(os.getenv('APIFY_ACTOR_TIMEOUT_SECONDS', '240'))
+    actor_timeout = int(os.getenv('APIFY_ACTOR_TIMEOUT_SECONDS', '600'))
     try:
         response = _request(_actor_path(actor) + '/runs?' + urlencode({'timeout': actor_timeout}), method='POST', payload=payload, timeout=30)
     except ApifyError:
@@ -100,75 +94,6 @@ def wait_run(run_id, max_seconds=None):
         time.sleep(delay)
         delay = min(8.0, delay * 1.6)
     raise ApifyError('Se alcanzó el tiempo máximo de seguimiento de Apify.')
-
-
-def _duration(value):
-    if isinstance(value, (int, float)):
-        return int(value)
-    if not isinstance(value, str):
-        return None
-    try:
-        parts = [int(part) for part in value.split(':')]
-        seconds = 0
-        for part in parts:
-            seconds = seconds * 60 + part
-        return seconds
-    except (TypeError, ValueError):
-        return None
-
-
-def search(artist, title, max_duration):
-    global _last_search
-    token = configured()
-    actor = os.getenv('APIFY_SEARCH_ACTOR', 'streamers/youtube-scraper').strip()
-    key = (actor, artist.strip().casefold(), title.strip().casefold())
-    with _lock:
-        now = time.monotonic()
-        cached = _cache.get(key)
-        if cached and now - cached[0] < int(os.getenv('APIFY_SEARCH_CACHE_SECONDS', '300')):
-            _cache.move_to_end(key)
-            return cached[1]
-        interval = float(os.getenv('APIFY_SEARCH_MIN_INTERVAL_SECONDS', '2'))
-        if now - _last_search < interval:
-            raise ApifyRateLimit('Búsqueda limitada temporalmente; espera unos segundos y vuelve a intentarlo.')
-        _last_search = now
-    run = create_run(actor, {
-        'searchQueries': [f'{artist.strip()} {title.strip()}'],
-        'maxResults': 5, 'maxResultsShorts': 0, 'maxResultStreams': 0,
-    })
-    try:
-        run = wait_run(run['id'], int(os.getenv('APIFY_SEARCH_TIMEOUT_SECONDS', '90')))
-    except ApifyError:
-        try:
-            abort_run(run['id'])
-        except ApifyError:
-            logging.getLogger('uvicorn.error').error('apify_search_abort_pending actor=%s', actor)
-        raise ApifyError('La búsqueda superó el tiempo máximo. Revisa Apify antes de volver a intentarlo.') from None
-    if run.get('status') != 'SUCCEEDED':
-        raise ApifyError('El Actor de búsqueda de Apify no terminó correctamente.')
-    items = dataset_items(run.get('defaultDatasetId', '')) if run.get('defaultDatasetId') else []
-    import re
-    results = []
-    for item in items:
-        video_id = item.get('id')
-        duration = _duration(item.get('duration'))
-        if (not isinstance(video_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{11}', video_id)
-                or item.get('type') not in (None, 'video') or not duration or duration > max_duration):
-            continue
-        image = item.get('thumbnailUrl')
-        parsed = urlparse(image or '')
-        if parsed.scheme != 'https' or not parsed.hostname:
-            image = f'https://i.ytimg.com/vi/{video_id}/mqdefault.jpg'
-        results.append({'id': video_id, 'title': str(item.get('title') or title)[:200],
-                        'artist': str(item.get('channelName') or artist)[:200],
-                        'duration': duration, 'image': image})
-        if len(results) == 5:
-            break
-    with _lock:
-        _cache[key] = (time.monotonic(), results)
-        while len(_cache) > 128:
-            _cache.popitem(last=False)
-    return results
 
 
 def download_input(actor, video_id, max_duration, max_bytes):

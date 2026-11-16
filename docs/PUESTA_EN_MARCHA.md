@@ -10,7 +10,15 @@ git --version
 python3 scripts/check_project.py
 ```
 
-Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; la importación requiere FFmpeg/ffprobe y el secreto `APIFY_TOKEN` configurado solo en el backend. No se usa yt-dlp/Deno. Node permite el check JS; Docker es una alternativa de ejecución. Si faltan herramientas en tu Mac, pide a Codex que compruebe las existentes antes de instalar. No instalar paquetes del proyecto en el Python del sistema.
+Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; la búsqueda usa yt-dlp y la importación requiere FFmpeg/ffprobe y el secreto `APIFY_TOKEN` solo en backend. Docker instala Deno, requerido por la extracción JavaScript de YouTube. Para arrancar nativamente, instala Deno 2.3 o posterior y asegúrate de que `deno` esté en `PATH`:
+
+```bash
+curl -fsSL https://deno.land/install.sh | sh
+export PATH="$HOME/.deno/bin:$PATH"
+deno --version
+```
+
+La búsqueda no consume Actors ni necesita token Apify. Node permite el check JS; Docker es una alternativa de ejecución. Si faltan herramientas en tu Mac, pide a Codex que compruebe las existentes antes de instalar. No instalar paquetes del proyecto en el Python del sistema.
 
 ## 2. Ver la web sin API ni credenciales
 

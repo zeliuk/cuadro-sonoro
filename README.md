@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: integración Apify implementada y pendiente de validación real en Render.** El prototipo tuvo una importación previa validada en Docker local; la nueva combinación de búsqueda/descarga Apify desde Render no se ha probado ni desplegado. La web local apunta a `https://cuadro-sonoro.onrender.com`. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía de prueba Apify/Render](docs/PRUEBA_APIFY_RENDER.md).
+**Estado: búsqueda rápida con yt-dlp y descarga Apify implementadas localmente; flujo en Render pendiente de validación real.** El prototipo tuvo una importación previa validada en Docker local; esta combinación no se ha probado ni desplegado. La web local apunta a `https://cuadro-sonoro.onrender.com`. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía de prueba Apify/Render](docs/PRUEBA_APIFY_RENDER.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -33,7 +33,7 @@ La [definición completa](docs/DEFINICION.md) es la referencia para implementar 
 | Parte | Tecnología y ubicación |
 |---|---|
 | Web | HTML, CSS y JavaScript modular servidos por el ESP32 en la red doméstica; el móvil ejecuta la interfaz. |
-| API e importador | Python/FastAPI; búsqueda y descarga mediante Apify; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Integración pendiente de prueba real Apify/Render. |
+| API e importador | Python/FastAPI; búsqueda con yt-dlp y descarga mediante Apify; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Integración pendiente de prueba real Apify/Render. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
 | Dispositivo | ESP32 con pantalla, audio y controles; hardware pendiente. |

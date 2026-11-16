@@ -72,7 +72,7 @@ Se mantiene la propuesta estética de un color cálido; el brillo y el modelo de
 
 1. Abrir un hueco vacío o cambiar el contenido de uno ocupado.
 2. Seleccionar «Canción» e introducir artista y título.
-3. El backend usa `streamers/youtube-scraper` de Apify y devuelve hasta cinco resultados con título, canal, miniatura y duración.
+3. El backend usa yt-dlp para buscar y devuelve hasta cinco resultados con título, canal, miniatura y duración; tras la elección explícita, Apify descarga el MP3 a partir del ID seleccionado.
 4. La persona elige el resultado; no se importa automáticamente la primera coincidencia.
 5. Se crea una tarea de importación. El servicio obtiene y prepara el audio, la imagen y los metadatos.
 6. La web muestra su progreso. Cuando termina correctamente, la selección queda disponible.
@@ -204,7 +204,7 @@ La configuración publicada y lo que está reproduciéndose son estados distinto
 
 - La web estática se sirve desde el ESP32 en la red doméstica; no se utiliza Firebase Hosting ni se requiere un servidor web público de Carlos para la configuración musical.
 - El navegador ejecuta la web y llama directamente a la API para búsquedas, importaciones y cambios. El ESP32 solo sirve los archivos de interfaz y no proxyfica esas operaciones. El proveedor de API accesible desde el móvil está pendiente.
-- La prueba de integración servirá la web local y llamará a Render. Apify sustituye el acceso directo de yt-dlp a YouTube desde el backend; la eficacia y coste deben validarse manualmente.
+- La prueba de integración servirá la web local y llamará a Render. La búsqueda con yt-dlp se mantiene y Apify descarga únicamente el resultado seleccionado; el comportamiento de ambos proveedores depende de la red y requiere validación manual.
 - Firebase proporciona datos y almacenamiento de archivos. Sus cuotas, región y configuración de facturación se revisarán antes del despliegue. Storage requiere Blaze; no se garantiza coste cero.
 - La ejecución fiable de trabajos en varias instancias queda fuera de esta prueba; mantener una instancia y un worker. La combinación Apify/Render está pendiente de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
 - Cada reproducción desde Storage genera tráfico de salida, aunque solo existan tres selecciones y se limpie contenido antiguo.
@@ -299,7 +299,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 
 - Placa, memoria, pantalla, audio, alimentación, ruedas/pulsadores, pines y medidas.
 - Lectura autónoma del ESP32 y reglas de acceso directo a Firebase.
-- Ejecución y recuperación de tareas, coordinación entre workers y validación de descargas desde el alojamiento elegido. La descarga directa con yt-dlp en Render falló con los errores históricos registrados; Apify/Render es una prueba alternativa pendiente.
+- Ejecución y recuperación de tareas, coordinación entre workers y validación de descargas desde el alojamiento elegido. Una importación directa con yt-dlp en Render falló históricamente en `source_lookup`; la búsqueda independiente en ese entorno no se ha validado y Apify se conserva solo para descarga.
 - Duración máxima de canciones, tiempos máximos de tareas, calidad MP3 y límites de subida de imágenes.
 - Resolución y formato de imágenes, brillo de pantalla y duración exacta de pulsación para restablecer Wi-Fi.
 - Conservación local de la imagen decorativa y comportamiento de pantalla sin red.

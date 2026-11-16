@@ -48,14 +48,8 @@
           "401": {
             "description": "Identificador ausente o no válido."
           },
-          "429": {
-            "description": "Límite global de frecuencia."
-          },
           "502": {
-            "description": "Falló la búsqueda en Apify."
-          },
-          "503": {
-            "description": "Falta APIFY_TOKEN."
+            "description": "Falló la búsqueda en YouTube."
           },
           "422": {
             "description": "Validation Error",

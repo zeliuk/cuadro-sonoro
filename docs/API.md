@@ -45,9 +45,7 @@ Respuesta 200 sin nube:
 
 ## POST /search
 
-Busca hasta cinco resultados mediante `streamers/youtube-scraper` de Apify a partir de artista y título. Usa caché acotada de 5 minutos y enfriamiento global; filtra Shorts, streams, IDs inválidos y duraciones superiores a 15 minutos. No descarga audio ni modifica huecos. Requiere `APIFY_TOKEN`; ausente: 503. Límite global: 429. Error o timeout del proveedor: 502. Una ejecución de búsqueda queda limitada por `APIFY_SEARCH_TIMEOUT_SECONDS`.
-
-Cada búsqueda no cacheada crea un run de Actor y puede generar consumo según el plan/tarifa vigente. No ejecutar este ejemplo contra una cuenta real hasta revisar límites y aprobar la prueba manual de [Apify/Render](PRUEBA_APIFY_RENDER.md). Las pruebas automatizadas sustituyen el proveedor.
+Busca hasta cinco resultados mediante `yt-dlp` (`ytsearch5`) a partir de artista y título. Devuelve candidatos planos con ID, título, canal, duración y miniatura; filtra IDs inválidos, emisiones en directo y duraciones superiores a 15 minutos. No descarga audio ni modifica huecos. No requiere `APIFY_TOKEN` ni crea ejecuciones de Apify. La extracción depende del acceso de red del backend a YouTube; fallo o timeout: 502. En Docker se instala Deno y `yt-dlp-ejs` para la extracción JavaScript. Las pruebas automatizadas sustituyen yt-dlp.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
