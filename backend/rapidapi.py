@@ -36,7 +36,18 @@ class _SafeRedirect(HTTPRedirectHandler):
 
 def open_public_media(url, timeout=45):
     _public_https_url(url)
-    return build_opener(_SafeRedirect()).open(Request(url), timeout=timeout)
+    request = Request(url, headers={
+        'User-Agent': 'CuadroSonoro/0.1 (+https://github.com/cturmo/cuadro-sonoro)',
+        'Accept': 'audio/mpeg,application/octet-stream,*/*;q=0.8',
+    })
+    try:
+        return build_opener(_SafeRedirect()).open(request, timeout=timeout)
+    except HTTPError as exc:
+        # The signed media URL can contain temporary credentials; log only its host.
+        host = urlparse(exc.geturl()).hostname or 'desconocido'
+        raise RapidAPIError(
+            f'El servidor del MP3 rechazó la descarga con HTTP {exc.code} (host: {host}).'
+        ) from None
 
 
 def download_link(video_id):
