@@ -4,7 +4,7 @@ Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar
 
 ## Web servida por el ESP32
 
-Decisión confirmada: el enlace usa `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. Antes del ESP32, [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md) describe cómo servir `web/` desde macOS y anunciarlo con Bonjour; el navegador del móvil llama directamente a la API HTTPS de Render. Configura `ALLOWED_ORIGIN_REGEX` en Render para el hostname y reinicia el servicio. El recorrido no valida firmware; resolución y acceso móvil siguen pendientes. Si mDNS falla, la guía documenta una prueba por IP con origen CORS exacto.
+El enlace del cuadro conserva `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. Para la prueba actual, sirve `web/` local y llama a `https://cuadro-sonoro.onrender.com`; configuración, límites, logs y rollback están en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). La integración Apify/Render no está validada hasta la prueba real. Esto no valida firmware ni acceso móvil desde el hostname doméstico.
 
 ## Comprobar el contenedor local
 
@@ -21,11 +21,9 @@ curl -sS http://127.0.0.1:8000/health
 
 Logs pueden contener detalles de operación: redactar cualquier valor sensible antes de compartirlos. Parada y recreación se explican en [backend/README.md](../backend/README.md).
 
-## Render
+## Prueba de API en Render con Apify
 
-Cuando esté autorizado, crear un servicio Docker desde el repositorio con contexto raíz y `Dockerfile` raíz. El proceso usa `PORT` y `/health`. En el prototipo se requiere un worker Uvicorn y una instancia. Las variables se inyectan en ejecución; no añadir cuentas de servicio al build. Configurar CORS con el origen exacto de la web propia.
-
-Render Free puede suspender/reiniciar el proceso y su disco es temporal. Antes de elegir plan/worker, validar la continuidad y recuperación de tareas. Un proceso dentro de FastAPI no demuestra por sí solo esa garantía. Descargar desde la IP de Render sigue pendiente; una búsqueda correcta no acredita la descarga. CORS deberá permitir el origen local desde el que se sirva la web en el ESP32; no es una autenticación ni controla quién puede llamar a la API fuera del navegador.
+`web/index.html` apunta a `https://cuadro-sonoro.onrender.com` para la prueba autorizada. Apify sustituye el acceso a YouTube desde Render, pero esta integración no está validada hasta ejecutar la prueba manual. Sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) para variables, límites, despliegue, logs, prueba con proveedores reales y rollback. No despliegues ni generes consumo automáticamente.
 
 ## Firebase
 
@@ -33,4 +31,4 @@ Consultar [firebase/README.md](../firebase/README.md) para seleccionar proyecto,
 
 ## Aceptación real
 
-Verificar lectura por URL conocida, separación de registros, listados/escrituras denegados; buscar desde Render; procesar una pista de prueba adecuada; comprobar MP3, imagen y metadatos; escuchar desde navegador; verificar fallo/cancelación/sustitución sin pérdida; cerrar y reabrir la web; reiniciar el servicio; confirmar limpieza segura. Registrar evidencia redactada y coste observado sin incluir URLs de cuadro ni credenciales. El ESP32 se valida en su propia fase.
+Verificar lectura por URL conocida, separación de registros, listados/escrituras denegados; buscar y procesar una pista de prueba adecuada desde el alojamiento elegido; comprobar MP3, imagen y metadatos; escuchar desde navegador; verificar fallo/cancelación/sustitución sin pérdida; cerrar y reabrir la web; reiniciar el servicio; confirmar limpieza segura. Registrar evidencia redactada y coste observado sin incluir URLs de cuadro ni credenciales. El ESP32 se valida en su propia fase.

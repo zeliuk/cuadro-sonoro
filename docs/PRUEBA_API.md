@@ -1,5 +1,7 @@
 # Probar la API paso a paso
 
+La nueva búsqueda real de canciones usa Apify y puede generar consumo. No ejecutes las llamadas de `/search` o `/imports` con credenciales reales hasta revisar límites/uso y seguir el procedimiento de [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Las pruebas de pytest usan proveedores simulados.
+
 ## A. Comprobación local sin Firebase ni descargas
 
 Esta prueba usa exclusivamente un entorno local dedicado. No arrancar con variables de nube de producción. Desde la raíz y con las dependencias instaladas, preparar y arrancar en una terminal:
@@ -42,7 +44,7 @@ curl -i "$API_BASE/media/2" -H "Authorization: Bearer $FRAME_ID"
 
 Se espera 200, 200 con la URL sintética, 200 y 404. Esto verifica operaciones de metadatos, no una emisora funcional. Sin bucket configurado, un POST `/imports` válido debe devolver 503 sin crear una importación; no rellenar nombres ficticios para forzarlo.
 
-Al acabar, `unset FRAME_ID` en la segunda terminal y `Ctrl+C` en la primera. El identificador no es un secreto ni se necesita configurarlo en Render. No imprimir `.env` para comprobar credenciales Firebase.
+Al acabar, `unset FRAME_ID` en la segunda terminal y `Ctrl+C` en la primera. El identificador no es un secreto ni se necesita configurarlo en un alojamiento. No imprimir `.env` para comprobar credenciales Firebase.
 
 ## B. Búsqueda de emisoras (Radio Browser)
 
@@ -92,9 +94,9 @@ Solo si se prepara otro cuadro/slot de prueba autorizado, seguir estos pasos. El
 5. Si está `ready`, comprobar el hueco y sus claves de audio/imagen, obtener `/media/{slot}` y usar la escucha local de la web. Confirmar que es el audio elegido y la imagen esperada.
 6. Verificar en Firebase el registro y los objetos del entorno dedicado, sin copiar URLs públicas del cuadro ni credenciales al informe.
 7. Comprobar un fallo de importación conservando una selección anterior. Comprobar cancelación y que no publica contenido cancelado.
-8. Cerrar/reabrir la web y comprobar estado. Reiniciar el backend y registrar qué se recupera y qué requiere reintento. En Render validar desde su IP; lo probado en el Mac no acredita el alojamiento.
+8. Cerrar/reabrir la web y comprobar estado. Reiniciar el backend y registrar qué se recupera y qué requiere reintento. La validación en Docker local no acredita el futuro alojamiento para móvil.
 9. El DELETE de un hueco elimina los medios que ya no tengan referencias. En Firebase real, úsalo solo cuando quieras borrar definitivamente ese favorito. La limpieza también reintenta huérfanos cuando se vacía un hueco y al arrancar la API.
 
 El reintento manual consiste en crear una tarea nueva con `/imports`; no existe `/retry`. Una interrupción del servicio durante descarga, preparación o subida se recupera desde cero hasta dos veces. Una cancelación persiste y no se reactiva tras reiniciar. La guía de backend incluye un recorrido reproducible en Docker con un trabajo sintético, sin credenciales ni servicios externos.
 
-Los resultados ejecutados, incluidos los límites que siguen pendientes, se registran en [VALIDACION.md](VALIDACION.md). Esta validación local no acredita Render, hardware ESP32 ni que una persona haya percibido el sonido.
+Los resultados ejecutados, incluidos los límites que siguen pendientes, se registran en [VALIDACION.md](VALIDACION.md). Esta validación local no acredita un alojamiento externo, hardware ESP32 ni que una persona haya percibido el sonido.

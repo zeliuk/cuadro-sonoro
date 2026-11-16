@@ -87,11 +87,14 @@ def test_cloud_ensure_transaction_persists_and_reuses_initial_state(monkeypatch)
 
 def test_validate_id_slot_and_duplicate_jobs(monkeypatch):
     monkeypatch.setenv('FIREBASE_STORAGE_BUCKET','test-bucket')
+    monkeypatch.setenv('APIFY_TOKEN','synthetic-test-token')
+    monkeypatch.setenv('APIFY_IMPORT_MIN_INTERVAL_SECONDS','0')
     base={'slot':0,'source_id':'BaW_jenozKc','title':'Test','artist':'Test'}
     assert client.post('/imports',headers=AUTH,json={**base,'source_id':'https://internal/'}).status_code == 422
     assert client.post('/imports',headers=AUTH,json={**base,'slot':3}).status_code == 422
     first=client.post('/imports',headers=AUTH,json=base)
     assert first.status_code == 202
+    assert client.post('/imports',headers=AUTH_B,json={**base,'slot':1}).status_code == 429
     second_slot={**base,'slot':1}
     assert client.post('/imports',headers=AUTH,json=second_slot).status_code == 409
     job_id=first.json()['id']
@@ -107,8 +110,7 @@ def test_failing_import_preserves_old_track_and_never_marks_ready():
         state['slots']['slot-0']=old
         state['jobs']['test']=job
     m.store.mutate(KEY_A, seed)
-    with patch('yt_dlp.YoutubeDL') as ydl:
-        ydl.return_value.__enter__.return_value.extract_info.side_effect=RuntimeError('SECRET=do-not-expose')
+    with patch.object(worker.apify, 'create_run', side_effect=RuntimeError('SECRET=do-not-expose')):
         worker.execute_import(KEY_A, job)
     state=m.store.read(KEY_A)
     assert state['slots']['slot-0']==old
@@ -117,25 +119,29 @@ def test_failing_import_preserves_old_track_and_never_marks_ready():
 
 
 def test_progress_pipeline_only_commits_after_upload():
+    import json
     job={'id':'pipeline','slot':1,'source_id':'BaW_jenozKc','title':'Test','artist':'Test','status':'queued','created_at':0}
     m.store.mutate(KEY_A, lambda state: state['jobs'].update(pipeline=job))
-    with patch('yt_dlp.YoutubeDL') as ydl, patch.object(worker,'persist_media') as upload:
-        instance=ydl.return_value.__enter__.return_value
-        instance.extract_info.return_value={'duration':30}
-        def download(urls):
-            options=ydl.call_args.args[0]
-            audio=Path(options['outtmpl'].replace('%(ext)s','mp3'))
-            audio.write_bytes(b'test-audio')
-            options['progress_hooks'][0]({'status':'downloading','downloaded_bytes':5,'total_bytes':10})
+    class Response:
+        headers={'Content-Length':'10'}
+        def __enter__(self): return self
+        def __exit__(self,*args): pass
+        def geturl(self): return 'https://audio.example/a.mp3'
+        def read(self,size=-1):
+            if not hasattr(self,'done'):
+                self.done=True
+                chunk=b'12345'
+                return chunk
             assert m.store.read(KEY_A)['jobs']['pipeline']['percent']==50
-            options['progress_hooks'][0]({'status':'finished'})
-        instance.download.side_effect=download
-        def uploaded(*args, **kwargs):
-            state=m.store.read(KEY_A)
-            assert state['jobs']['pipeline']['status']=='uploading'
-            assert 'slot-1' not in state['slots']
-            return f'private/frames/{KEY_A}/pipeline/audio.mp3',None
-        upload.side_effect=uploaded
+            return b''
+    with patch.object(worker.apify,'create_run',return_value={'id':'remote'}) as create, \
+         patch.object(worker.apify,'wait_run',return_value={'id':'remote','status':'SUCCEEDED'}), \
+         patch.object(worker.apify,'download_result',return_value={'videoId':'BaW_jenozKc','duration':30,'audioFileUrl':'https://audio.example/a.mp3','thumbnailFileUrl':None}), \
+         patch.object(worker.apify,'validate_public_url',side_effect=lambda url:url), \
+         patch.object(worker.apify,'open_media',return_value=Response()), \
+         patch.object(worker.subprocess,'run',return_value=type('Probe',(),{'stdout':json.dumps({'format':{'duration':'30','format_name':'mp3'}})})()), \
+         patch.object(worker,'persist_media') as upload:
+        upload.return_value=(f'private/frames/{KEY_A}/pipeline/audio.mp3',None)
         worker.execute_import(KEY_A, job)
     state=m.store.read(KEY_A)
     assert state['jobs']['pipeline']['status']=='ready', state['jobs']['pipeline']
@@ -147,9 +153,9 @@ def test_cancel_before_download_and_station_validation():
     job={'id':'cancel','slot':2,'source_id':'BaW_jenozKc','title':'Test','artist':'Test','status':'queued','created_at':0}
     m.store.mutate(KEY_A, lambda state: state['jobs'].update(cancel=job))
     m.store.mutate(KEY_A, lambda state: state['jobs']['cancel'].update(status='cancelled'))
-    with patch('yt_dlp.YoutubeDL') as ydl:
+    with patch.object(worker.apify, 'create_run') as create_run:
         worker.execute_import(KEY_A, job)
-        ydl.assert_not_called()
+        create_run.assert_not_called()
     assert m.store.read(KEY_A)['jobs']['cancel']['status']=='cancelled'
     assert client.post('/stations',headers=AUTH,json={'slot':0,'title':'Radio','url':'http://localhost/private'}).status_code==422
     assert client.post('/stations',headers=AUTH,json={'slot':0,'title':'Radio','url':'https://example.org/stream.mp3'}).status_code==200

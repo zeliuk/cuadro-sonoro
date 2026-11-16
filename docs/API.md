@@ -45,7 +45,9 @@ Respuesta 200 sin nube:
 
 ## POST /search
 
-Busca hasta cinco resultados a partir de artista y título. Requiere dependencias/red; no descarga audio ni modifica huecos. Filtra directos y resultados que excedan la duración del prototipo cuando ese dato está disponible.
+Busca hasta cinco resultados mediante `streamers/youtube-scraper` de Apify a partir de artista y título. Usa caché acotada de 5 minutos y enfriamiento global; filtra Shorts, streams, IDs inválidos y duraciones superiores a 15 minutos. No descarga audio ni modifica huecos. Requiere `APIFY_TOKEN`; ausente: 503. Límite global: 429. Error o timeout del proveedor: 502. Una ejecución de búsqueda queda limitada por `APIFY_SEARCH_TIMEOUT_SECONDS`.
+
+Cada búsqueda no cacheada crea un run de Actor y puede generar consumo según el plan/tarifa vigente. No ejecutar este ejemplo contra una cuenta real hasta revisar límites y aprobar la prueba manual de [Apify/Render](PRUEBA_APIFY_RENDER.md). Las pruebas automatizadas sustituyen el proveedor.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
@@ -65,7 +67,7 @@ Forma de respuesta 200 (ID y datos sintéticos, no una disponibilidad acreditada
 {"results":[{"id":"abcdefghijk","title":"Título del resultado","artist":"Canal","duration":214,"image":"https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg"}]}
 ```
 
-Puede haber una lista vacía o duración desconocida. 502 significa que la fuente o la búsqueda fallaron; no implica un problema de Firebase. Una búsqueda correcta no prueba la descarga desde Render.
+Puede haber una lista vacía o duración desconocida. 502 significa que la fuente o la búsqueda fallaron; no implica un problema de Firebase. Una búsqueda correcta no prueba que la descarga vaya a funcionar desde otro entorno de red.
 
 ## POST /stations/search
 
@@ -87,7 +89,7 @@ Respuesta 200: `{"results":[{"stationuuid":"id-radio","name":"Radio Nacional","c
 
 ## POST /imports
 
-Crea una tarea, sin esperar a que termine. Requiere Storage configurado; el worker necesitará también credenciales y datos Firebase válidos para completar el proceso. Crea/actualiza registros y, si termina, archivos y el hueco. Probar solo con recursos dedicados.
+Crea una tarea, sin esperar a que termine. Requiere `APIFY_TOKEN`, Storage configurado y credenciales/datos Firebase válidos. Hay un límite global de importación activa (`APIFY_MAX_ACTIVE_IMPORTS`, valor de prueba 1), además del límite por cuadro. El worker inicia `lurkapi/youtube-to-mp3-audio-downloader` con `videoUrls` de un solo ID validado, `audioFormat=mp3`, `audioBitrate=128k` y `maxVideosPerUrl=1`. Persiste el run ID antes de seguirlo; tras reinicio consulta el mismo run. Si el POST de creación da respuesta ambigua, queda en error y no se reintenta automáticamente. La tarea comprueba estado terminal y resultado individual antes de descargar el archivo preparado, valida tamaño/MP3/duración y publica de forma atómica. Probar solo con recursos dedicados. Falta la prueba real Apify/Render.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
@@ -115,7 +117,7 @@ Errores: 503 si falta configuración Storage; 409 si el cuadro ya tiene una tare
 
 La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo. `attempts` cuenta ejecuciones iniciadas; `recoveries` cuenta recuperaciones tras caída (máximo dos).
 
-En caso de `error`, la API devuelve un mensaje general para la interfaz. Para identificar la causa técnica, consulta los logs de Uvicorn o la pestaña **Logs** de Render y busca `import_checkpoint`; durante la prueba diagnóstica también `yt_dlp_diagnostic`. Se registran etapas y detalles redactados sin URLs ni identificadores del cuadro. La guía del backend describe cada etapa.
+En caso de `error`, la API devuelve un mensaje general para la interfaz. Para identificar la causa técnica, consulta los logs de Uvicorn o `docker compose logs -f api` y busca `import_checkpoint`; durante la prueba diagnóstica también `yt_dlp_diagnostic`. Se registran etapas y detalles redactados sin URLs ni identificadores del cuadro. La guía del backend describe cada etapa.
 
 ## GET /state
 

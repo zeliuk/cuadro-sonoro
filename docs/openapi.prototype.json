@@ -48,8 +48,14 @@
           "401": {
             "description": "Identificador ausente o no válido."
           },
+          "429": {
+            "description": "Límite global de frecuencia."
+          },
           "502": {
-            "description": "Falló la búsqueda en la fuente."
+            "description": "Falló la búsqueda en Apify."
+          },
+          "503": {
+            "description": "Falta APIFY_TOKEN."
           },
           "422": {
             "description": "Validation Error",
@@ -146,8 +152,11 @@
           "409": {
             "description": "El cuadro ya tiene una importación activa."
           },
+          "429": {
+            "description": "Límite global de frecuencia o concurrencia."
+          },
           "503": {
-            "description": "Firebase Storage no está configurado."
+            "description": "Falta Apify o Firebase Storage."
           },
           "422": {
             "description": "Validation Error",

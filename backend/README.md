@@ -1,10 +1,10 @@
 # API: instalar, arrancar y probar
 
-**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). Su ejecución local permite comprobarla sin nube. El servidor estático de Mac es independiente y usa la API de Render; consulta [prueba web móvil](../docs/PRUEBA_WEB_LOCAL.md).
+**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web versionada apunta a Render; para probarla sirve `web/` estática según [PRUEBA_APIFY_RENDER.md](../docs/PRUEBA_APIFY_RENDER.md), sin backend Python local.
 
 ## Requisitos e instalación nativa
 
-Python 3.12. Para importar audio real, también FFmpeg/ffprobe y Deno en PATH. Para revisar endpoints, OpenAPI y tests con proveedores simulados no hace falta ejecutar esos binarios externos.
+Python 3.12. Para importar audio real, también FFmpeg/ffprobe y `APIFY_TOKEN` configurado solo en backend. No se usa yt-dlp ni Deno. Para revisar endpoints, OpenAPI y tests con proveedores simulados no hacen falta credenciales reales.
 
 ```bash
 python3.12 -m venv .venv
@@ -26,7 +26,7 @@ Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso.
 
 ### Diagnosticar importaciones
 
-Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Render, abre el servicio y consulta **Logs** alrededor de la hora del intento; busca `import_checkpoint`. En local, aparecen en la terminal de Uvicorn. Cada línea indica etapa y resultado (`start`, `complete` o `error`): `initialize`, `source_lookup`, `metadata_validation`, `source_download`, `audio_conversion`, `cover_processing`, `firebase_upload`, `publish` y `cleanup`. Durante la prueba diagnóstica, yt-dlp emite también `yt_dlp_diagnostic`; se eliminan URLs, identificadores y rutas temporales antes de registrarlas. El error incluye tipo y detalle técnico redactado. Si la última etapa solo tiene `result=start`, el fallo ocurrió dentro de ella. La limpieza puede fallar después de una importación completada sin revertir la publicación.
+Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Docker local consulta `docker compose logs -f api`; en Render usa el panel Logs. Busca etapas `source_download`, `audio_validation`, `cover_processing`, `firebase_upload` y `publish`. La credencial Apify no se registra. La limpieza puede fallar después de una importación completada sin revertir la publicación.
 
 La tarjeta de la web seguirá mostrando un mensaje general para los fallos de importación. Usa el detalle de los logs del backend para localizar la etapa; no compartas capturas o registros sin revisar que no contengan datos privados.
 
@@ -105,4 +105,4 @@ Las pruebas usan identificadores sintéticos y SQLite temporal, simulando descar
 
 Para una prueba real, usar recursos dedicados y completar el entorno según [CONFIGURACION.md](../docs/CONFIGURACION.md). Nativo: ruta absoluta de la cuenta de servicio en `GOOGLE_APPLICATION_CREDENTIALS`. Compose: archivo privado `secrets/firebase.json` y ruta `/run/secrets/firebase.json`, dejando vacía la alternativa JSON.
 
-El [despliegue](../docs/DESPLIEGUE.md) es una fase posterior: resolver el acceso directo del ESP32 a configuración y medios, las garantías de ejecución en Render y la migración manual de datos antiguos dedicados. No usar varios workers/réplicas todavía. El inicio de API y el vaciado de un hueco eliminan objetos de Storage que ya no estén referenciados por una selección; fallos quedan pendientes para el siguiente intento.
+El despliegue de prueba Apify/Render se documenta en [PRUEBA_APIFY_RENDER.md](../docs/PRUEBA_APIFY_RENDER.md); sigue pendiente ejecutarlo y validar sus servicios reales. El acceso desde firmware y la migración manual de datos antiguos dedicados quedan para fases posteriores. No usar varios workers/réplicas todavía. El inicio de API y el vaciado de un hueco eliminan objetos de Storage que ya no estén referenciados por una selección; fallos quedan pendientes para el siguiente intento.

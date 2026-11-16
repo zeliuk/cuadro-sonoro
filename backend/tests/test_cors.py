@@ -49,10 +49,19 @@ def test_unrelated_and_suffix_spoof_origins_rejected(monkeypatch):
 
 
 def test_exact_origins_remain_allowed_with_regex(monkeypatch):
-    client = client_for(monkeypatch, REGEX, exact='https://trusted.example,http://127.0.0.1:5173')
-    for origin in ('https://trusted.example', 'http://127.0.0.1:5173'):
+    client = client_for(monkeypatch, REGEX, exact='https://trusted.example,http://127.0.0.1:5173,http://localhost:5173')
+    for origin in ('https://trusted.example', 'http://127.0.0.1:5173', 'http://localhost:5173'):
         response = client.get('/health', headers={'Origin': origin})
         assert response.headers['access-control-allow-origin'] == origin
+
+
+def test_both_local_frontend_origins_allow_authorization_preflight(monkeypatch):
+    client = client_for(monkeypatch, REGEX, exact='http://127.0.0.1:5173,http://localhost:5173')
+    for origin in ('http://127.0.0.1:5173','http://localhost:5173'):
+        response=client.options('/search',headers={'Origin':origin,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'authorization,content-type'})
+        assert response.status_code==200
+        assert response.headers['access-control-allow-origin']==origin
+        assert 'authorization' in response.headers['access-control-allow-headers'].lower()
 
 
 def test_absent_regex_preserves_previous_exact_origin_behavior(monkeypatch):

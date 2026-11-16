@@ -1,9 +1,9 @@
 """HTTP API for frame-scoped configuration and imports."""
 import os
-import re
 import secrets
 import time
 import json
+import threading
 from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import ACTIVE, MAX_DURATION
+from . import apify
 from .identity import frame_key_for
 from .lifecycle import lifespan
 from .media import delete_orphaned_media
@@ -29,6 +30,9 @@ origins = [x.strip() for x in os.getenv('ALLOWED_ORIGINS', 'http://localhost:517
 origin_regex = os.getenv('ALLOWED_ORIGIN_REGEX') or None
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_origin_regex=origin_regex, allow_methods=['GET', 'POST', 'DELETE'], allow_headers=['Authorization', 'Content-Type'])
 security = HTTPBearer(auto_error=False, description='Identificador público del cuadro (1–128 caracteres ASCII; no es una credencial).')
+search_lock = threading.Lock()
+import_lock = threading.Lock()
+last_import_at = 0.0
 
 
 def identify_frame(credentials: HTTPAuthorizationCredentials | None = Depends(security)):
@@ -45,24 +49,16 @@ def health():
     return {'ok': True, 'storage_configured': bool(os.getenv('FIREBASE_STORAGE_BUCKET')), 'durable_state': store.cloud}
 
 
-@app.post('/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 502: {'description': 'Falló la búsqueda en la fuente.'}})
+@app.post('/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 429: {'description': 'Límite global de frecuencia.'}, 502: {'description': 'Falló la búsqueda en Apify.'}, 503: {'description': 'Falta APIFY_TOKEN.'}})
 def search(body: Search, _frame_key: str = Depends(identify_frame)):
-    import yt_dlp
-    query = f'{body.artist} {body.title} official audio'
+    if not os.getenv('APIFY_TOKEN', '').strip():
+        raise HTTPException(503, 'Configura APIFY_TOKEN en el backend antes de buscar.')
     try:
-        with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True, 'extract_flat': 'in_playlist', 'skip_download': True, 'socket_timeout': 20, 'retries': 1}) as ydl:
-            result = ydl.extract_info('ytsearch5:' + query, download=False)
-        entries = []
-        for entry in result.get('entries', []):
-            if not entry or not re.fullmatch(r'[A-Za-z0-9_-]{11}', entry.get('id', '')):
-                continue
-            duration = entry.get('duration')
-            if entry.get('is_live') or (duration and duration > MAX_DURATION):
-                continue
-            entries.append({'id': entry['id'], 'title': entry.get('title', body.title), 'artist': entry.get('channel') or entry.get('uploader') or body.artist, 'duration': duration, 'image': f"https://i.ytimg.com/vi/{entry['id']}/mqdefault.jpg"})
-        return {'results': entries}
-    except Exception:
-        raise HTTPException(502, 'No se pudo completar la búsqueda. La fuente puede estar bloqueando al servidor; vuelve a intentarlo.')
+        with search_lock:
+            return {'results': apify.search(body.artist, body.title, MAX_DURATION)}
+    except apify.ApifyError as exc:
+        status = 429 if isinstance(exc, apify.ApifyRateLimit) else 503 if 'APIFY_TOKEN' in str(exc) else 502
+        raise HTTPException(status, str(exc)) from None
 
 
 @app.post('/stations/search', responses={401: {'description': 'Identificador ausente o no válido.'}, 502: {'description': 'Radio Browser no está disponible.'}})
@@ -96,10 +92,24 @@ def search_stations(body: StationSearch, _frame_key: str = Depends(identify_fram
         raise HTTPException(502, 'No se pudo consultar Radio Browser. Vuelve a intentarlo más tarde.') from None
 
 
-@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 503: {'description': 'Firebase Storage no está configurado.'}})
+@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta Apify o Firebase Storage.'}})
 def create_import(body: Import, frame_key: str = Depends(identify_frame)):
+    global last_import_at
+    if not os.getenv('APIFY_TOKEN', '').strip():
+        raise HTTPException(503, 'Configura APIFY_TOKEN en el backend antes de importar.')
+    if any(j['status'] in ACTIVE for j in store.read(frame_key)['jobs'].values()):
+        raise HTTPException(409, 'Este cuadro ya tiene una importación en curso.')
     if not os.getenv('FIREBASE_STORAGE_BUCKET'):
         raise HTTPException(503, 'Configura Firebase Storage antes de importar.')
+    with import_lock:
+        now = time.monotonic()
+        cooldown = float(os.getenv('APIFY_IMPORT_MIN_INTERVAL_SECONDS', '10'))
+        if now - last_import_at < cooldown:
+            raise HTTPException(429, 'Importación limitada temporalmente; espera antes de generar otra ejecución.')
+        last_import_at = now
+    total_active = sum(j['status'] in ACTIVE for frame in store.read_all().values() for j in frame['jobs'].values())
+    if total_active >= int(os.getenv('APIFY_MAX_ACTIVE_IMPORTS', '1')):
+        raise HTTPException(429, 'Se alcanzó el límite global de importaciones. Inténtalo más tarde.')
     job = {**body.model_dump(), 'id': secrets.token_hex(12), 'status': 'queued', 'percent': None, 'message': 'Esperando turno', 'created_at': time.time()}
     def add(state):
         if any(j['status'] in ACTIVE for j in state['jobs'].values()):
@@ -128,8 +138,17 @@ def cancel(job_id: str, frame_key: str = Depends(identify_frame)):
             current = state['jobs'].get(job_id)
             if current and current['status'] in ACTIVE:
                 current.update(status='cancelled', percent=None, message='Importación cancelada', updated_at=time.time())
+                if current.get('apify_run_id'):
+                    current['apify_cancel_pending'] = True
                 current.pop('execution_id', None)
         store.mutate(frame_key, cancel_job)
+        current = store.read(frame_key)['jobs'].get(job_id, {})
+        if current.get('apify_cancel_pending'):
+            try:
+                apify.abort_run(current['apify_run_id'])
+                store.mutate(frame_key, lambda state: state['jobs'][job_id].update(apify_cancel_pending=False))
+            except apify.ApifyError:
+                pass  # durable marker is retained for operational retry
     return {'ok': True}
 
 

@@ -69,7 +69,7 @@ async function api(path,options={}) {
   if(!base)throw new Error('Este sitio no tiene configurada la dirección del servicio del cuadro.');
   const controller=new AbortController();apiControllers.add(controller);
   const abort=()=>controller.abort();
-  const timeout=setTimeout(abort,90000);
+  const timeout=setTimeout(abort,path==='/search'?120000:90000);
   externalSignal?.addEventListener('abort',abort,{once:true});
   try{
     const {signal,...requestOptions}=options;

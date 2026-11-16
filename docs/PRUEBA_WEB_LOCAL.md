@@ -1,13 +1,23 @@
+# Prueba frontend local contra Render
+
+La prueba de integración usa estáticos locales y la API remota indicada en `web/index.html`; no hace falta levantar Python/FastAPI en el ordenador. Ejecuta desde la raíz:
+
+```bash
+python3 -m http.server 5173 --bind 127.0.0.1 --directory web
+```
+
+Abre `http://127.0.0.1:5173/#token=cuadro-prueba-apify`. DevTools → Network debe mostrar API en `https://cuadro-sonoro.onrender.com`; las lecturas directas de reproducción a Firebase son esperadas. No debe aparecer Apify en la red del navegador. La prueba de importación, recuperación, errores, gasto y rollback está en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Se conserva también el servidor Bonjour/macOS descrito más abajo para sus pruebas de acceso desde móviles.
+
 # Prueba web local desde un móvil
 
-Esta prueba sirve únicamente los archivos estáticos de `web/` desde el Mac. El teléfono debe estar en la misma Wi-Fi, con comunicación entre clientes habilitada y salida a internet para llegar directamente a `https://cuadro-sonoro.onrender.com`. No inicia Docker ni la API local. No emula ESP32, botones, pantalla, audio I2S, firmware ni portal Wi-Fi. La demo permanece separada; el enlace real de prueba consulta API/servicios reales si ese cuadro llega a tener datos.
+Para la prueba Apify/Render desde el ordenador, sigue los pasos arriba: sirve `web/` estática y el navegador llamará a Render. La receta Bonjour/macOS de este documento es una prueba de acceso a estáticos desde móvil; no representa por sí sola la API remota ni hardware.
 
 ## Requisitos y preparación inicial
 
 - macOS con Python 3 y Bonjour `dns-sd` (incluido en macOS).
 - Mac y teléfono conectados a la misma red no invitada; el router no debe aislar clientes y debe permitir mDNS/multicast.
 - Para usar puerto 80, macOS debe permitir al proceso actual abrirlo. El script no usa `sudo` ni modifica configuraciones globales. Si el puerto está ocupado o no hay permiso, muestra un diagnóstico y se puede probar con puerto 8080.
-- La API desplegada en Render debe tener CORS configurado y reiniciado, ver [CONFIGURACION.md](CONFIGURACION.md). El servidor HTTP no carga `.env` ni hace proxy.
+- El backend permite los orígenes exactos `localhost:5173` y `127.0.0.1:5173`. El servidor HTTP estático no carga `.env` ni hace proxy.
 
 Instala la dependencia QR una sola vez, desde la raíz del repositorio:
 
@@ -74,15 +84,15 @@ El enlace pasa a `http://cuadro-sonoro-dev001.local:8080/#token=cuadro-prueba`; 
 
 ## Abrir y verificar desde el móvil
 
-1. En Render, configura `ALLOWED_ORIGIN_REGEX` y reinicia/redeploy la API.
+1. Arranca también la API local si vas a probar el flujo real desde el Mac. La demo no necesita backend.
 2. Arranca el script y confirma que informa servidor en el puerto 80 y anuncio Bonjour. No copies enlaces ni tokens reales a chats o capturas.
-3. Escanea el QR generado con el móvil conectado a la misma Wi-Fi. Resultado esperado: carga la interfaz Sonoro; la aplicación lee el identificador del fragmento, lo guarda en `sessionStorage` y limpia el fragmento de la barra sin recargar. La web consulta Render directamente.
-4. Con el QR ficticio sin datos, deben aparecer tres huecos vacíos. Para recuperar selecciones existentes, genera el QR con el ID correspondiente indicado de forma privada en la terminal; la web debe mostrar las selecciones publicadas de ese cuadro. No se crea ni importa contenido como parte de esta prueba.
-5. En Render, los registros de acceso de la API pueden confirmar las llamadas. El terminal local muestra solicitudes `GET` de archivos web; no actúa como API ni proxy.
+3. Escanea el QR generado con el móvil conectado a la misma Wi-Fi. Resultado esperado: carga la interfaz Sonoro; la aplicación lee el identificador del fragmento, lo guarda en `sessionStorage` y limpia el fragmento de la barra sin recargar. Sin una API LAN configurada, el móvil no podrá consultar el estado real; usa «Probar demostración» para verificar la interfaz.
+4. Para consultar selecciones o importar desde la API local, abre el sitio en el mismo Mac (`http://127.0.0.1:5173`) y levanta Docker Compose. El QR Bonjour no cambia el destino `127.0.0.1` del API.
+5. El terminal local muestra solicitudes `GET` de archivos web; las llamadas de API aparecen en los logs de Compose.
 
 ### Diagnóstico separado por IP
 
-Si Bonjour no resuelve desde el móvil, el script imprime una URL de diagnóstico usando la IP detectada. También se puede ver la IP Wi-Fi en Ajustes de macOS > Red. Abrir, por ejemplo, `http://192.168.1.23/#token=cuadro-prueba`. Esta ruta no es el QR hostname y requiere añadir en Render el origen exacto `http://192.168.1.23` a `ALLOWED_ORIGINS`; reemplaza por la IP real. Para puerto alternativo incluye `:8080`. No uses `/etc/hosts`: solo cambiaría la resolución en el Mac, no en el móvil.
+Si Bonjour no resuelve desde el móvil, el script imprime una URL de diagnóstico usando la IP detectada. También se puede ver la IP Wi-Fi en Ajustes de macOS > Red. Abrir, por ejemplo, `http://192.168.1.23/#token=cuadro-prueba`. Esto solo verifica que el móvil carga la página; la URL loopback de API sigue apuntando al móvil. No uses `/etc/hosts`: solo cambiaría la resolución en el Mac, no en el móvil.
 
 Si el hostname no funciona, comprobar en orden: misma Wi-Fi (no red de invitados), aislamiento de clientes desactivado, multicast/mDNS permitido, anuncio aún activo, IP actual y firewall del Mac. Reiniciar el script vuelve a anunciar el mismo nombre con la IP vigente.
 
@@ -94,10 +104,10 @@ Pulsa `Ctrl+C` en la terminal que ejecuta el script. El proceso sale después de
 
 La API permite orígenes exactos mediante `ALLOWED_ORIGINS` y, opcionalmente, una regex mediante `ALLOWED_ORIGIN_REGEX`. El patrón acordado cubre solo HTTP estándar y hosts que terminan exactamente en `.local`. `Authorization` y `Content-Type` están permitidos para el uso actual de API. El token está en el fragmento y no forma parte del origen ni se envía en el `GET` de la página. CORS no autentica ni vincula hostname y cuadro.
 
-Añadir en el Environment de Render, sin comillas exteriores:
+La configuración que se usaba en Render queda aquí solo como referencia histórica:
 
 ```dotenv
 ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$
 ```
 
-Guía completa y CORS por IP/puerto: [CONFIGURACION.md](CONFIGURACION.md).
+Un futuro backend LAN deberá permitir el origen desde el que el ESP32 sirva la web. Guía CORS: [CONFIGURACION.md](CONFIGURACION.md).

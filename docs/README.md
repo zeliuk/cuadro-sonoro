@@ -12,7 +12,7 @@
 | [ARQUITECTURA.md](ARQUITECTURA.md) | Componentes y límites. |
 | [STACK.md](STACK.md) | Tecnologías y herramientas. |
 | [CONFIGURACION.md](CONFIGURACION.md) | Variables, credenciales y entornos. |
-| [DESPLIEGUE.md](DESPLIEGUE.md) | Hosting propio, Render y Firebase. |
+| [DESPLIEGUE.md](DESPLIEGUE.md) | API local, alojamiento futuro y Firebase. |
 | [PLAN.md](PLAN.md) | Fases y criterios de aceptación. |
 | [DECISIONES.md](DECISIONES.md) | Decisiones y cambios de alcance. |
 | [PUBLICAR_GITHUB.md](PUBLICAR_GITHUB.md) | Preparación del repositorio público. |

@@ -10,7 +10,7 @@ git --version
 python3 scripts/check_project.py
 ```
 
-Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; para importar hacen falta también FFmpeg/ffprobe y Deno. Node permite el check JS; Docker es una alternativa de ejecución. Si faltan herramientas en tu Mac, pide a Codex que compruebe las existentes antes de instalar. No instalar paquetes del proyecto en el Python del sistema.
+Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; la importación requiere FFmpeg/ffprobe y el secreto `APIFY_TOKEN` configurado solo en el backend. No se usa yt-dlp/Deno. Node permite el check JS; Docker es una alternativa de ejecución. Si faltan herramientas en tu Mac, pide a Codex que compruebe las existentes antes de instalar. No instalar paquetes del proyecto en el Python del sistema.
 
 ## 2. Ver la web sin API ni credenciales
 
@@ -22,7 +22,7 @@ Abre [la web](http://127.0.0.1:5173). Sin un enlace de cuadro aparece el acceso 
 
 ## 3. API
 
-Sigue [backend/README.md](../backend/README.md): instalación, preparación de `.env`, arranque nativo o Docker, comprobación HTTP, logs, tests y parada. Sigue [PRUEBA_API.md](PRUEBA_API.md) para comprobar rutas en orden.
+Sigue [backend/README.md](../backend/README.md): instalación, preparación de `.env`, arranque nativo o Docker, comprobación HTTP, logs, tests y parada. Sigue [PRUEBA_API.md](PRUEBA_API.md) para comprobar rutas en orden. Para la prueba de frontend local contra Render, sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md); no requiere backend Python local.
 
 ## 4. Comenzar con Codex
 

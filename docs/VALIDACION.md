@@ -1,5 +1,13 @@
 # Validación de esta entrega
 
+## Endpoint API predeterminado local — 16 de noviembre de 2026
+
+Por decisión de Carlos, `web/index.html` deja de apuntar a Render y usa `http://127.0.0.1:8000`, la API Docker local del Mac. Render se descarta para importaciones de YouTube por los HTTP 429/403 documentados. El worker Docker local y Render podían compartir la cola en Firebase RTDB cuando ambos tenían acceso al mismo proyecto; el worker local podía consumir tareas enviadas a Render. No se debe ejecutar esa configuración compartida como solución de alojamiento para el producto.
+
+Se actualizaron definición, estado, decisiones, arquitectura, configuración, guías operativas e instrucciones del proyecto ChatGPT. La URL loopback se limita al navegador del mismo Mac; no sirve desde un móvil ni desde el ESP32. Elegir una API accesible desde la LAN queda pendiente.
+
+Verificaciones de esta edición: `node --check web/app.js` y `git diff --check`. No se ejecutaron tests ni pruebas de API/Docker; el daemon Docker no estaba disponible al revisar el estado. No se hicieron llamadas a Render/YouTube/Firebase ni pruebas en móvil.
+
 ## Decisión de alojamiento web — 13 de noviembre de 2026
 
 Carlos confirmó que el ESP32 servirá la web estática en la red doméstica; el móvil la abrirá mediante QR/NFC, preferentemente con un hostname mDNS único en lugar de una IP fija. La web seguirá llamando a Render y usando Firebase según el flujo actual. Se actualizó la definición, arquitectura y guías para reflejarlo. Es una decisión de producto/documentación, no una implementación: el firmware y hardware no existen, mDNS/CORS no se han probado y todavía no se comprobó el acceso desde móviles o routers reales.
@@ -387,3 +395,8 @@ La API lee opcionalmente `ALLOWED_ORIGIN_REGEX` y pasa su valor (o `None`) a `CO
 | Prueba física móvil/Render/hardware | Pendiente. No se modificó ni desplegó Render; no se hicieron llamadas de importación, cambios Firebase ni pruebas de hardware. |
 
 El siguiente paso manual es añadir en Render `ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$` sin comillas exteriores y reiniciar/redeploy la API. Luego escanear desde el móvil el QR ficticio en la misma Wi-Fi, con aislamiento de clientes desactivado y salida a internet. Si Bonjour no resuelve, probar por IP con esa URL como origen exacto en `ALLOWED_ORIGINS` de Render. Los detalles y comandos están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md). Esta fase solo comprueba acceso web local; no implementa ni emula ESP32/firmware y conserva el problema documentado de importación de YouTube desde Render.
+# Integración Apify simulada — 16 de noviembre de 2026
+
+Implementación local de búsqueda con `streamers/youtube-scraper` y descarga con `lurkapi/youtube-to-mp3-audio-downloader`. Se revisaron las páginas actuales de esquemas de entrada/salida y la API de runs de Apify. Las pruebas ejecutadas usan mocks y SQLite temporal: cubren búsqueda con resultados/vacía/fallo y configuración ausente; normalización/filtros; importación y conservación del contenido anterior; resultado individual fallido con run exitoso; duración no permitida, transferencia excesiva, formato incorrecto; run ID durable tras recuperación; seguimiento reencolado sin duplicar el Actor; creación ambigua sin repetir POST; cancelación remota con reintento, carrera de cancelación/creación y protección ante publicación tardía; límite global/frecuencia; CORS preflight para Authorization desde ambos orígenes localhost. No se usaron credenciales ni servicios reales y no se desplegó ni generó consumo.
+
+Comprobaciones locales: `python -m pytest backend/tests scripts/tests -q` (62 passed), `python -m compileall -q backend scripts`, `node --check web/app.js`, `git diff --check`; `docker compose config --quiet` pasó. La construcción de imagen se inició, pero el comando no entregó progreso ni finalizó dentro de la ventana de observación; no se declara Docker build validado. Pendiente del propietario: desplegar manualmente en Render, probar Actors reales, revisar uso/coste Apify, comprobar publicación/escucha y seguir rollback en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).

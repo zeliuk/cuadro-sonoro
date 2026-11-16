@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: prototipo ejecutable con una primera importación real validada.** La importación y el avance del reproductor web se comprobaron con Firebase real y Chrome Headless; posteriormente se eliminó esa canción y sus medios para validar la limpieza. La lectura pública por URL conocida está aplicada manualmente. Falta validar Render, escucha humana, firmware y QR/NFC físicos. Ver [estado real](docs/ESTADO.md) y la [prueba web desde móvil en la LAN](docs/PRUEBA_WEB_LOCAL.md). Para arrancar la prueba (genera el QR y levanta el servicio): `python3 scripts/serve_local_preview.py`.
+**Estado: integración Apify implementada y pendiente de validación real en Render.** El prototipo tuvo una importación previa validada en Docker local; la nueva combinación de búsqueda/descarga Apify desde Render no se ha probado ni desplegado. La web local apunta a `https://cuadro-sonoro.onrender.com`. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía de prueba Apify/Render](docs/PRUEBA_APIFY_RENDER.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -26,19 +26,19 @@ Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración»
 - Imagen decorativa elegida en la web y optimizada por el servidor.
 - Configuración Wi-Fi local mediante QR y asistente, sin instalar una app.
 
-La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos.
+La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. La prueba manual de Apify, su configuración segura y rollback están en [PRUEBA_APIFY_RENDER.md](docs/PRUEBA_APIFY_RENDER.md).
 
 ## Arquitectura elegida
 
 | Parte | Tecnología y ubicación |
 |---|---|
 | Web | HTML, CSS y JavaScript modular servidos por el ESP32 en la red doméstica; el móvil ejecuta la interfaz. |
-| API e importador | Python/FastAPI, yt-dlp y FFmpeg, en Render con Docker. |
+| API e importador | Python/FastAPI; búsqueda y descarga mediante Apify; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Integración pendiente de prueba real Apify/Render. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
 | Dispositivo | ESP32 con pantalla, audio y controles; hardware pendiente. |
 
-La web se aloja fuera de Firebase Hosting. El ESP32 recibirá el audio directamente de Storage o de la emisora; Render no debe intervenir en cada reproducción de una canción ya preparada.
+La web se aloja fuera de Firebase Hosting. El ESP32 recibirá el audio directamente de Storage o de la emisora; el backend no debe intervenir en cada reproducción de una canción ya preparada.
 
 ## Empezar a desarrollar
 
@@ -63,4 +63,4 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 
 Documentación adicional: [stack](docs/STACK.md), [configuración](docs/CONFIGURACION.md), [despliegue](docs/DESPLIEGUE.md), [publicación en GitHub](docs/PUBLICAR_GITHUB.md), [contribución](CONTRIBUTING.md) y [seguridad](SECURITY.md).
 
-El primer hito real —buscar, importar, guardar audio e imagen en Firebase y probar el MP3 en navegador— está validado en [VALIDACION.md](docs/VALIDACION.md). Esto no acredita Render ni la compatibilidad con un ESP32. La licencia del código y los recursos de demo está pendiente de elegir; no se atribuye una licencia abierta por defecto.
+El primer hito real —buscar, importar, guardar audio e imagen en Firebase y probar el MP3 en navegador— está validado en [VALIDACION.md](docs/VALIDACION.md). Esto acredita Docker local, no un alojamiento accesible desde móvil ni la compatibilidad con un ESP32. La licencia del código y los recursos de demo está pendiente de elegir; no se atribuye una licencia abierta por defecto.

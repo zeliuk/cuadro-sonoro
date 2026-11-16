@@ -8,7 +8,7 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 
 - Repo `cuadro-sonoro`; Sonoro es nombre provisional de interfaz. Documentación y UI en español.
 - HTML/CSS/JavaScript organizado en módulos, sin framework y con prioridad móvil. Conservar el diseño aprobado de `web/`; separar módulos por responsabilidad sin rediseñar.
-- Web estática servida por el ESP32 en la Wi-Fi doméstica, abierta desde el móvil mediante QR/NFC y un hostname local único; Python/FastAPI, yt-dlp, FFmpeg y procesamiento de imágenes en Render/Docker; RTDB y Storage en Firebase. No Firebase Hosting.
+- Web estática prevista para el ESP32 en la Wi-Fi doméstica, abierta desde el móvil mediante QR/NFC y un hostname local único; API Python/FastAPI en Render integra Apify para búsqueda/descarga y usa FFmpeg/procesamiento de imágenes; RTDB y Storage en Firebase. Apify/Render es una prueba por validar, no una solución confirmada. Frontend apunta a `https://cuadro-sonoro.onrender.com`; no Firebase Hosting.
 - Identificador por cuadro en el enlace; no requiere alta y no es una credencial. No confundirlo con una credencial administrativa de Firebase.
 - Tres selecciones, tres pulsadores iluminados y rueda física. La web configura y permite escuchar localmente; no envía órdenes de reproducción ni volumen al ESP32.
 - Sin microSD ni canciones permanentes en el dispositivo. No autoplay al arrancar; una canción termina y se detiene.
@@ -24,7 +24,7 @@ Antes de editar, revisa `git status --short` y los cambios existentes. Trabaja p
 
 Usa mensajes con prefijo de tipo y dos puntos, siguiendo el estilo Conventional Commits: por ejemplo `feat:`, `fix:`, `docs:`, `test:`, `refactor:` o `chore:`. El prefijo debe describir el cambio principal.
 
-El identificador del cuadro no es una credencial: cualquier identificador válido se puede usar sin registro previo. Se transporta como Bearer por compatibilidad, y su SHA-256 deriva ámbitos en API, Firebase, SQLite y cliente directo. La web acepta `#token=...`, lo conserva en la pestaña y limpia el fragmento. Por decisión expresa de Carlos, Firebase deja leer sin sesión la configuración/medios publicados por URL conocida, con listados y escrituras públicas cerrados en sus reglas. Las escrituras de API quedan agrupadas por identificador, sin lista de autorización ni cuentas de usuario. Lee `docs/ESTADO.md` para los límites restantes: Render, preparar QR/NFC, firmware, tareas, limpieza y Radio Browser. No basta con renombrar variables o actualizar un README. No prometer continuidad de tareas en Render Free porque exista un hilo de fondo. No hacer que el ESP32 dependa de un Render dormido para cada reproducción.
+El identificador del cuadro no es una credencial: cualquier identificador válido se puede usar sin registro previo. Se transporta como Bearer por compatibilidad, y su SHA-256 deriva ámbitos en API, Firebase, SQLite y cliente directo. La web acepta `#token=...`, lo conserva en la pestaña y limpia el fragmento. Por decisión expresa de Carlos, Firebase deja leer sin sesión la configuración/medios publicados por URL conocida, con listados y escrituras públicas cerrados en sus reglas. Las escrituras de API quedan agrupadas por identificador, sin lista de autorización ni cuentas de usuario. Lee `docs/ESTADO.md` para límites y `docs/PRUEBA_APIFY_RENDER.md` para ejecutar la prueba manual. No expongas `APIFY_TOKEN` al frontend.
 
 ## Documentación obligatoria
 

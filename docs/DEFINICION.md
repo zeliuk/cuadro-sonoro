@@ -24,7 +24,7 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 - El identificador no es una credencial ni una prueba de identidad; no hay lista de cuadros permitidos, registro de usuarios ni Firebase Auth. Quien elija/conozca uno puede consultar y cambiar ese ámbito mediante la API.
 - El ESP32 sirve los archivos estáticos de la web dentro de la Wi-Fi doméstica. El QR y el NFC habituales abren esa web desde el móvil, con acceso al cuadro correspondiente.
 - El enlace usa `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El sufijo es configurable, válido como etiqueta DNS y estable, independiente de la IP; en el entorno de prueba del Mac es `dev001`. En el futuro se derivará de una identidad estable del ESP32. El hostname encuentra el servidor local y el fragmento identifica los datos; no cambia el identificador ni las rutas SHA-256. Bonjour/mDNS y su compatibilidad móvil se deben validar en hardware real. Si no resuelve, se puede diagnosticar por IP con CORS explícito para ese origen.
-- El navegador del móvil consume el identificador del fragmento sin incluirlo en la petición que obtiene la web y después limpia la barra de direcciones. El móvil debe estar en la misma red doméstica y conservar acceso a internet para comunicarse con Render y Firebase.
+- El navegador del móvil consume el identificador del fragmento sin incluirlo en la petición que obtiene la web y después limpia la barra de direcciones. El móvil debe estar en la misma red doméstica y conservar acceso a internet para comunicarse con el backend y Firebase. El frontend de prueba apunta al backend Render; se sirve como estático local para verificar desde el ordenador. Firmware/móvil y disponibilidad real del backend requieren validación.
 - No se plantea un registro ni un selector de usuarios para la primera versión. Quien tenga el enlace podrá consultar y cambiar la configuración de ese cuadro.
 - Las selecciones pertenecen al cuadro y son compartidas entre quienes acceden desde distintos móviles.
 - El identificador acepta entre 1 y 128 caracteres ASCII: letra o número inicial, luego letras, números, guion o guion bajo. La API lo conserva como Bearer por compatibilidad de transporte; el SHA-256 UTF-8 solo deriva el ámbito de almacenamiento.
@@ -72,12 +72,12 @@ Se mantiene la propuesta estética de un color cálido; el brillo y el modelo de
 
 1. Abrir un hueco vacío o cambiar el contenido de uno ocupado.
 2. Seleccionar «Canción» e introducir artista y título.
-3. El servicio busca en YouTube y devuelve unos pocos resultados con título, miniatura y duración.
+3. El backend usa `streamers/youtube-scraper` de Apify y devuelve hasta cinco resultados con título, canal, miniatura y duración.
 4. La persona elige el resultado; no se importa automáticamente la primera coincidencia.
 5. Se crea una tarea de importación. El servicio obtiene y prepara el audio, la imagen y los metadatos.
 6. La web muestra su progreso. Cuando termina correctamente, la selección queda disponible.
 
-No se utiliza la API de Spotify. El importador previsto utiliza Python, `yt-dlp` y FFmpeg. La obtención desde YouTube requiere validación real desde el alojamiento elegido y puede necesitar mantenimiento.
+No se utiliza la API de Spotify. La integración implementada usa Apify para buscar y preparar una descarga MP3 a 128 kbps; FFmpeg/ffprobe valida el archivo en backend. La combinación Apify/Render es experimental y requiere la prueba real documentada en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md); no se da por validada.
 
 ### Añadir una emisora
 
@@ -97,7 +97,7 @@ Se guardan los datos de la emisora y la dirección de streaming. No se descarga 
 - Se admite cancelación y se limpian los archivos temporales y resultados que queden sin utilizar.
 - Una tarea completa solo publica una selección cuando audio, imagen y metadatos necesarios están preparados.
 
-La ejecución debe soportar interrupciones y evitar duplicar publicaciones o borrar contenido vigente al reintentar. Guardar el estado en Firebase no sustituye por sí solo un mecanismo fiable de ejecución. La cola, el proceso que la consume y la recuperación tras reinicios se concretarán antes del despliegue definitivo en Render.
+La ejecución debe soportar interrupciones y evitar duplicar publicaciones o borrar contenido vigente al reintentar. Guardar el estado en Firebase no sustituye por sí solo un mecanismo fiable de ejecución. La nueva ruta Apify/Render está implementada, pero sigue pendiente de prueba real. El diagnóstico histórico de yt-dlp en Render registró HTTP 429/403; eso no demuestra que Apify funcione desde ese entorno.
 
 ### Si el hueco está sonando durante un cambio
 
@@ -110,7 +110,7 @@ La reproducción anterior continúa hasta que se detenga o termine la canción. 
 - El ESP32 no lleva microSD ni almacena canciones completas de forma permanente.
 - Recibe el MP3 directamente desde Firebase Storage y lo reproduce por streaming con un búfer en memoria.
 - No espera a descargar el archivo completo para empezar. El objetivo es un inicio en pocos segundos con una conexión estable; el tiempo real se medirá con el hardware.
-- Render interviene en la incorporación de contenido, no en el recorrido normal del audio ya preparado.
+- El backend interviene en la incorporación de contenido, no en el recorrido normal del audio ya preparado.
 - Al terminar una canción se detiene. No repite ni salta automáticamente a otro hueco.
 - Las emisoras continúan hasta detenerlas, cambiar de selección o encontrar un problema de conexión que impida seguir.
 - Al encender o reiniciar, el cuadro muestra la imagen decorativa y permanece en silencio. Conserva selecciones y último volumen utilizado.
@@ -153,7 +153,7 @@ La pantalla será a color, sin necesidad de función táctil ni vídeo en la pri
 
 1. La persona sube una imagen normal desde el móvil u ordenador.
 2. La web muestra una vista previa con la proporción real de pantalla y permite ajustar el encuadre.
-3. Render valida el archivo, corrige orientación, aplica encuadre, adapta resolución y comprime.
+3. El backend valida el archivo, corrige orientación, aplica encuadre, adapta resolución y comprime.
 4. Se eliminan metadatos innecesarios, incluida ubicación GPS cuando exista.
 5. Se guarda la versión optimizada y se actualiza la configuración cuando esté lista.
 
@@ -188,25 +188,25 @@ Durante una sustitución pueden coexistir temporalmente la versión anterior y l
 |---|---|
 | Web | HTML, CSS y JavaScript en módulos, manteniendo el diseño aprobado. |
 | API | Python con FastAPI. |
-| Importador | `yt-dlp`, FFmpeg y procesamiento de imágenes. |
-| Backend externo | Docker desplegado en Render. |
+| Importador | Actors de Apify para búsqueda/descarga; FFmpeg/ffprobe y procesamiento de imágenes en backend. |
+| Backend externo | Docker; alojamiento público por decidir. En desarrollo local se usa Docker en el Mac. |
 | Datos | Firebase Realtime Database. |
 | Audio e imágenes | Firebase Storage. |
 | Firmware | C++; entorno y librerías por concretar con el hardware. |
 
 La web será dinámica: búsquedas, resultados, formularios, progreso, actualización de huecos, imagen y escucha local funcionan sin recargas completas durante el uso normal. La interfaz separa estilos, componentes visuales, servicios de comunicación y lógica de estado.
 
-Diseño primero para móvil: una columna cuando corresponda, controles cómodos, ventanas adaptadas al teclado y sin desbordamientos, imágenes optimizadas, audio iniciado por acción del usuario, dependencias mínimas y peticiones limitadas a lo necesario. El procesamiento pesado se realiza en Render.
+Diseño primero para móvil: una columna cuando corresponda, controles cómodos, ventanas adaptadas al teclado y sin desbordamientos, imágenes optimizadas, audio iniciado por acción del usuario, dependencias mínimas y peticiones limitadas a lo necesario. El procesamiento pesado se realiza en el backend.
 
 La configuración publicada y lo que está reproduciéndose son estados distintos. No se debe afirmar que el ESP32 ha aplicado un cambio por el mero hecho de guardarlo en Firebase. Tampoco se requiere añadir un panel de órdenes remotas para cumplir la configuración básica.
 
 ## 12. Alojamiento, coste y recuperación
 
 - La web estática se sirve desde el ESP32 en la red doméstica; no se utiliza Firebase Hosting ni se requiere un servidor web público de Carlos para la configuración musical.
-- El navegador del móvil ejecuta la web y llama directamente a la API HTTPS de Render para búsquedas, importaciones y cambios. La conexión y los datos de la API siguen alojados en Render/Firebase; el ESP32 solo sirve los archivos de interfaz y no proxyfica esas operaciones.
-- API e importaciones se ejecutan externamente en Render con Docker; Firebase Functions queda como alternativa no elegida para esta base.
+- El navegador ejecuta la web y llama directamente a la API para búsquedas, importaciones y cambios. El ESP32 solo sirve los archivos de interfaz y no proxyfica esas operaciones. El proveedor de API accesible desde el móvil está pendiente.
+- La prueba de integración servirá la web local y llamará a Render. Apify sustituye el acceso directo de yt-dlp a YouTube desde el backend; la eficacia y coste deben validarse manualmente.
 - Firebase proporciona datos y almacenamiento de archivos. Sus cuotas, región y configuración de facturación se revisarán antes del despliegue. Storage requiere Blaze; no se garantiza coste cero.
-- La suspensión de Render gratuito y la ejecución fiable de trabajos son aspectos pendientes de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
+- La ejecución fiable de trabajos en varias instancias queda fuera de esta prueba; mantener una instancia y un worker. La combinación Apify/Render está pendiente de validar. No se dará por garantizada la continuidad de una tarea por dejarla en un proceso de fondo sin recuperación.
 - Cada reproducción desde Storage genera tráfico de salida, aunque solo existan tres selecciones y se limpie contenido antiguo.
 
 | Incidencia | Comportamiento acordado |
@@ -226,7 +226,7 @@ El repositorio se llama `cuadro-sonoro`. Sonoro continúa como nombre provisiona
 
 Habrá un modo demostración para portfolio, utilizable sin credenciales y claramente identificado. Usará datos y recursos de ejemplo separados, sin acceder a cuadros reales, crear importaciones reales ni generar costes en los servicios del proyecto.
 
-La demo podrá simular el flujo y el progreso, indicando que son simulaciones. Sus recursos de audio e imagen deben ser adecuados para publicarse junto al proyecto. La demo no demuestra por sí misma el funcionamiento real de YouTube, Firebase, Render o el ESP32.
+La demo podrá simular el flujo y el progreso, indicando que son simulaciones. Sus recursos de audio e imagen deben ser adecuados para publicarse junto al proyecto. La demo no demuestra por sí misma el funcionamiento real de YouTube, Firebase, la API o el ESP32.
 
 ## 14. Repositorio, documentación y forma de trabajar
 
@@ -257,7 +257,7 @@ La documentación debe permitir arrancar y probar cada parte desde una instalaci
 | Componente | Instrucciones y comandos que debe incluir |
 |---|---|
 | `web/` | Requisitos, configuración de demo y modo real, arranque del servidor local, URL que abrir, conexión con la API y comprobaciones disponibles. Documentar cómo se empaqueta y sirve desde el firmware. |
-| `backend/` | Versiones y dependencias, entorno virtual, instalación, plantilla de variables, arranque local y con Docker, ejecución de las tareas en segundo plano, pruebas, logs, parada, reinicio y despliegue en Render. |
+| `backend/` | Versiones y dependencias, entorno virtual, instalación, plantilla de variables, arranque local y con Docker, ejecución de las tareas en segundo plano, pruebas, logs y parada. El alojamiento externo queda por elegir. |
 | `firebase/` | Creación/configuración de recursos, conexión desde el backend, reglas, comandos de validación y despliegue cuando corresponda, emuladores si se incorporan y verificación de acceso con un cuadro de prueba. |
 | `firmware/` | Al abordar esta fase: herramientas, preparación privada del cuadro, compilación, carga por USB, monitor serie, configuración Wi-Fi, pruebas de audio/pantalla/controles y restablecimiento Wi-Fi. |
 | `docs/` | Guía de inicio completa, catálogo de API, recorrido de prueba paso a paso, despliegue y resolución de problemas habituales. |
@@ -289,7 +289,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 ### Orden de validación
 
 1. Consolidar esta definición en la documentación y preparar una base coherente de repositorio.
-2. Validar el recorrido real: buscar, elegir, procesar desde Render, subir audio e imagen a Firebase y escuchar el MP3 desde el navegador.
+2. Validar el recorrido real: buscar, elegir, procesar desde la API alojada, subir audio e imagen a Firebase y escuchar el MP3 desde el navegador.
 3. Completar la web dinámica conectada a tareas reales, incluyendo progreso, reintentos, sustitución y limpieza; validar búsqueda y escucha de Radio Browser en navegador y después en ESP32.
 4. Elegir hardware y validar reproducción de MP3 y radio por Wi-Fi, controles físicos y volumen.
 5. Integrar pantalla, imagen decorativa, luces y asistente Wi-Fi; comprobar recuperación y cambios durante reproducción.
@@ -299,7 +299,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 
 - Placa, memoria, pantalla, audio, alimentación, ruedas/pulsadores, pines y medidas.
 - Lectura autónoma del ESP32 y reglas de acceso directo a Firebase.
-- Ejecución y recuperación de tareas, concurrencia global, plan de Render y validación de descargas desde ese entorno.
+- Ejecución y recuperación de tareas, coordinación entre workers y validación de descargas desde el alojamiento elegido. La descarga directa con yt-dlp en Render falló con los errores históricos registrados; Apify/Render es una prueba alternativa pendiente.
 - Duración máxima de canciones, tiempos máximos de tareas, calidad MP3 y límites de subida de imágenes.
 - Resolución y formato de imágenes, brillo de pantalla y duración exacta de pulsación para restablecer Wi-Fi.
 - Conservación local de la imagen decorativa y comportamiento de pantalla sin red.

@@ -1,10 +1,15 @@
 import logging
+import json
+import os
 import re
+import subprocess
 import tempfile
 import time
 from pathlib import Path
+from urllib.request import Request
 
 from .config import MAX_BYTES, MAX_DURATION
+from . import apify
 from .media import delete_orphaned_media, persist_media
 from .state import begin_execution, check_cancel, patch_job, store
 
@@ -27,22 +32,6 @@ def _safe_error_detail(exc, source_id, temp_dir, frame_key, job_id, run_id):
     return detail[:500]
 
 
-class _YtDlpDiagnosticLogger:
-    """Forward extractor diagnostics after removing URLs and frame/task IDs."""
-    def __init__(self, source_id, temp_dir, frame_key, job_id, run_id):
-        self.context = (source_id, temp_dir, frame_key, job_id, run_id)
-
-    def debug(self, message):
-        if str(message).startswith('[debug]'):
-            logger.info('yt_dlp_diagnostic %s', _safe_error_detail(RuntimeError(message), *self.context))
-
-    def warning(self, message):
-        logger.warning('yt_dlp_diagnostic %s', _safe_error_detail(RuntimeError(message), *self.context))
-
-    def error(self, message):
-        logger.error('yt_dlp_diagnostic %s', _safe_error_detail(RuntimeError(message), *self.context))
-
-
 def execute_import(frame_key, queued_job):
     job_id = queued_job['id']
     job = begin_execution(frame_key, job_id)
@@ -54,72 +43,102 @@ def execute_import(frame_key, queued_job):
     logger.info('import_checkpoint stage=%s result=start', stage)
     try:
         check_cancel(frame_key, job_id, run_id)
-        import yt_dlp
         with tempfile.TemporaryDirectory(prefix='sonoro-') as tmp:
             base = Path(tmp)
             temp_dir = base
-            last = [0.0]
-            conversion_logged = [False]
-            def progress(data):
-                nonlocal stage
-                check_cancel(frame_key, job_id, run_id)
-                if data.get('downloaded_bytes', 0) > MAX_BYTES:
-                    raise RuntimeError('El archivo supera el tamaño permitido.')
-                if data['status'] == 'downloading' and time.monotonic() - last[0] > .6:
-                    last[0] = time.monotonic()
-                    total = data.get('total_bytes') or data.get('total_bytes_estimate')
-                    percent = min(99, int(data.get('downloaded_bytes', 0) * 100 / total)) if total else None
-                    patch_job(frame_key, job_id, run_id, status='downloading', percent=percent, estimated=not bool(data.get('total_bytes')), message='Descargando audio')
-                elif data['status'] == 'finished':
-                    stage = 'audio_conversion'
-                    if not conversion_logged[0]:
-                        logger.info('import_checkpoint stage=audio_conversion result=start')
-                        conversion_logged[0] = True
-                    patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando el MP3')
-            def processing(data):
-                check_cancel(frame_key, job_id, run_id)
-                patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando audio e imagen')
-            options = {
-                'quiet': True, 'no_warnings': False, 'verbose': True,
-                'logger': _YtDlpDiagnosticLogger(job.get('source_id', ''), base, frame_key, job_id, run_id),
-                'noplaylist': True,
-                'format': 'bestaudio/best', 'outtmpl': str(base / 'audio.%(ext)s'),
-                'writethumbnail': True, 'max_filesize': MAX_BYTES,
-                'socket_timeout': 25, 'retries': 2, 'fragment_retries': 2,
-                'progress_hooks': [progress], 'postprocessor_hooks': [processing],
-                'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '128'}],
-            }
-            url = 'https://www.youtube.com/watch?v=' + job['source_id']
-            with yt_dlp.YoutubeDL(options) as ydl:
-                stage = 'source_lookup'
-                logger.info('import_checkpoint stage=%s result=start', stage)
-                info = ydl.extract_info(url, download=False)
-                logger.info('import_checkpoint stage=%s result=complete', stage)
-                stage = 'metadata_validation'
-                logger.info('import_checkpoint stage=%s result=start', stage)
-                if info.get('is_live') or info.get('live_status') in {'is_live', 'is_upcoming'}:
-                    raise RuntimeError('Selecciona una canción grabada, no una emisión en directo.')
-                if not info.get('duration') or info['duration'] > MAX_DURATION:
-                    raise RuntimeError('La duración máxima es de 15 minutos.')
-                check_cancel(frame_key, job_id, run_id)
-                logger.info('import_checkpoint stage=%s result=complete', stage)
-                stage = 'source_download'
-                logger.info('import_checkpoint stage=%s result=start', stage)
-                ydl.download([url])
-                logger.info('import_checkpoint stage=%s result=complete', stage)
-            stage = 'audio_conversion'
+            stage = 'source_download'
+            logger.info('import_checkpoint stage=%s result=start', stage)
+            check_cancel(frame_key, job_id, run_id)
+            current = store.read(frame_key)['jobs'][job_id]
+            remote_run_id = current.get('apify_run_id')
+            if not remote_run_id:
+                if current.get('apify_creation_started'):
+                    raise apify.ApifyError('La creación remota quedó ambigua; comprueba Apify antes de reintentar.')
+                patch_job(frame_key, job_id, run_id, apify_creation_started=True)
+                patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando descarga con Apify')
+                try:
+                    remote = apify.create_run(os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader'), {
+                        'videoUrls': ['https://www.youtube.com/watch?v=' + job['source_id']],
+                        'audioFormat': 'mp3', 'audioBitrate': '128k', 'maxVideosPerUrl': 1,
+                    })
+                except Exception:
+                    # Ambiguous POST outcomes must be inspected manually, never repeated.
+                    logger.error('apify_run_creation_ambiguous actor=%s', os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader'))
+                    changed = patch_job(frame_key, job_id, run_id, status='error', message='No se pudo confirmar si Apify creó la descarga. Revisa Apify antes de cancelar y reintentar.', apify_creation_ambiguous=True)
+                    if not changed:
+                        def mark_ambiguous_cancel(state):
+                            current = state['jobs'].get(job_id)
+                            if current and current.get('status') == 'cancelled':
+                                current.update(apify_creation_ambiguous=True, message='Cancelada localmente; comprueba Apify porque la creación remota no se pudo confirmar.')
+                        store.mutate(frame_key, mark_ambiguous_cancel)
+                    return
+                remote_run_id = remote['id']
+                recorded = patch_job(frame_key, job_id, run_id, apify_run_id=remote_run_id, apify_creation_started=False, status='downloading', percent=None,
+                                     message='Apify está preparando el audio', apify_actor=os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader'))
+                if not recorded:
+                    def attach_cancelled_run(state):
+                        current = state['jobs'].get(job_id)
+                        if current and current.get('status') == 'cancelled':
+                            current.update(apify_run_id=remote_run_id, apify_creation_started=False, apify_cancel_pending=True)
+                    store.mutate(frame_key, attach_cancelled_run)
+                    try:
+                        apify.abort_run(remote_run_id)
+                        store.mutate(frame_key, lambda state: state['jobs'][job_id].update(apify_cancel_pending=False))
+                    except apify.ApifyError:
+                        pass
+                    check_cancel(frame_key, job_id, run_id)
+            else:
+                patch_job(frame_key, job_id, run_id, status='downloading', percent=None, message='Recuperando ejecución de Apify')
+            remote = apify.wait_run(remote_run_id)
+            check_cancel(frame_key, job_id, run_id)
+            info = apify.download_result(remote)
+            if info.get('videoId') != job['source_id']:
+                raise RuntimeError('Apify devolvió un vídeo distinto al seleccionado.')
+            duration = info.get('duration')
+            if not isinstance(duration, (int, float)) or duration <= 0 or duration > MAX_DURATION:
+                raise RuntimeError('La duración máxima es de 15 minutos.')
+            stage = 'source_download'
             audio = base / 'audio.mp3'
-            if not audio.is_file():
-                raise RuntimeError('No se ha generado el archivo de audio.')
+            request = Request(info['audioFileUrl'], headers={'Accept': 'audio/mpeg,application/octet-stream'})
+            with apify.open_media(request, timeout=30) as response, audio.open('wb') as output:
+                apify.validate_public_url(response.geturl())
+                length = response.headers.get('Content-Length')
+                total = int(length) if length and length.isdigit() else None
+                downloaded = 0
+                while True:
+                    check_cancel(frame_key, job_id, run_id)
+                    chunk = response.read(64 * 1024)
+                    if not chunk:
+                        break
+                    downloaded += len(chunk)
+                    if downloaded > MAX_BYTES:
+                        raise RuntimeError('El archivo supera el tamaño permitido.')
+                    output.write(chunk)
+                    percent = min(99, int(downloaded * 100 / total)) if total else None
+                    patch_job(frame_key, job_id, run_id, status='downloading', percent=percent,
+                              estimated=not bool(total), message='Descargando audio preparado por Apify')
+            stage = 'audio_validation'
+            probe = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration,format_name', '-of', 'json', str(audio)], capture_output=True, text=True, timeout=20, check=True)
+            measured = json.loads(probe.stdout).get('format', {})
+            if 'mp3' not in measured.get('format_name', ''):
+                raise RuntimeError('El archivo de audio no tiene formato MP3 válido.')
+            real_duration = float(measured.get('duration', 0))
+            if not real_duration or real_duration > MAX_DURATION:
+                raise RuntimeError('La duración máxima es de 15 minutos.')
+            patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando imagen y metadatos')
             logger.info('import_checkpoint stage=%s result=complete', stage)
             check_cancel(frame_key, job_id, run_id)
             stage = 'cover_processing'
             image_path = None
-            thumbnails = [p for p in base.glob('audio.*') if p.suffix.lower() in {'.jpg', '.jpeg', '.png', '.webp'}]
-            if thumbnails:
+            if info.get('thumbnailFileUrl'):
                 from PIL import Image, ImageOps
                 image_path = base / 'cover.jpg'
-                with Image.open(thumbnails[0]) as image:
+                thumbnail_path = base / 'thumbnail'
+                with apify.open_media(Request(info['thumbnailFileUrl']), timeout=20) as response:
+                    thumbnail_path.write_bytes(response.read(5 * 1024 * 1024 + 1))
+                if thumbnail_path.stat().st_size > 5 * 1024 * 1024:
+                    raise RuntimeError('La portada supera el tamaño permitido.')
+                with Image.open(thumbnail_path) as image:
                     ImageOps.fit(image.convert('RGB'), (320, 320)).save(image_path, quality=85)
             logger.info('import_checkpoint stage=%s result=complete cover=%s', stage, bool(image_path))
             patch_job(frame_key, job_id, run_id, status='uploading', percent=0, message='Guardando en tu biblioteca')
@@ -130,7 +149,7 @@ def execute_import(frame_key, queued_job):
             check_cancel(frame_key, job_id, run_id)
             track = {
                 'id': job_id, 'kind': 'song', 'title': job['title'], 'artist': job['artist'],
-                'source_id': job['source_id'], 'duration': info['duration'],
+                'source_id': job['source_id'], 'duration': int(real_duration),
                 'audio_key': audio_key, 'image_key': image_key, 'created_at': time.time(),
             }
             def complete(state):
@@ -151,6 +170,10 @@ def execute_import(frame_key, queued_job):
             type(exc).__name__,
             _safe_error_detail(exc, job.get('source_id', ''), temp_dir, frame_key, job_id, run_id),
         )
+        if isinstance(exc, apify.ApifyError) and 'tiempo máximo de seguimiento' in str(exc):
+            patch_job(frame_key, job_id, run_id, status='queued', percent=None,
+                      message='Apify sigue trabajando; se retomará el seguimiento automáticamente.')
+            return
         message = str(exc)
         known = ('duración máxima', 'emisión en directo', 'tamaño permitido', 'generado el archivo')
         safe = message if any(x in message for x in known) else 'La fuente no ha permitido completar la importación. Puedes reintentar o elegir otra versión.'
