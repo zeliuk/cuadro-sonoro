@@ -12,7 +12,8 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 - Identificador por cuadro en el enlace; no requiere alta y no es una credencial. No confundirlo con una credencial administrativa de Firebase.
 - Tres selecciones, tres pulsadores iluminados y rueda física. La web configura y permite escuchar localmente; no envía órdenes de reproducción ni volumen al ESP32.
 - Sin microSD ni canciones permanentes en el dispositivo. No autoplay al arrancar; una canción termina y se detiene.
-- Imagen decorativa optimizada desde la web; Wi-Fi mediante portal local y QR específico del dispositivo, separado de la web musical. Hardware y firmware siguen pendientes.
+- Imagen decorativa optimizada desde la web; primera configuración Wi-Fi mediante portal local sin Internet, con red temporal protegida por contraseña propia del dispositivo. Hardware y firmware siguen pendientes.
+- Botón 1 mantenido 2 s muestra durante 20 s el QR musical sin afectar al audio; botones 2+3 mantenidos juntos 5 s restablecen solo Wi-Fi, con cuenta atrás cancelable. Pulsaciones cortas controlan los tres huecos y la rueda solo el volumen. La definición completa está en `docs/DEFINICION.md`.
 - Una importación por cuadro; conservar selección anterior ante fallos. Cambiar configuración no interrumpe la reproducción activa.
 - Modo demo identificado, separado y sin uso de servicios reales.
 

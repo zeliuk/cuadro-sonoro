@@ -31,15 +31,16 @@ La experiencia debe resultar sencilla para regalar el cuadro a una persona sin c
 
 ### Configuración Wi-Fi
 
-1. En la primera instalación, sin una red guardada, el cuadro crea una red Wi-Fi temporal.
-2. La pantalla muestra un QR para conectarse a esa red y unas instrucciones breves.
-3. El móvil solicita confirmar la conexión. Un portal cautivo abre el asistente; si no aparece, la pantalla ofrece una dirección local de respaldo.
-4. La persona selecciona su red doméstica e introduce la contraseña.
-5. El ESP32 comprueba la conexión. Si falla, permite corregirla. Si funciona, guarda la configuración y cierra la red temporal.
+1. Al encenderse, el ESP32 comprueba si conserva credenciales Wi-Fi. Si no las tiene, inicia el modo de instalación y crea una red temporal con un nombre identificable por dispositivo, por ejemplo `Sonoro-Config-A1B2`.
+2. La pantalla muestra «Vamos a conectar tu cuadro», instrucciones breves y un QR para conectarse a esa red. La red temporal está protegida por una contraseña propia del dispositivo, incluida en el QR; no es la contraseña doméstica.
+3. La persona escanea el QR y confirma la conexión en el móvil. El cuadro intenta abrir automáticamente el portal cautivo. Si no aparece, muestra una dirección local de respaldo, por ejemplo `http://192.168.4.1`; la dirección definitiva queda pendiente de verificar al implementar el firmware.
+4. El asistente local permite elegir una red doméstica, actualizar la lista de redes, escribir su contraseña y pulsar «Conectar cuadro». Funciona sin Internet, Render ni Firebase. Si el móvil avisa que la red temporal no tiene Internet, las instrucciones le indican permanecer conectado mientras configura el cuadro.
+5. El ESP32 comprueba la conexión al router. Si falla, informa y permite corregir los datos sin reiniciar el proceso. La conexión al router y el acceso a Internet son estados distintos: no tener Internet no se interpreta automáticamente como contraseña incorrecta ni provoca borrar credenciales.
+6. Cuando se establece la conexión al router, el cuadro conserva las credenciales para los siguientes encendidos, muestra el resultado y cierra la red temporal. Después muestra el QR habitual de la web musical con «Escanea para elegir tu música». El móvil vuelve a su conexión habitual para abrir la web; no se garantiza el cambio automático de red.
 
-La contraseña Wi-Fi se conserva en el dispositivo y no se envía al hosting web, Render ni Firebase. Para cambiarla, se mantiene pulsado cualquiera de los tres botones. Una cuenta atrás en pantalla permite soltarlo antes de confirmar el restablecimiento. Este proceso borra únicamente la configuración Wi-Fi y conserva el identificador, las selecciones y el volumen.
+La contraseña de la red doméstica se conserva únicamente en el ESP32 y no se envía al hosting web, Render ni Firebase. El QR temporal de instalación y el QR/NFC habitual de configuración musical tienen funciones distintas. Con credenciales guardadas, una caída temporal del router o de Internet no las borra ni abre automáticamente el asistente: el cuadro informa del problema e intenta reconectar.
 
-El QR temporal de instalación y el QR/NFC habitual de configuración musical tienen funciones distintas. Una caída temporal de internet no borra la red guardada ni abre automáticamente el asistente de instalación.
+Para cambiar de router o corregir la red guardada, se mantiene pulsados juntos los botones 2 y 3 durante 5 segundos. Una cuenta atrás permite cancelar soltando cualquiera de ellos antes de completarla. El restablecimiento elimina únicamente las credenciales Wi-Fi y abre el asistente local; conserva identificador, selecciones, imagen decorativa y volumen. No es un borrado de fábrica ni elimina datos de Firebase.
 
 ## 3. Tres huecos y controles físicos
 
@@ -47,12 +48,18 @@ Cada hueco representa una única canción o emisora. No se incluyen listas de re
 
 | Acción | Resultado |
 |---|---|
-| Pulsar un botón con contenido, sin reproducir ese hueco | Reproduce su selección. |
-| Pulsar un botón de otro hueco | Cambia a la selección de ese hueco. |
-| Pulsar el botón del hueco que está sonando | Detiene la reproducción y vuelve a la imagen decorativa. |
-| Pulsar un hueco vacío | No inicia reproducción. |
-| Mantener pulsado cualquiera de los botones | Tras la cuenta atrás, restablece la Wi-Fi y abre el asistente. |
-| Girar el control de volumen | Modifica el volumen del cuadro. |
+| Pulsación corta en un hueco con contenido | Reproduce su selección. |
+| Pulsación corta en otro hueco | Cambia a la selección de ese hueco. |
+| Pulsación corta en el hueco activo | Detiene la reproducción y vuelve a la imagen decorativa. |
+| Pulsación corta en un hueco vacío | No inicia sonido. |
+| Mantener botón 1 durante 2 segundos | Muestra durante 20 segundos el QR de la web musical, sin interrumpir el audio. |
+| Mantener botones 2 y 3 juntos durante 5 segundos | Completa una cuenta atrás y restablece únicamente la Wi-Fi; después abre el asistente local. |
+| Soltar cualquiera de los botones 2 o 3 antes de completar la cuenta atrás | Cancela el restablecimiento. |
+| Girar la rueda | Ajusta únicamente el volumen del cuadro. No requiere pulsación ni tiene funciones adicionales. |
+
+El QR musical se genera en el dispositivo a partir de su identificador estable; no se descarga desde Firebase ni cambia el identificador. Mantener el botón 1 para mostrarlo no inicia, cambia ni detiene el audio. Tras 20 segundos, la pantalla vuelve a lo que corresponda al estado actual: carátula o logo durante la reproducción, imagen decorativa en reposo.
+
+El firmware debe tratar las pulsaciones largas y combinadas sin ejecutar también acciones cortas. La combinación 2+3 tiene prioridad sobre las acciones individuales; soltar tras una combinación no activa canciones y mantener pulsados los botones no repite continuamente la acción. Los tiempos de 2, 5 y 20 segundos son decisiones de producto pendientes de validar en hardware.
 
 Habrá tres pulsadores momentáneos retroiluminados y un control físico de volumen, preferentemente una rueda. El componente concreto se elegirá con el hardware.
 
@@ -302,7 +309,7 @@ Esta definición incorpora el requisito documental. El catálogo con comandos y 
 - Lectura autónoma del ESP32 y reglas de acceso directo a Firebase.
 - Ejecución y recuperación de tareas, coordinación entre workers y verificación independiente y detallada del flujo RapidAPI desde el origen web público. Carlos comunica que el backend funciona en Render. La búsqueda yt-dlp en Render tuvo errores históricos HTTP 429/403; no se ha probado en Raspberry Pi ni en una red doméstica.
 - Duración máxima de canciones, tiempos máximos de tareas, calidad MP3 y límites de subida de imágenes.
-- Resolución y formato de imágenes, brillo de pantalla y duración exacta de pulsación para restablecer Wi-Fi.
+- Resolución y formato de imágenes, brillo de pantalla, dirección definitiva del portal y validación en hardware de los tiempos acordados de 2, 5 y 20 segundos.
 - Conservación local de la imagen decorativa y comportamiento de pantalla sin red.
 - Política de limpieza de recursos en uso, retención de estados de tareas y configuración de borrado del bucket.
 - Comportamiento de reanudación tras una interrupción de audio por la red.

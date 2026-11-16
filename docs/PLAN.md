@@ -6,7 +6,7 @@ Leer definición y estado; revisar Git; ejecutar demo, API local, tests, checks 
 
 ## Fase 1 — Acceso y datos por cuadro (en curso)
 
-Completado: la API deriva ámbitos del identificador sin alta previa; IDs válidos crean o recuperan estado y se aíslan mediante SHA-256. La web recibe `#token=...`, lo mantiene en `sessionStorage`, limpia la URL y cambia de cuadro cancelando solicitudes anteriores. Las reglas Firebase permiten lecturas públicas por URL conocida en las rutas acordadas; listados y escrituras directas siguen cerrados. La conexión Admin, una importación anterior y la reproducción web en Chrome Headless están registradas en VALIDACION. La web pública queda decidida en `https://sonoro.zeliuk.xyz`; publicación, HTTPS, CORS desde ese origen y recorrido integrado están pendientes de comprobar. Los datos antiguos no se migran automáticamente.
+Completado: la API deriva ámbitos del identificador sin alta previa; IDs válidos crean o recuperan estado y se aíslan mediante SHA-256. La web recibe `#token=...`, lo mantiene en `sessionStorage`, limpia la URL y cambia de cuadro cancelando solicitudes anteriores. Las reglas Firebase permiten lecturas públicas por URL conocida en las rutas acordadas; listados y escrituras directas siguen cerrados. La conexión Admin, una importación anterior y la reproducción web en Chrome Headless están registradas en VALIDACION. La web pública queda decidida en `https://sonoro.zeliuk.xyz`; publicación, HTTPS, CORS desde ese origen y recorrido integrado están pendientes de comprobar. Los datos antiguos no se migran automáticamente. Se documentó el recorrido de instalación Wi-Fi y los gestos físicos acordados; todavía no hay firmware ni hardware que los implemente.
 
 ## Fase 2 — Importación real fiable
 
@@ -18,7 +18,7 @@ Herramientas de desarrollo ya existentes: servidor local de `web/`, publicación
 
 ## Fase 4 — Hardware y firmware
 
-Elegir hardware sin tratar la propuesta ESP32-S3 con PSRAM como decisión definitiva: placa, memoria, pantalla, audio, alimentación y conexiones siguen abiertas. Implementar consulta de configuración, streaming sin SD, botones y luces, rueda de volumen, imagen en reposo y portal local de Wi-Fi. Comprobar cambios durante reproducción, pérdidas de red y arranque silencioso. Añadir compilación/carga y monitor serie. El ESP32 no sirve la web musical.
+Elegir hardware sin tratar la propuesta ESP32-S3 con PSRAM como decisión definitiva: placa, memoria, pantalla, audio, alimentación y conexiones siguen abiertas. Implementar consulta de configuración, streaming sin SD, botones y luces, rueda de volumen, imagen en reposo y portal local de Wi-Fi. Implementar primera instalación offline con punto de acceso protegido por contraseña del dispositivo; QR musical con botón 1 (2 s/20 s); restablecimiento Wi-Fi solo con 2+3 (5 s, cuenta atrás cancelable); reconexión sin borrado automático al perder Internet; aislamiento correcto de gestos largos/combinados. Comprobar cambios durante reproducción, pérdidas de red y arranque silencioso. Añadir compilación/carga y monitor serie cuando se elijan entorno y placa. El ESP32 no sirve la web musical. WiFiManager puede evaluarse, pero no es una dependencia decidida.
 
 ## Fase 5 — Montaje y despliegue final
 

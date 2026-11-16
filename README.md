@@ -26,7 +26,7 @@ Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración»
 - Imagen decorativa elegida en la web y optimizada por el servidor.
 - Configuración Wi-Fi local mediante QR y asistente, sin instalar una app.
 
-La web pública decidida es `https://sonoro.zeliuk.xyz`; el QR/NFC usará `#token=<id-cuadro>`. El móvil necesita Internet, pero no la Wi-Fi del cuadro. El ESP32 tendrá un portal local separado para configurar su Wi-Fi. La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. El procedimiento y antecedentes de RapidAPI están en [PRUEBA_RAPIDAPI.md](docs/PRUEBA_RAPIDAPI.md); Carlos comunica el backend operativo, sin validación independiente de Codex en esta fase.
+La web pública decidida es `https://sonoro.zeliuk.xyz`; el QR/NFC usará `#token=<id-cuadro>`. El móvil necesita Internet, pero no la Wi-Fi del cuadro. El ESP32 tendrá un portal local independiente para configurar su Wi-Fi. Los gestos acordados son botón 1 mantenido 2 s para mostrar el QR musical durante 20 s y botones 2+3 mantenidos 5 s para restablecer únicamente Wi-Fi, con cuenta atrás cancelable. Son requisitos pendientes de firmware y validación en hardware. La [definición completa](docs/DEFINICION.md) es la referencia para implementar estos comportamientos. El procedimiento y antecedentes de RapidAPI están en [PRUEBA_RAPIDAPI.md](docs/PRUEBA_RAPIDAPI.md); Carlos comunica el backend operativo, sin validación independiente de Codex en esta fase.
 
 ## Arquitectura elegida
 

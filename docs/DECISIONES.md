@@ -6,7 +6,7 @@ La [definición](DEFINICION.md) contiene el detalle acordado el 12 de noviembre 
 |---|---|
 | Identidad | El identificador se fija en el enlace y selecciona su ámbito por Bearer; no autentica ni requiere alta. API y cliente directo derivan SHA-256. No hay Firebase Auth ni lista de cuadros. Por decisión expresa de Carlos, Firebase permite leer selecciones/medios por URL conocida sin sesión. |
 | Selecciones | Tres huecos, cada uno canción o emisora; sin playlists iniciales. |
-| Controles | Tres pulsadores iluminados y rueda. Repetir el botón activo detiene; pulsación larga restablece Wi-Fi. |
+| Controles | Tres pulsadores iluminados y rueda. Pulsación corta activa/detiene huecos; botón 1 mantenido 2 s muestra el QR musical durante 20 s; botones 2+3 juntos mantenidos 5 s restablecen solo Wi-Fi tras una cuenta atrás cancelable. La rueda solo ajusta volumen. Los gestos largos/combinados suprimen la acción corta y no se repiten al mantener. |
 | Encendido | Imagen decorativa y silencio, recordando volumen. |
 | Audio | Streaming directo al ESP32, búfer y sin SD; canción termina y se detiene. |
 | Web | Móvil primero, dinámica sin recargas y JavaScript modular; sin React. |
@@ -38,3 +38,7 @@ Carlos solicita mantener la búsqueda yt-dlp y sustituir Apify por RapidAPI YouT
 ## Estado comunicado del backend en Render — 16 de noviembre de 2026
 
 Carlos confirma que el backend funciona en Render con RapidAPI. Se registra como validación manual comunicada por el propietario; esta fase documental no hizo llamadas a Render, RapidAPI, YouTube o Firebase ni recibió métricas o logs para verificar detalles de importación, recuperación, cancelación o estabilidad. El firmware no existe. Los fallos históricos HTTP 429/403 pertenecen a descargas anteriores con yt-dlp y no deben describirse como bloqueo vigente de RapidAPI.
+
+## Primera instalación Wi-Fi y controles — 16 de noviembre de 2026
+
+Por instrucción de Carlos, la primera instalación usa un punto de acceso temporal identificable y protegido por contraseña propia del dispositivo; el QR conecta el móvil a esa red y el asistente local opera sin Internet ni servicios cloud. La contraseña doméstica queda solo en el ESP32. Una caída de Internet no se confunde con credenciales incorrectas ni abre el asistente. El dispositivo muestra después el QR musical generado desde su ID estable. Restablecer Wi-Fi requiere mantener 2+3 juntos 5 s; se cancela al soltar cualquiera y conserva ID, selecciones, imagen y volumen. El botón 1 muestra el QR tras 2 s de pulsación y lo mantiene visible 20 s. Son tiempos acordados, pendientes de validación física. Efecto: definición, arquitectura, estado, plan, guías de firmware y reglas compartidas actualizadas; sin implementación de firmware.

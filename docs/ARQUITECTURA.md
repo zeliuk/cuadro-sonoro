@@ -10,7 +10,7 @@ La [definición](DEFINICION.md) fija el producto; [ESTADO.md](ESTADO.md) describ
 | API/importador | Derivar el ámbito desde cualquier identificador válido, buscar, crear/procesar tareas, preparar medios y publicar configuraciones. No autentica usuarios ni consulta una lista de acceso. Cada tarea usa RapidAPI para preparar el MP3 seleccionado. Carlos comunica que el backend funciona en Render con RapidAPI; Codex no verificó el servicio en esta fase ni el recorrido desde la web pública. |
 | Realtime Database | Configuración por cuadro y estado durable de tareas. |
 | Storage | Audio e imágenes preparados, con limpieza según referencias. |
-| ESP32 | Consultar configuración por el identificador fijado para el cuadro; reproducir directamente; gestionar pantalla, botones, rueda física de volumen y Wi-Fi. Un portal local separado configura/restablece Wi-Fi; no aloja la web musical. |
+| ESP32 | Consultar configuración por el identificador fijado para el cuadro; reproducir directamente; gestionar pantalla, botones, rueda física de volumen y Wi-Fi. Un portal local separado configura/restablece Wi-Fi; no aloja la web musical. El QR temporal de instalación es distinto del QR habitual de la web musical. |
 
 El audio no atraviesa la API al reproducirse. No se añaden órdenes web de reproducir/detener ni volumen remoto. El estado configurado y la reproducción activa deben modelarse por separado para preservar un audio en uso durante una sustitución.
 
@@ -29,6 +29,14 @@ La web acepta el identificador en el fragmento, lo guarda en `sessionStorage` y 
 El acceso habitual usa `https://sonoro.zeliuk.xyz/#token=cuadro-demo`; web y cuadro pueden estar en redes distintas si el móvil tiene Internet. El navegador llama a `https://cuadro-sonoro.onrender.com`; CORS requiere el origen exacto `https://sonoro.zeliuk.xyz` en `ALLOWED_ORIGINS` (sin barra final). Esta variable existe en el backend, pero no se afirma que Render ya tenga el valor aplicado. La URL `meta[name="sonoro-api-base"]` del código aún apunta a Render. La búsqueda usa yt-dlp y RapidAPI descarga el ID seleccionado desde backend. Los fallos históricos HTTP 429/403 correspondían a descargas yt-dlp y son antecedentes, no bloqueo vigente de RapidAPI.
 
 Los scripts de servidor local/Bonjour se conservan como herramientas de desarrollo y sus pruebas como antecedentes, no como acceso de producto. El hardware y firmware no existen. No se conoce el proveedor o procedimiento de publicación del hosting de Carlos; la guía solo puede especificar publicar el contenido estático de `web/` por HTTPS sin inventar comandos ni rutas.
+
+## Primera instalación y controles físicos acordados
+
+Sin credenciales guardadas, el ESP32 crea un punto de acceso temporal identificable por dispositivo y protegido por una contraseña propia incluida en el QR de conexión. La pantalla guía a la persona al portal cautivo local; si este no se abre, muestra una dirección de respaldo aún por confirmar en firmware. El asistente permite actualizar redes, introducir la contraseña doméstica y volver a probar sin reiniciar el recorrido. Opera sin Internet ni servicios cloud. Se distingue conexión al router de acceso a Internet: perder Internet no invalida ni borra credenciales.
+
+Una vez conectado, el cuadro conserva las credenciales, cierra el punto temporal y muestra el QR musical. El dispositivo genera este QR desde el identificador estable; no lo descarga desde Firebase. Mantener botón 1 durante 2 segundos lo muestra durante 20 segundos sin tocar el audio. Para restablecer únicamente Wi-Fi se mantienen 2+3 juntos durante 5 segundos; la cuenta atrás se cancela al soltar cualquiera. Se conservan identificador, selecciones, imagen decorativa y volumen. Pulsaciones cortas activan/detienen huecos y la rueda solo ajusta volumen. El firmware debe dar prioridad a 2+3, suprimir la acción corta cuando hay gesto largo/combinado y evitar repetición mientras se mantienen los botones.
+
+Con credenciales guardadas, el cuadro intenta reconectar e informa de fallos temporales sin abrir el asistente automáticamente. Los tiempos, la dirección del portal y todo el comportamiento están acordados pero pendientes de implementación y comprobación en hardware. No se ha elegido placa ni librería; WiFiManager es solo candidato.
 
 ## Decisiones aplazadas
 
