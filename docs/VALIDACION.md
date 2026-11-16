@@ -1,5 +1,21 @@
 # Validación de esta entrega
 
+## Proveedor inicial yt-dlp — 16 de noviembre de 2026
+
+Tras el reporte de una solicitud que pedía `APIFY_TOKEN` sin querer usar Apify, la interfaz pasa a seleccionar yt-dlp inicialmente. Apify sigue disponible en el selector. La API conserva su valor predeterminado Apify para clientes antiguos que no envíen `provider`; la interfaz actual envía el valor elegido. No se ejecutaron pruebas ni se reinició/reconstruyó el backend en esta edición.
+
+## API local predeterminada en la web — 16 de noviembre de 2026
+
+Por decisión de Carlos, `web/index.html` ahora usa `http://127.0.0.1:8000` como `sonoro-api-base`, en lugar de Render. Se actualizaron README y guías de web, API, pruebas y configuración. Desde el móvil, `127.0.0.1` señala al propio teléfono; para Raspberry Pi/LAN debe configurarse la dirección alcanzable de la API en el HTML servido. La guía Render requiere cambiar temporalmente el meta en una copia local.
+
+No se ejecutaron pruebas ni comprobaciones automáticas en esta edición. No se llamó a Render, YouTube o Firebase.
+
+## Selector de proveedor y descarga local yt-dlp — 16 de noviembre de 2026
+
+Se preparó un selector por importación en la web para conservar Apify y permitir yt-dlp en la máquina que ejecuta la API. El proveedor se incluye en la tarea para mantenerlo al recuperar/reintentar; ambas opciones pasan por la validación de MP3/duración, portada, Storage y publicación existentes. yt-dlp convierte a MP3 con FFmpeg y usa el runtime JavaScript instalado en el host. Se actualizaron el contrato de `/imports`, OpenAPI generado por FastAPI, guía de API, instrucciones locales, definición, estado, configuración y README.
+
+Esta edición no se ha ejecutado ni probado todavía. No se ejecutaron tests, comprobaciones de sintaxis, build Docker ni pruebas de navegador; no hubo solicitudes a YouTube, Apify, Render o Firebase. La compatibilidad de yt-dlp en macOS/Raspberry Pi, el progreso/cancelación durante descargas y la publicación real siguen pendientes. Próximo paso: configurar una API local y Firebase de prueba, seleccionar un resultado autorizado y verificar primero `provider=yt_dlp`, preservación ante fallo y reintento; después contrastar que `provider=apify` conserva su flujo.
+
 ## Búsqueda yt-dlp y descarga Apify — 16 de noviembre de 2026
 
 Se restauró la búsqueda plana inicial con yt-dlp (`ytsearch5`) y se mantuvo Apify únicamente en la importación del MP3 seleccionado por ID. `/search` no requiere `APIFY_TOKEN` ni crea runs de Actors. Se añadió yt-dlp/yt-dlp-ejs a dependencias y Deno a la imagen Docker; se retiraron las variables de configuración exclusivas de la antigua búsqueda Apify del ejemplo y del `.env` local sin mostrar sus valores. Se actualizaron API/OpenAPI, definición, estado, configuración y procedimiento de descarga.

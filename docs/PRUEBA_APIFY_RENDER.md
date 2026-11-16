@@ -1,6 +1,6 @@
 # Preparar y ejecutar la prueba Apify en Render
 
-La descarga Apify está implementada, pero todavía no está validada con Actors reales ni desde Render. La búsqueda se hace con yt-dlp y no consume Actors. No se ha desplegado nada ni se ha iniciado ninguna ejecución de pago. Mantén una sola instancia y un worker (`--workers 1`): la cola durable y el límite global de esta prueba no coordinan varias instancias independientes.
+La descarga Apify está implementada, pero todavía no está validada con Actors reales ni desde Render. La web permite elegir Apify o yt-dlp por importación; esta guía cubre únicamente la variante Apify/Render. La búsqueda se hace con yt-dlp y no consume Actors. No se ha desplegado nada ni se ha iniciado ninguna ejecución de pago. Mantén una sola instancia y un worker (`--workers 1`): la cola durable y el límite global de esta prueba no coordinan varias instancias independientes. El `meta[name="sonoro-api-base"]` versionado apunta a `http://127.0.0.1:8000`; para esta prueba remota, cambia temporalmente una copia local de `web/index.html` a `https://cuadro-sonoro.onrender.com` y selecciona Apify. No incluyas ese cambio temporal en el uso local.
 
 ## 1. Revisar los Actors y proteger el gasto
 
@@ -66,4 +66,4 @@ Si el navegador bloquea CORS, revisa el origen exacto y el preflight. Se conserv
 
 ## 5. Volver a la versión anterior
 
-En Render, selecciona el último deploy anterior a este cambio y haz rollback desde el panel. El frontend versionado aquí ahora apunta a la URL de Render: para volver al endpoint/configuración anterior restaura también `web/index.html` desde el commit anterior y vuelve a servirlo. Retira `APIFY_TOKEN` del servicio después de confirmar que no hay runs en curso; no borres la base durable ni selecciones Firebase. Verifica logs y `/health`. No borres los datasets/runs de Apify hasta revisar si son evidencia/coste de la prueba.
+En Render, selecciona el último deploy anterior a este cambio y haz rollback desde el panel. El frontend versionado apunta a la API local; para volver a usar Render hay que cambiar temporalmente `meta[name="sonoro-api-base"]` en el HTML servido a la URL del servicio. Retira `APIFY_TOKEN` del servicio después de confirmar que no hay runs en curso; no borres la base durable ni selecciones Firebase. Verifica logs y `/health`. No borres los datasets/runs de Apify hasta revisar si son evidencia/coste de la prueba.

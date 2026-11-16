@@ -6,7 +6,7 @@ La prueba de integración usa estáticos locales y la API remota indicada en `we
 python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 ```
 
-Abre `http://127.0.0.1:5173/#token=cuadro-prueba-apify`. DevTools → Network debe mostrar API en `https://cuadro-sonoro.onrender.com`; las lecturas directas de reproducción a Firebase son esperadas. No debe aparecer Apify en la red del navegador. La prueba de importación, recuperación, errores, gasto y rollback está en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Se conserva también el servidor Bonjour/macOS descrito más abajo para sus pruebas de acceso desde móviles.
+Abre `http://127.0.0.1:5173/#token=cuadro-prueba-local`. Con el valor versionado, DevTools → Network debe mostrar API en `http://127.0.0.1:8000`; esa dirección solo funciona en el mismo ordenador. Para probar desde el móvil, configura el HTML para apuntar a una API accesible por LAN (por ejemplo, una Raspberry Pi) y ajusta CORS. La prueba remota Apify/Render requiere cambiar temporalmente el meta de la copia local; sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Se conserva también el servidor Bonjour/macOS descrito más abajo para las pruebas de acceso desde móviles.
 
 # Prueba web local desde un móvil
 

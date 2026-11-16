@@ -22,8 +22,10 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 | `APIFY_DOWNLOAD_ACTOR` | Actor de audio; predeterminado `lurkapi/youtube-to-mp3-audio-downloader`. Hay un adaptador compatible sin validar en real para `johnvc/youtube-download-api`; revisa su precio y esquema antes de seleccionarlo. | Configuración backend. |
 | `APIFY_RUN_TIMEOUT_SECONDS` | Espera acotada del ciclo de seguimiento de descarga. | Límites backend. |
 | `APIFY_ACTOR_TIMEOUT_SECONDS` | Límite del run remoto enviado a Apify; predeterminado `600` s. | Límite backend. |
+| `IMPORT_MIN_INTERVAL_SECONDS` | Enfriamiento global entre importaciones con cualquiera de los dos proveedores. Acepta el nombre antiguo `APIFY_IMPORT_MIN_INTERVAL_SECONDS` como alternativa. | Límites backend. |
+| `IMPORT_MAX_ACTIVE` | Número máximo de importaciones globales activas entre Apify y yt-dlp. Acepta el nombre antiguo `APIFY_MAX_ACTIVE_IMPORTS` como alternativa. | Límites backend. |
 
-| `APIFY_IMPORT_MIN_INTERVAL_SECONDS` / `APIFY_MAX_ACTIVE_IMPORTS` | Enfriamiento y concurrencia global de nuevas descargas. | Límites backend. |
+| `APIFY_IMPORT_MIN_INTERVAL_SECONDS` / `APIFY_MAX_ACTIVE_IMPORTS` | Nombres anteriores de los dos límites globales; se mantienen como fallback. | Compatibilidad backend. |
 
 Las selecciones antiguas que ya están bajo el hash del identificador continúan en la misma ruta; no se cambia el algoritmo ni se migra el nodo existente. Los datos de la antigua colección global `state` no se asignan a un cuadro porque su identidad no puede deducirse.
 
@@ -37,13 +39,13 @@ En macOS, la API nativa puede conservar en `backend/.env` la ruta absoluta de cr
 
 Admin SDK usa credenciales únicamente en backend y herramientas privadas; no se entrega al dispositivo. Por decisión expresa de Carlos, las reglas Firebase permiten leer `slots` y descargar objetos individuales por URL conocida sin sesión; bloquean listados, tareas y escrituras públicas. Cualquier persona que conozca o elija un identificador puede además modificar los datos de ese espacio mediante la API. SHA-256 solo deriva la ruta; no funciona como autorización. No hay Firebase Auth.
 
-La web recibe la URL desde `meta[name="sonoro-api-base"]`. `web/index.html` apunta a `https://cuadro-sonoro.onrender.com`. Al servir estáticos localmente, el navegador llama a Render y no requiere backend Python en el Mac. La credencial Apify solo reside como secreto en el backend. La prueba real está pendiente; configuración y procedimiento están en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
+La web recibe la URL desde `meta[name="sonoro-api-base"]`. `web/index.html` apunta a `http://127.0.0.1:8000`, la API local del mismo equipo. En cada cuadro de canción el usuario elige `Apify` o `yt-dlp (este servidor)`; la preferencia queda en el navegador y cada tarea conserva el proveedor elegido para recuperación/reintento. Para que yt-dlp corra en una Raspberry Pi y usarla desde el móvil, el HTML servido debe apuntar a la dirección LAN de la API de la Pi. Apify requiere su secreto solo en backend. yt-dlp necesita que la máquina de la API tenga yt-dlp/yt-dlp-ejs, un runtime JavaScript (Deno en Docker), FFmpeg/ffprobe y acceso a YouTube. La instalación manual local está en [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md); Apify/Render sigue en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
 
 El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`, por ejemplo `http://cuadro-sonoro-dev001.local/#token=cuadro-prueba`. En el entorno Mac de prueba se usa Bonjour/mDNS y el puerto HTTP 80. El sufijo es una etiqueta DNS configurable (1–49 caracteres en el script) y permanece estable aunque cambie la IP; el identificador del fragmento sigue siendo el ámbito SHA-256 existente. Instrucciones completas de instalación, QR, arranque y diagnóstico están en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md).
 
 CORS contempla `http://127.0.0.1:5173`, `http://localhost:5173` y el patrón restringido de hostnames `cuadro-sonoro-*.local`; el preflight debe permitir Authorization. `127.0.0.1` no identifica al Mac desde el teléfono.
 
-La búsqueda de YouTube usa yt-dlp desde la API y no requiere variables Apify; si el backend está en Render, su acceso a YouTube puede estar limitado por la red de salida. Para la prueba de descarga con Apify se mantienen los dos orígenes exactos de localhost y el patrón restringido de hostname local. La configuración completa de Apify y del servicio está en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
+La búsqueda de YouTube usa yt-dlp desde la API y no requiere variables Apify; el selector define después si la descarga sucede en esa misma máquina o en Apify. La configuración de orígenes para la prueba local conserva localhost y el patrón de hostname local. Los procedimientos están en [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) y [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md).
 
 ```dotenv
 ALLOWED_ORIGIN_REGEX=^http://cuadro-sonoro-[a-z0-9-]+\.local$

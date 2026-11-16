@@ -7,7 +7,7 @@ La [definición](DEFINICION.md) fija el producto; [ESTADO.md](ESTADO.md) describ
 | Componente | Responsabilidad |
 |---|---|
 | Web estática en ESP32 | Sirve HTML/CSS/JS en la red doméstica. El navegador del móvil ejecuta la interfaz de configuración, búsqueda/selección, progreso, imagen decorativa y escucha local. Se accede con QR/NFC mediante hostname local único, preferentemente mDNS; el firmware sirve los archivos, no ejecuta la aplicación web. |
-| API/importador Docker | Derivar el ámbito desde cualquier identificador válido, buscar, crear/procesar tareas, preparar medios y publicar configuraciones. No autentica usuarios ni consulta una lista de acceso. La integración de prueba ejecuta Actors Apify desde backend Render; despliegue y compatibilidad real siguen sin validar. |
+| API/importador | Derivar el ámbito desde cualquier identificador válido, buscar, crear/procesar tareas, preparar medios y publicar configuraciones. No autentica usuarios ni consulta una lista de acceso. Cada tarea escoge Apify (Actor remoto) o yt-dlp ejecutado en el host de la API; ambas rutas siguen pendientes de validación completa en el entorno de destino. |
 | Realtime Database | Configuración por cuadro y estado durable de tareas. |
 | Storage | Audio e imágenes preparados, con limpieza según referencias. |
 | ESP32 | Servir los archivos estáticos de la web; leer su configuración por el identificador fijado en el enlace; reproducir directamente y gestionar pantalla, botones, volumen, hostname local y Wi-Fi. |
@@ -26,7 +26,7 @@ El identificador se envía a la API en `Authorization: Bearer` como selector de 
 
 La web acepta el identificador en el fragmento del enlace. El cliente de prueba de ordenador obtiene los slots y medios directamente sin llamar a la API; el firmware no existe. La prueba actual sirve el frontend desde el ordenador y usa la URL Render del meta. Apify solo se comunica desde el backend. Los objetos publicados tienen URLs directas estables sujetas a las reglas de lectura pública por URL conocida.
 
-El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. En la prueba previa al hardware, un proceso Python del Mac sirve solo `web/` y Bonjour publica el hostname/IP LAN. El `meta` apunta a `https://cuadro-sonoro.onrender.com`. El navegador nunca conoce la credencial Apify. yt-dlp resuelve la búsqueda en el backend y Apify solo descarga el ID seleccionado. El diagnóstico histórico durante una importación con yt-dlp en Render devolvió HTTP 429/403; la búsqueda independiente no se ha verificado allí. En hardware, el ESP32 ocupará el lugar del servidor web; su servidor aún no existe.
+El enlace aprobado es `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. En la prueba previa al hardware, un proceso Python del Mac sirve solo `web/` y Bonjour publica el hostname/IP LAN. El `meta` versionado apunta a `http://127.0.0.1:8000` para uso en el mismo equipo. Para Raspberry Pi/móvil hay que configurar en el HTML servido la dirección LAN de la API de la Pi. El navegador nunca conoce la credencial Apify. yt-dlp resuelve la búsqueda y, si se elige, descarga el ID seleccionado en el host de la API; Apify permanece como segunda opción. El diagnóstico histórico de descarga yt-dlp en Render devolvió HTTP 429/403, que no determina el comportamiento en una Raspberry Pi ni en otra red. En hardware, el ESP32 ocupará el lugar del servidor web; su servidor aún no existe.
 
 ## Decisiones aplazadas
 

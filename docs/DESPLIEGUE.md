@@ -4,7 +4,7 @@ Esta entrega no crea proyectos remotos ni despliega servicios. Primero completar
 
 ## Web servida por el ESP32
 
-El enlace del cuadro conserva `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. Para la prueba actual, sirve `web/` local y llama a `https://cuadro-sonoro.onrender.com`; configuración, límites, logs y rollback están en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). La integración Apify/Render no está validada hasta la prueba real. Esto no valida firmware ni acceso móvil desde el hostname doméstico.
+El enlace del cuadro conserva `http://cuadro-sonoro-<id-dispositivo>.local/#token=<id-cuadro>`. El HTML versionado apunta a `http://127.0.0.1:8000`; la guía [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) explica cómo configurar una Raspberry Pi/API local en LAN para ejecutar allí yt-dlp. La opción Apify requiere `APIFY_TOKEN`. Para la prueba remota de Apify/Render sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). No se ha validado móvil ni firmware.
 
 ## Comprobar el contenedor local
 
@@ -23,7 +23,7 @@ Logs pueden contener detalles de operación: redactar cualquier valor sensible a
 
 ## Prueba de API en Render con Apify
 
-`web/index.html` apunta a `https://cuadro-sonoro.onrender.com` para la prueba autorizada. Apify sustituye el acceso a YouTube desde Render, pero esta integración no está validada hasta ejecutar la prueba manual. Sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) para variables, límites, despliegue, logs, prueba con proveedores reales y rollback. No despliegues ni generes consumo automáticamente.
+Para la prueba remota autorizada, cambia temporalmente el `meta[name="sonoro-api-base"]` de la copia local a la URL Render indicada en [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md); el valor versionado ahora es `http://127.0.0.1:8000`. La opción Apify sustituye el acceso de descarga a YouTube desde Render, pero la integración no está validada hasta ejecutar la prueba manual. La guía detalla variables, límites, despliegue, logs y rollback. No despliegues ni generes consumo automáticamente.
 
 ## Firebase
 

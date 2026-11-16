@@ -10,7 +10,7 @@ Completado: la API deriva ámbitos del identificador sin alta previa; IDs válid
 
 ## Fase 2 — Importación real fiable
 
-Comprobación inicial completada en Docker local: búsqueda de YouTube, selección explícita, descarga y conversión, subida de MP3/portada a Firebase real, publicación RTDB y reproducción en Chrome Headless. Implementado y probado localmente: recuperación acotada tras reinicio, cancelación durable, publicación atómica e idempotencia por ejecución, conservación de selección previa y volumen SQLite Docker. Búsqueda rápida con yt-dlp y descarga mediante Apify implementadas localmente con proveedores simulados; pendiente validar la búsqueda desde el entorno elegido y la importación real, consumo Apify, recuperación y escucha. Mantener una instancia/worker. No se ha desplegado ni iniciado consumo.
+Comprobación inicial completada en Docker local: búsqueda de YouTube, selección explícita, descarga y conversión, subida de MP3/portada a Firebase real, publicación RTDB y reproducción en Chrome Headless. Implementado localmente: recuperación acotada tras reinicio, cancelación durable, publicación atómica, conservación de selección previa y persistencia SQLite Docker. La búsqueda usa yt-dlp; la descarga por tarea puede elegirse entre Apify y yt-dlp en el host de API. El selector y la ruta de descarga yt-dlp se acaban de preparar y aún no se han probado ni siquiera con mocks; quedan pendientes tests y validación real de ambas rutas, búsqueda desde el entorno elegido, recuperación y escucha. Mantener una instancia/worker. No se ha desplegado ni iniciado consumo.
 
 ## Fase 3 — Completar la configuración web
 

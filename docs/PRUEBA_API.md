@@ -1,6 +1,6 @@
 # Probar la API paso a paso
 
-La búsqueda de canciones usa yt-dlp desde el backend y no consume Actors de Apify; puede estar sujeta a límites de YouTube según la red de salida. `/imports` usa Apify y puede generar consumo. Antes de importar con credenciales reales, revisa límites/uso y sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md). Las pruebas de pytest usan proveedores simulados.
+La búsqueda usa yt-dlp desde el backend. En `/imports`, el campo `provider` permite escoger `apify` (predeterminado; puede generar consumo) o `yt_dlp` (descarga en la máquina de la API). Ambos dependen del acceso a YouTube en su entorno correspondiente y requieren Storage para publicar. Sigue [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) o [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) antes de importar con servicios reales. Las pruebas automatizadas usan proveedores simulados.
 
 ## A. Comprobación local sin Firebase ni descargas
 

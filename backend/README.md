@@ -1,10 +1,10 @@
 # API: instalar, arrancar y probar
 
-**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web versionada apunta a Render; para probarla sirve `web/` estática según [PRUEBA_APIFY_RENDER.md](../docs/PRUEBA_APIFY_RENDER.md), sin backend Python local.
+**Todos los comandos parten de la raíz `cuadro-sonoro/`, no de esta carpeta.** La API aísla configuración, tareas y objetos nuevos por identificador Bearer del cuadro; el identificador solo selecciona un ámbito y no autentica usuarios. Ver [límites](../docs/ESTADO.md). La web versionada apunta a `http://127.0.0.1:8000`. Para probar o usar yt-dlp en este equipo, sirve `web/` estática y arranca esta API local. Ver [PRUEBA_YTDLP_LOCAL.md](../docs/PRUEBA_YTDLP_LOCAL.md).
 
 ## Requisitos e instalación nativa
 
-Python 3.12. La búsqueda usa yt-dlp y requiere salida a YouTube; la imagen Docker incluye Deno para la extracción JavaScript. Para importar audio se requieren FFmpeg/ffprobe y `APIFY_TOKEN`, solo en backend. Para revisar endpoints, OpenAPI y tests con proveedores simulados no hacen falta credenciales reales.
+Python 3.12. Búsqueda y descarga local usan yt-dlp y requieren salida a YouTube; la extracción de YouTube necesita un runtime JavaScript compatible (Deno en Docker), `yt-dlp-ejs` y FFmpeg/ffprobe. El selector de la web permite elegir Apify (requiere `APIFY_TOKEN`, solo en backend) o yt-dlp en el servidor local (sin token Apify). Ambos requieren Firebase Storage para publicar una selección.
 
 ```bash
 python3.12 -m venv .venv
@@ -14,7 +14,7 @@ python scripts/setup_local.py
 python scripts/check_project.py
 ```
 
-El script crea `backend/.env` a partir de la plantilla y deja vacíos los valores Firebase. Buscar no necesita `APIFY_TOKEN`; Apify se usa después de elegir un resultado. No sobrescribe un archivo existente. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. La API deriva su clave SHA-256, crea el estado al primer GET y lo recupera en peticiones posteriores. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
+El script crea `backend/.env` a partir de la plantilla y deja vacíos los valores Firebase. Buscar no necesita `APIFY_TOKEN`; solo se requiere al seleccionar Apify como proveedor de descarga. yt-dlp se ejecuta dentro del proceso backend y descarga en almacenamiento temporal antes de procesar/subir el audio. No sobrescribe un archivo existente. No hacen falta tokens locales ni listas de cuadros: usa como Bearer un identificador como `mi-cuadro-prueba`. `requirements-dev.txt` incluye las dependencias de ejecución y las de tests.
 
 ## Arranque nativo
 

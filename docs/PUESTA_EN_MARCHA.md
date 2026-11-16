@@ -10,7 +10,7 @@ git --version
 python3 scripts/check_project.py
 ```
 
-Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; la búsqueda usa yt-dlp y la importación requiere FFmpeg/ffprobe y el secreto `APIFY_TOKEN` solo en backend. Docker instala Deno, requerido por la extracción JavaScript de YouTube. Para arrancar nativamente, instala Deno 2.3 o posterior y asegúrate de que `deno` esté en `PATH`:
+Para ver la demo basta Python 3. Para instalar el backend se recomienda Python 3.12; búsqueda y descarga local usan yt-dlp, yt-dlp-ejs, un runtime JavaScript (Deno en Docker) y FFmpeg/ffprobe. Apify requiere además `APIFY_TOKEN` solo en backend; yt-dlp local no. Para arrancar nativamente, instala Deno 2.3 o posterior y asegúrate de que `deno` esté en `PATH`:
 
 ```bash
 curl -fsSL https://deno.land/install.sh | sh
@@ -30,7 +30,7 @@ Abre [la web](http://127.0.0.1:5173). Sin un enlace de cuadro aparece el acceso 
 
 ## 3. API
 
-Sigue [backend/README.md](../backend/README.md): instalación, preparación de `.env`, arranque nativo o Docker, comprobación HTTP, logs, tests y parada. Sigue [PRUEBA_API.md](PRUEBA_API.md) para comprobar rutas en orden. Para la prueba de frontend local contra Render, sigue [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md); no requiere backend Python local.
+Sigue [backend/README.md](../backend/README.md): instalación, preparación de `.env`, arranque nativo o Docker, comprobación HTTP, logs y parada. Sigue [PRUEBA_API.md](PRUEBA_API.md) para los contratos, [PRUEBA_YTDLP_LOCAL.md](PRUEBA_YTDLP_LOCAL.md) para descargar en el equipo de la API, o [PRUEBA_APIFY_RENDER.md](PRUEBA_APIFY_RENDER.md) para la ruta Apify en Render.
 
 ## 4. Comenzar con Codex
 

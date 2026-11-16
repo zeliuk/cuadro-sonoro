@@ -123,10 +123,10 @@ def search_stations(body: StationSearch, _frame_key: str = Depends(identify_fram
         raise HTTPException(502, 'No se pudo consultar Radio Browser. Vuelve a intentarlo más tarde.') from None
 
 
-@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta Apify o Firebase Storage.'}})
+@app.post('/imports', status_code=202, responses={401: {'description': 'Identificador ausente o no válido.'}, 409: {'description': 'El cuadro ya tiene una importación activa.'}, 429: {'description': 'Límite global de frecuencia o concurrencia.'}, 503: {'description': 'Falta el proveedor seleccionado o Firebase Storage.'}})
 def create_import(body: Import, frame_key: str = Depends(identify_frame)):
     global last_import_at
-    if not os.getenv('APIFY_TOKEN', '').strip():
+    if body.provider == 'apify' and not os.getenv('APIFY_TOKEN', '').strip():
         raise HTTPException(503, 'Configura APIFY_TOKEN en el backend antes de importar.')
     if any(j['status'] in ACTIVE for j in store.read(frame_key)['jobs'].values()):
         raise HTTPException(409, 'Este cuadro ya tiene una importación en curso.')
@@ -134,12 +134,12 @@ def create_import(body: Import, frame_key: str = Depends(identify_frame)):
         raise HTTPException(503, 'Configura Firebase Storage antes de importar.')
     with import_lock:
         now = time.monotonic()
-        cooldown = float(os.getenv('APIFY_IMPORT_MIN_INTERVAL_SECONDS', '10'))
+        cooldown = float(os.getenv('IMPORT_MIN_INTERVAL_SECONDS', os.getenv('APIFY_IMPORT_MIN_INTERVAL_SECONDS', '10')))
         if now - last_import_at < cooldown:
             raise HTTPException(429, 'Importación limitada temporalmente; espera antes de generar otra ejecución.')
         last_import_at = now
     total_active = sum(j['status'] in ACTIVE for frame in store.read_all().values() for j in frame['jobs'].values())
-    if total_active >= int(os.getenv('APIFY_MAX_ACTIVE_IMPORTS', '1')):
+    if total_active >= int(os.getenv('IMPORT_MAX_ACTIVE', os.getenv('APIFY_MAX_ACTIVE_IMPORTS', '1'))):
         raise HTTPException(429, 'Se alcanzó el límite global de importaciones. Inténtalo más tarde.')
     job = {**body.model_dump(), 'id': secrets.token_hex(12), 'status': 'queued', 'percent': None, 'message': 'Esperando turno', 'created_at': time.time()}
     def add(state):

@@ -87,7 +87,7 @@ Respuesta 200: `{"results":[{"stationuuid":"id-radio","name":"Radio Nacional","c
 
 ## POST /imports
 
-Crea una tarea, sin esperar a que termine. Requiere `APIFY_TOKEN`, Storage configurado y credenciales/datos Firebase válidos. Hay un límite global de importación activa (`APIFY_MAX_ACTIVE_IMPORTS`, valor de prueba 1), además del límite por cuadro. El worker inicia `lurkapi/youtube-to-mp3-audio-downloader` con `videoUrls` de un solo ID validado, `audioFormat=mp3`, `audioBitrate=128k` y `maxVideosPerUrl=1`. Persiste el run ID antes de seguirlo; tras reinicio consulta el mismo run. Si el POST de creación da respuesta ambigua, queda en error y no se reintenta automáticamente. La tarea comprueba estado terminal y resultado individual antes de descargar el archivo preparado, valida tamaño/MP3/duración y publica de forma atómica. Probar solo con recursos dedicados. Falta la prueba real Apify/Render.
+Crea una tarea, sin esperar a que termine. Requiere Firebase Storage y estado accesibles. `provider` selecciona `apify` (predeterminado y requiere `APIFY_TOKEN`) o `yt_dlp` (descarga y convierte en la máquina que ejecuta la API; requiere yt-dlp, runtime JavaScript, FFmpeg/ffprobe y acceso a YouTube). Ambos usan los límites globales de concurrencia/frecuencia y el mismo procesamiento, validación, subida y publicación atómica. Apify conserva su run ID para recuperarse tras reinicio; yt-dlp reanuda la tarea desde cero, sujeto al límite habitual de recuperaciones. La selección previa se conserva ante fallos. La ruta yt-dlp local y Apify/Render están pendientes de prueba completa con servicios reales.
 
 | Campo JSON | Tipo | Restricción |
 |---|---|---|
@@ -95,6 +95,7 @@ Crea una tarea, sin esperar a que termine. Requiere `APIFY_TOKEN`, Storage confi
 | `source_id` | string | ID del resultado, exactamente 11 caracteres de letras, números, `_` o `-`. |
 | `title` | string | Entre 1 y 200 caracteres. |
 | `artist` | string | Entre 1 y 200 caracteres. |
+| `provider` | string | `apify` o `yt_dlp`; opcional, valor predeterminado `apify`. |
 
 El siguiente ID es sintético: sustituirlo por uno seleccionado realmente en `/search` antes de ejecutar una importación real.
 
@@ -102,16 +103,16 @@ El siguiente ID es sintético: sustituirlo por uno seleccionado realmente en `/s
 curl -sS "$API_BASE/imports" \
   -H "Authorization: Bearer $FRAME_ID" \
   -H 'Content-Type: application/json' \
-  -d '{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido"}'
+  -d '{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","provider":"yt_dlp"}'
 ```
 
 Forma de respuesta 202:
 
 ```json
-{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","id":"id-de-tarea","status":"queued","percent":null,"message":"Esperando turno","created_at":1700000000.0}
+{"slot":0,"source_id":"abcdefghijk","title":"Título elegido","artist":"Artista elegido","provider":"yt_dlp","id":"id-de-tarea","status":"queued","percent":null,"message":"Esperando turno","created_at":1700000000.0}
 ```
 
-Errores: 503 si falta configuración Storage; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una tarea nueva.
+Errores: 503 si falta configuración Storage o `APIFY_TOKEN` cuando `provider=apify`; 409 si el cuadro ya tiene una tarea activa, incluso en otro hueco; 422 si el cuerpo no cumple restricciones; 429 si se alcanza la frecuencia/concurrencia global. `provider=yt_dlp` no requiere token Apify. No hay clave de idempotencia: repetir una petición después de acabar/cancelar puede crear una tarea nueva.
 
 La selección anterior se conserva hasta completar audio, imagen y publicación. Estados: `queued`, `downloading`, `processing`, `uploading`, `ready`, `error`, `cancelled`. `percent` puede ser `null` y, en descarga, `estimated` puede marcar una estimación. El porcentaje es de la etapa, no del proceso completo. `attempts` cuenta ejecuciones iniciadas; `recoveries` cuenta recuperaciones tras caída (máximo dos).
 

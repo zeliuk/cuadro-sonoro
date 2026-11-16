@@ -2,7 +2,7 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
-**Estado: búsqueda rápida con yt-dlp y descarga Apify implementadas localmente; flujo en Render pendiente de validación real.** El prototipo tuvo una importación previa validada en Docker local; esta combinación no se ha probado ni desplegado. La web local apunta a `https://cuadro-sonoro.onrender.com`. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md) y [guía de prueba Apify/Render](docs/PRUEBA_APIFY_RENDER.md).
+**Estado: la web permite elegir Apify o yt-dlp en el servidor de API; la nueva ruta yt-dlp no está validada.** El prototipo tuvo una importación previa validada en Docker local; las variantes actuales no se han probado completas. La web apunta ahora a `http://127.0.0.1:8000`, la API local. Para ejecutar la variante yt-dlp en una Raspberry Pi, la web debe apuntar a la API instalada allí. Consulta [estado](docs/ESTADO.md), [puesta en marcha](docs/PUESTA_EN_MARCHA.md), [guía yt-dlp local](docs/PRUEBA_YTDLP_LOCAL.md) y [guía Apify/Render](docs/PRUEBA_APIFY_RENDER.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -33,7 +33,7 @@ La [definición completa](docs/DEFINICION.md) es la referencia para implementar 
 | Parte | Tecnología y ubicación |
 |---|---|
 | Web | HTML, CSS y JavaScript modular servidos por el ESP32 en la red doméstica; el móvil ejecuta la interfaz. |
-| API e importador | Python/FastAPI; búsqueda con yt-dlp y descarga mediante Apify; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Integración pendiente de prueba real Apify/Render. |
+| API e importador | Python/FastAPI; búsqueda con yt-dlp y elección de descarga mediante Apify o yt-dlp en el servidor; FFmpeg/ffprobe y procesamiento de imágenes; RTDB/Storage en Firebase. Ambas rutas pendientes de prueba real con la arquitectura de destino. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
 | Dispositivo | ESP32 con pantalla, audio y controles; hardware pendiente. |
