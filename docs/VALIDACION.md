@@ -6,6 +6,8 @@ Se restauró la búsqueda plana inicial con yt-dlp (`ytsearch5`) y se mantuvo Ap
 
 Verificaciones: `pytest backend/tests scripts/tests -q` (**65 passed**); `python -m compileall -q backend scripts`; `node --check web/app.js`; `git diff --check`; `docker compose config --quiet`. La construcción de la imagen no pudo comprobarse porque el daemon Docker no está activo. La búsqueda fue verificada con mocks; no se llamó a YouTube, Apify, Render ni Firebase. La búsqueda desde Render y la descarga real siguen pendientes.
 
+Durante la construcción remota, el instalador de Deno descargado con `curl` terminó con código 56. Se sustituyó por la copia del binario desde la imagen oficial `denoland/deno:bin-2.9.8` en una etapa multi-stage. La nueva construcción todavía debe confirmarse en Render.
+
 
 ## Endpoint API predeterminado local — 16 de noviembre de 2026
 
