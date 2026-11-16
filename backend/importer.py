@@ -51,19 +51,17 @@ def execute_import(frame_key, queued_job):
             check_cancel(frame_key, job_id, run_id)
             current = store.read(frame_key)['jobs'][job_id]
             remote_run_id = current.get('apify_run_id')
+            actor = current.get('apify_actor') or os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader').strip()
             if not remote_run_id:
                 if current.get('apify_creation_started'):
                     raise apify.ApifyError('La creación remota quedó ambigua; comprueba Apify antes de reintentar.')
                 patch_job(frame_key, job_id, run_id, apify_creation_started=True)
                 patch_job(frame_key, job_id, run_id, status='processing', percent=None, message='Preparando descarga con Apify')
                 try:
-                    remote = apify.create_run(os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader'), {
-                        'videoUrls': ['https://www.youtube.com/watch?v=' + job['source_id']],
-                        'audioFormat': 'mp3', 'audioBitrate': '128k', 'maxVideosPerUrl': 1,
-                    })
+                    remote = apify.create_run(actor, apify.download_input(actor, job['source_id'], MAX_DURATION, MAX_BYTES))
                 except Exception:
                     # Ambiguous POST outcomes must be inspected manually, never repeated.
-                    logger.error('apify_run_creation_ambiguous actor=%s', os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader'))
+                    logger.error('apify_run_creation_ambiguous actor=%s', actor)
                     changed = patch_job(frame_key, job_id, run_id, status='error', message='No se pudo confirmar si Apify creó la descarga. Revisa Apify antes de cancelar y reintentar.', apify_creation_ambiguous=True)
                     if not changed:
                         def mark_ambiguous_cancel(state):
@@ -74,7 +72,7 @@ def execute_import(frame_key, queued_job):
                     return
                 remote_run_id = remote['id']
                 recorded = patch_job(frame_key, job_id, run_id, apify_run_id=remote_run_id, apify_creation_started=False, status='downloading', percent=None,
-                                     message='Apify está preparando el audio', apify_actor=os.getenv('APIFY_DOWNLOAD_ACTOR', 'lurkapi/youtube-to-mp3-audio-downloader'))
+                                     message='Apify está preparando el audio', apify_actor=actor)
                 if not recorded:
                     def attach_cancelled_run(state):
                         current = state['jobs'].get(job_id)
@@ -91,7 +89,7 @@ def execute_import(frame_key, queued_job):
                 patch_job(frame_key, job_id, run_id, status='downloading', percent=None, message='Recuperando ejecución de Apify')
             remote = apify.wait_run(remote_run_id)
             check_cancel(frame_key, job_id, run_id)
-            info = apify.download_result(remote)
+            info = apify.download_result(remote, actor=actor)
             if info.get('videoId') != job['source_id']:
                 raise RuntimeError('Apify devolvió un vídeo distinto al seleccionado.')
             duration = info.get('duration')

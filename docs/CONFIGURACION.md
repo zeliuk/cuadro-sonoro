@@ -20,7 +20,7 @@ El formato aceptado es de 1 a 128 caracteres ASCII: el primero debe ser letra o 
 | `PORT` | Puerto del proceso Docker; por defecto 8000. | Entorno de ejecución. |
 | `APIFY_TOKEN` | Token privado para ejecutar Actors, leer sus runs/datasets y descargar medios de sus key-value stores; exclusivamente backend. | **Secreto**, nunca web/firmware/logs. |
 | `APIFY_SEARCH_ACTOR` | Actor de búsqueda; predeterminado `streamers/youtube-scraper`. | Configuración backend. |
-| `APIFY_DOWNLOAD_ACTOR` | Actor de audio; predeterminado `lurkapi/youtube-to-mp3-audio-downloader`. | Configuración backend. |
+| `APIFY_DOWNLOAD_ACTOR` | Actor de audio; predeterminado `lurkapi/youtube-to-mp3-audio-downloader`. Hay un adaptador compatible sin validar en real para `johnvc/youtube-download-api`; revisa su precio y esquema antes de seleccionarlo. | Configuración backend. |
 | `APIFY_SEARCH_TIMEOUT_SECONDS` / `APIFY_RUN_TIMEOUT_SECONDS` | Espera acotada de búsqueda/ciclo de seguimiento. | Límites backend. |
 | `APIFY_ACTOR_TIMEOUT_SECONDS` | Límite del run remoto enviado en la API de Apify. | Límite backend. |
 | `APIFY_SEARCH_CACHE_SECONDS` / `APIFY_SEARCH_MIN_INTERVAL_SECONDS` | Retención de resultados y enfriamiento global de búsquedas. | Límites backend. |

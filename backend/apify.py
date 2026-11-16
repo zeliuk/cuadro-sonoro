@@ -13,6 +13,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 API = 'https://api.apify.com/v2'
+JOHNVC_DOWNLOAD_ACTOR = 'johnvc/youtube-download-api'
 _lock = threading.Lock()
 _cache = OrderedDict()
 _last_search = 0.0
@@ -170,6 +171,25 @@ def search(artist, title, max_duration):
     return results
 
 
+def download_input(actor, video_id, max_duration, max_bytes):
+    video_url = 'https://www.youtube.com/watch?v=' + video_id
+    if actor == JOHNVC_DOWNLOAD_ACTOR:
+        return {
+            'videoUrls': [video_url],
+            'format': 'audio',
+            'audioFormat': 'mp3',
+            'audioQuality': 'standard',
+            'maxMinutes': max(1, (max_duration + 59) // 60),
+            'maxMegabytes': max(1, max_bytes // (1024 * 1024)),
+        }
+    return {
+        'videoUrls': [video_url],
+        'audioFormat': 'mp3',
+        'audioBitrate': '128k',
+        'maxVideosPerUrl': 1,
+    }
+
+
 def validate_public_url(url):
     parsed = urlparse(url or '')
     if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password:
@@ -214,13 +234,27 @@ def open_media(request, timeout=30):
     return build_opener(_SafeRedirect()).open(media_request, timeout=timeout)
 
 
-def download_result(run):
+def download_result(run, actor=None):
     if run.get('status') != 'SUCCEEDED':
         raise ApifyError('La ejecución de descarga de Apify no terminó correctamente.')
     items = dataset_items(run.get('defaultDatasetId', '')) if run.get('defaultDatasetId') else []
     if not items:
         raise ApifyError('El Actor terminó sin resultados de descarga.')
     result = items[0]
+    if actor == JOHNVC_DOWNLOAD_ACTOR:
+        if (result.get('resultType') != 'file' or result.get('error')
+                or result.get('format') != 'audio' or result.get('container') != 'mp3'):
+            logging.getLogger('uvicorn.error').warning(
+                'apify_download_item_failed actor=johnvc result_file=%s error_present=%s file_url_present=%s',
+                result.get('resultType') == 'file', bool(result.get('error')), bool(result.get('fileUrl')),
+            )
+            raise ApifyError('El run de Apify terminó, pero no entregó un MP3. Revisa el campo error del resultado en Apify.')
+        return {
+            'videoId': result.get('videoId'),
+            'duration': result.get('durationSeconds'),
+            'audioFileUrl': validate_public_url(result.get('fileUrl')),
+            'thumbnailFileUrl': validate_public_url(result.get('thumbnailUrl')) if result.get('thumbnailUrl') else None,
+        }
     if str(result.get('status', '')).casefold() != 'success' or result.get('error'):
         logging.getLogger('uvicorn.error').warning(
             'apify_download_item_failed run_succeeded=true status_success=%s error_present=%s audio_url_present=%s',
@@ -228,7 +262,7 @@ def download_result(run):
             bool(result.get('error')),
             bool(result.get('audioFileUrl')),
         )
-        raise ApifyError('El run de Apify terminó, pero falló la descarga individual. Revisa el run en Apify; los vídeos privados o restringidos por edad no se pueden descargar.')
+        raise ApifyError('El run de Apify terminó, pero falló la descarga individual. Revisa el campo status/error de ese run; YouTube puede bloquear la descarga incluso en vídeos públicos.')
     result['audioFileUrl'] = validate_public_url(result.get('audioFileUrl'))
     thumbnail = result.get('thumbnailFileUrl') or result.get('thumbnailYoutubeUrl')
     result['thumbnailFileUrl'] = validate_public_url(thumbnail) if thumbnail else None

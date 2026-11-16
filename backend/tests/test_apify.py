@@ -74,7 +74,7 @@ def test_import_success_publishes_after_download_and_preserves_previous_until_co
     job = seed_job()
     monkeypatch.setattr(importer.apify, 'create_run', lambda *args: {'id':'remote-1'})
     monkeypatch.setattr(importer.apify, 'wait_run', lambda run_id: {'id':run_id,'status':'SUCCEEDED'})
-    monkeypatch.setattr(importer.apify, 'download_result', lambda run: {'videoId':'BaW_jenozKc','duration':30,'audioFileUrl':'https://audio.example/test.mp3','thumbnailFileUrl':None})
+    monkeypatch.setattr(importer.apify, 'download_result', lambda run, actor=None: {'videoId':'BaW_jenozKc','duration':30,'audioFileUrl':'https://audio.example/test.mp3','thumbnailFileUrl':None})
     monkeypatch.setattr(importer.apify, 'validate_public_url', lambda url: url)
     class Response:
         headers = {'Content-Length':'4'}
@@ -110,7 +110,7 @@ def test_failed_individual_result_and_duration_leave_previous_track(monkeypatch,
     job=seed_job()
     monkeypatch.setattr(importer.apify, 'create_run', lambda *args: {'id':'run'})
     monkeypatch.setattr(importer.apify, 'wait_run', lambda *args: {'status':'SUCCEEDED'})
-    monkeypatch.setattr(importer.apify, 'download_result', lambda *args: result if result.get('status') == 'failed' else (_ for _ in ()).throw(apify.ApifyError('too long')))
+    monkeypatch.setattr(importer.apify, 'download_result', lambda *args, **kwargs: result if result.get('status') == 'failed' else (_ for _ in ()).throw(apify.ApifyError('too long')))
     monkeypatch.setattr(importer.apify, 'validate_public_url', lambda url: url)
     importer.execute_import(KEY, job)
     state=main.store.read(KEY)
@@ -149,7 +149,7 @@ def test_invalid_oversized_or_too_long_audio_is_not_published(monkeypatch, paylo
     monkeypatch.setattr(importer,'MAX_BYTES',limit)
     monkeypatch.setattr(importer.apify,'create_run',lambda *args:{'id':'remote'})
     monkeypatch.setattr(importer.apify,'wait_run',lambda *args:{'status':'SUCCEEDED'})
-    monkeypatch.setattr(importer.apify,'download_result',lambda *args:{'videoId':'BaW_jenozKc','duration':5,'audioFileUrl':'https://audio.example/file.mp3','thumbnailFileUrl':None})
+    monkeypatch.setattr(importer.apify,'download_result',lambda *args, **kwargs:{'videoId':'BaW_jenozKc','duration':5,'audioFileUrl':'https://audio.example/file.mp3','thumbnailFileUrl':None})
     monkeypatch.setattr(importer.apify,'validate_public_url',lambda url:url)
     class Response:
         headers={}
@@ -226,6 +226,28 @@ def test_apify_downloader_documented_success_casing_and_actor_path(monkeypatch):
     monkeypatch.setattr(apify,'validate_public_url',lambda url:url)
     assert apify.download_result({'status':'SUCCEEDED','defaultDatasetId':'dataset'})['audioFileUrl']=='https://api.apify.com/file'
     assert apify._actor_path('streamers/youtube-scraper')=='/acts/streamers~youtube-scraper'
+
+
+def test_johnvc_downloader_adapter_matches_documented_input_and_output(monkeypatch):
+    actor = apify.JOHNVC_DOWNLOAD_ACTOR
+    payload = apify.download_input(actor, 'BaW_jenozKc', 901, 40 * 1024 * 1024)
+    assert payload == {
+        'videoUrls': ['https://www.youtube.com/watch?v=BaW_jenozKc'],
+        'format': 'audio', 'audioFormat': 'mp3', 'audioQuality': 'standard',
+        'maxMinutes': 16, 'maxMegabytes': 40,
+    }
+    monkeypatch.setattr(apify, 'dataset_items', lambda dataset: [{
+        'resultType': 'file', 'videoId': 'BaW_jenozKc', 'durationSeconds': 30,
+        'format': 'audio', 'container': 'mp3',
+        'fileUrl': 'https://api.apify.com/v2/key-value-stores/store/records/audio.mp3',
+        'thumbnailUrl': None,
+    }])
+    monkeypatch.setattr(apify, 'validate_public_url', lambda url: url)
+    result = apify.download_result({'status': 'SUCCEEDED', 'defaultDatasetId': 'dataset'}, actor=actor)
+    assert result['videoId'] == 'BaW_jenozKc'
+    assert result['duration'] == 30
+    assert result['audioFileUrl'].endswith('/audio.mp3')
+    assert result['thumbnailFileUrl'] is None
 
 
 def test_media_download_authenticates_only_apify_key_value_store(monkeypatch):

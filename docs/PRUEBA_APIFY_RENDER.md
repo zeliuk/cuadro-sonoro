@@ -16,7 +16,7 @@ En el servicio web `cuadro-sonoro`, añade/modifica estas variables desde **Envi
 |---|---|---|
 | `APIFY_TOKEN` | Token creado en Apify con permisos mínimos necesarios para iniciar/leer/abortar runs y leer datasets | **Secreto** |
 | `APIFY_SEARCH_ACTOR` | `streamers/youtube-scraper` | Configuración |
-| `APIFY_DOWNLOAD_ACTOR` | `lurkapi/youtube-to-mp3-audio-downloader` | Configuración |
+| `APIFY_DOWNLOAD_ACTOR` | `lurkapi/youtube-to-mp3-audio-downloader` (predeterminado) | Configuración |
 | `APIFY_SEARCH_TIMEOUT_SECONDS` | `90` | Límite de espera por petición de búsqueda |
 | `APIFY_RUN_TIMEOUT_SECONDS` | `180` por ciclo de worker; conserva run ID y reanuda si continúa | Límite |
 | `APIFY_ACTOR_TIMEOUT_SECONDS` | `240` límite remoto enviado al crear cada ejecución | Límite |
@@ -56,9 +56,13 @@ Abre [http://127.0.0.1:5173/#token=cuadro-prueba-apify](http://127.0.0.1:5173/#t
 6. Para probar preservación: con una selección previa, inicia una canción no disponible o que falle el Actor. Espera el estado de error y confirma que la selección anterior sigue ahí. Cancelar debe impedir publicación tardía.
 7. Revisa las ejecuciones y el uso/coste en Apify. Registra el resultado sin tokens, IDs privados ni URLs de Storage.
 
-Si aparece «falló la descarga individual», el run pudo terminar `SUCCEEDED` y aun así devolver el registro del vídeo con estado de fallo. Abre ese run en Apify y revisa el campo `status`/`error`: el Actor informa que vídeos privados o restringidos por edad no son descargables y que YouTube puede bloquear los intentos. No reintentes ese mismo vídeo automáticamente; confirma la causa en Apify y elige otra versión autorizada si corresponde. La interfaz de logs del backend solo registra categorías redactadas (`status_success`, `error_present` y `audio_url_present`), no el detalle privado del Actor.
+Si aparece «falló la descarga individual», el run pudo terminar `SUCCEEDED` y aun así devolver el registro del vídeo con estado de fallo. Abre ese run en Apify y revisa el campo `status`/`error`: el Actor puede informar de bloqueo de YouTube incluso para vídeos públicos. Ese mensaje no demuestra que el vídeo sea privado o esté restringido por edad. No reintentes automáticamente; confirma la causa en Apify antes de decidir el siguiente intento. La interfaz de logs del backend solo registra categorías redactadas (`status_success`, `error_present` y `audio_url_present`), no el detalle del Actor.
 
 Si el resultado figura `Success` y su `audioFileUrl` es un registro de `https://api.apify.com/v2/key-value-stores/...`, la descarga de ese archivo requiere autenticación. El backend envía `APIFY_TOKEN` como cabecera Bearer únicamente a `api.apify.com`; nunca lo añade a hosts de medios externos ni a la URL. Si el host devuelve `insufficient-permissions`, confirma que el token de Render pertenece a la cuenta que ejecutó el Actor y puede leer sus almacenamientos de ejecución. Un token sin restricciones debería poder leerlos; no amplíes permisos de cuenta innecesariamente.
+
+## Actor alternativo preparado, sin validar en real
+
+Hay un adaptador local para `johnvc/youtube-download-api`; no está seleccionado por defecto ni se ha ejecutado desde este repositorio. La [ficha y esquema de Apify](https://apify.com/johnvc/youtube-download-api) declaran entrada `videoUrls`, `format: audio`, `audioFormat: mp3` y salida con `resultType: file`, `container: mp3` y `fileUrl`. Revisa el precio vigente y ejecuta primero una prueba manual controlada en Apify Console con un vídeo autorizado. Si funciona, prepara el cambio de código, selecciona `APIFY_DOWNLOAD_ACTOR=johnvc/youtube-download-api` en Render y despliega manualmente. El adaptador respeta los límites de 15 minutos y 40 MiB. Si el registro devuelve `YOUTUBE_BLOCKED`, cambiar de Actor tampoco garantiza superar el bloqueo. No cambies solo la variable en un despliegue que aún tenga una versión anterior del backend.
 
 Si el navegador bloquea CORS, revisa el origen exacto y el preflight. Se conservan `http://127.0.0.1:5173`, `http://localhost:5173` y hostnames locales `cuadro-sonoro-*.local`; Authorization debe aparecer en `Access-Control-Allow-Headers`.
 
