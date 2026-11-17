@@ -99,7 +99,7 @@ env -u FIREBASE_DATABASE_URL -u FIREBASE_STORAGE_BUCKET -u FIREBASE_SERVICE_ACCO
 python -m compileall -q backend scripts
 ```
 
-Las pruebas usan identificadores sintéticos y SQLite temporal, simulando descarga/subida. No acreditan acceso real a YouTube ni Firebase. Para ejecutar tests dentro de Docker hace falta instalar también las dependencias de desarrollo: la imagen de ejecución no incluye pytest por defecto.
+Las pruebas usan identificadores sintéticos y SQLite temporal, simulando descarga/subida. Los flujos del importador aíslan el validador DNS; pruebas específicas del validador cubren respuestas públicas y direcciones privadas sin consultar DNS real. No acreditan acceso real a YouTube ni Firebase. Para ejecutar tests dentro de Docker hace falta instalar también las dependencias de desarrollo: la imagen de ejecución no incluye pytest por defecto.
 
 ## Firebase y despliegue
 

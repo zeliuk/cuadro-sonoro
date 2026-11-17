@@ -69,3 +69,7 @@ La nueva ruta no se ha ejecutado en navegador ni se ha comprobado en una tablet,
 ## Sustitución del proveedor de descarga (16 de noviembre de 2026)
 
 Por instrucción de Carlos, se elimina la integración activa Apify y se sustituye por RapidAPI YouTube MP3. La búsqueda yt-dlp permanece; RapidAPI recibe el ID seleccionado y devuelve un enlace MP3 que se descarga en el backend. `RAPIDAPI_KEY` queda como secreto backend; `RAPIDAPI_USERNAME` se usa para generar el encabezado de identificación del host multimedia. La variante no se ha probado con una conversión real; una llamada puede consumir cuota. El MCP de Codex no es runtime del backend y no se usa desde la aplicación. Véase [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
+
+## Corrección del check de importación en CI — 17 de noviembre de 2026
+
+El check de GitHub Actions fallaba en dos pruebas del importador porque las respuestas simuladas usaban `audio.example`, pero la importación también valida el destino DNS de cada URL para bloquear redes privadas. Las pruebas ahora simulan esa validación de red al ejercitar el flujo de importación; las pruebas específicas del validador conservan la comprobación de direcciones públicas y rechazan direcciones privadas/locales. No se cambió el comportamiento de producción ni se usaron servicios externos.
