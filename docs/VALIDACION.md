@@ -521,3 +521,8 @@ La maqueta ahora resuelve anticipadamente los datos de `/media/{slot}` al cargar
 La página pública, `maqueta.js`, `maqueta.css` y los datos de la API estaban disponibles. La API devolvió el estado y las URLs de medios; CORS permitió el origen y Storage respondió al solicitar audio. La diferencia encontrada fue que Nginx servía `qrcode.mjs` sin `Content-Type`; los navegadores bloquean ese módulo por MIME estricto, impidiendo que el script principal se ejecute y procese `#token`.
 
 Se renombró el módulo a `qrcode.js` y se versionaron las URLs de módulo en HTML/JS para invalidar posibles cachés largas. La maqueta local pasó sintaxis JavaScript y `git diff --check`. Falta publicar el nuevo contenido y confirmar en navegador de producción que desaparece el fragmento y carga el estado; no se desplegó el hosting.
+## Sondeo adaptativo de estado — 17 de noviembre de 2026
+
+La web principal dejó de consultar `/state` cada 1,5 s de forma permanente: sondea cada 2,5 s mientras detecta una tarea activa y cada 120 s cuando está en reposo. Pausa el temporizador con la pestaña oculta y consulta al volver; tras aceptar una canción reanuda el sondeo de progreso. La maqueta de solo lectura consulta cada 60 s y pausa en segundo plano. Esto reduce llamadas, aunque las consultas visibles en reposo siguen pudiendo mantener despierto el servicio gratuito de Render.
+
+Comprobaciones: `node --check web/app.js`, `node --check web/maqueta/maqueta.js` y `git diff --check`. No se ejecutaron pruebas automatizadas ni se consultaron Render, API, Firebase o hardware. Los intervalos se han comprobado en el código, no mediante una medición de red en navegador.

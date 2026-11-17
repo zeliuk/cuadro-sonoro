@@ -131,7 +131,7 @@ Respuesta inicial 200:
 
 Los huecos se indexan por `slot-0`, `slot-1`, `slot-2`; las tareas por su `id`. Una canción lista contiene `id`, `kind: "song"`, `title`, `artist`, `source_id`, `duration`, `audio_key`, `image_key` y `created_at`. Una emisora contiene `id`, `kind: "station"`, `title`, `artist` y `url`. El estado corresponde al identificador Bearer. En Firebase, la ruta `slots` se lee sin autenticación y su URL conocida permite acceder a esos datos; las tareas no se incluyen en esa ruta pública. Una primera consulta API con su identificador crea y persiste el estado vacío del cuadro; las siguientes reutilizan el mismo registro.
 
-Las tareas incluyen los datos de solicitud, estado, mensaje, porcentaje y marcas temporales que se hayan publicado. El prototipo consulta esta ruta periódicamente para mostrar progreso. No hay SSE ni un endpoint de consulta individual de tarea implementado; usar `jobs[job_id]`. La poda actual conserva un número limitado de tareas finalizadas y aún debe revisarse.
+Las tareas incluyen los datos de solicitud, estado, mensaje, porcentaje y marcas temporales que se hayan publicado. La web consulta esta ruta cada 2,5 s mientras haya una importación activa y cada 120 s en reposo; pausa en segundo plano y consulta al volver. La maqueta de solo lectura consulta cada 60 s mientras está visible. No hay SSE ni un endpoint de consulta individual de tarea implementado; usar `jobs[job_id]`. La poda actual conserva un número limitado de tareas finalizadas y aún debe revisarse.
 
 ## POST /jobs/{job_id}/cancel
 

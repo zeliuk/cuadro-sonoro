@@ -151,9 +151,18 @@ async function syncFrame(currentGeneration = generation) {
       setStatus(`No se pudo consultar el cuadro: ${error.message}`, 'error');
     }
   } finally {
-    if (currentGeneration === generation && token) pollTimer = setTimeout(() => syncFrame(currentGeneration), 3000);
+    if (currentGeneration === generation && token && document.visibilityState === 'visible') pollTimer = setTimeout(() => syncFrame(currentGeneration), 60000);
   }
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+  } else if (token) {
+    syncFrame();
+  }
+});
 
 async function loadMedia(index, currentGeneration = generation) {
   const item = itemAt(index);

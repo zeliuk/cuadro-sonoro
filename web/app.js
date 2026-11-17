@@ -55,6 +55,7 @@ const active = new Set(['queued','downloading','processing','uploading']);
 const demoTimers = new Map();
 const mediaCache = new Map();
 const stages = ['queued','downloading','processing','uploading'];
+const ACTIVE_POLL_MS=2500,IDLE_POLL_MS=120000;
 const saveDemo = () => localStorage.setItem('sonoro-demo', JSON.stringify(demo));
 function toast(message) { $('toast').textContent=message; $('toast').classList.add('show'); clearTimeout(toastTimeout); toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),4400); }
 function showError(id,message) { $(id).textContent=message; $(id).hidden=!message; }
@@ -121,6 +122,7 @@ function applyFrameLink(token){
 window.addEventListener('hashchange',()=>{const link=consumeFrameToken();if(link.present)applyFrameLink(link.token);});
 window.addEventListener('pagehide',()=>resetFrameContext());
 window.addEventListener('pageshow',event=>{if(event.persisted&&config.mode==='real')startPolling();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&config.mode==='real')startPolling();else if(pollingTimer){clearTimeout(pollingTimer);pollingTimer=null;}});
 function slotJob(i) { return Object.values(state.jobs||{}).filter(j=>j.slot===i).sort((a,b)=>b.created_at-a.created_at)[0]; }
 function render() {
   const demoMode=config.mode==='demo';
@@ -191,6 +193,7 @@ async function importSong(result,slot=currentSlot){
   const job=await api('/imports',{method:'POST',body:JSON.stringify({slot,source_id:result.id,title:result.title,artist:result.artist})});
   if(generation!==frameGeneration)return;
   state.jobs[job.id]=job;render();
+  startPolling();
 }
 function startDemo(result,slot){
   const id=crypto.randomUUID();const job={id,slot,title:result.title,artist:result.artist,source_id:result.id,status:'queued',percent:null,message:'En la cola de demostración',created_at:Date.now()/1000};demo.jobs[id]=job;state=demo;
@@ -285,7 +288,7 @@ function startPolling(){
     polling=true;
     try{await refresh(generation);lastPollError=false;}
     catch(error){if(generation===frameGeneration&&error.name!=='AbortError'&&!lastPollError)toast('Se perdió la conexión. Reintentando…');if(generation===frameGeneration)lastPollError=true;}
-    finally{if(generation===frameGeneration){polling=false;if(config.mode==='real'&&config.token)pollingTimer=setTimeout(poll,1500);}}
+    finally{if(generation===frameGeneration){polling=false;if(config.mode==='real'&&config.token&&document.visibilityState==='visible'){const hasActiveJob=Object.values(state.jobs||{}).some(job=>active.has(job.status));pollingTimer=setTimeout(poll,hasActiveJob?ACTIVE_POLL_MS:IDLE_POLL_MS);}}}
   };
   poll();
 }
