@@ -10,6 +10,12 @@ Este documento consolida la definición acordada antes de reconstruir el reposit
 
 ## 1. Objetivo y alcance inicial
 
+### Referencia visual del resultado
+
+![Representación orientativa del cuadro sonoro con la portada de Infrasoinuak](imagenes/resultado-orientativo-infrasoinuak.webp)
+
+La imagen muestra una posible apariencia final del objeto: marco, pantalla con portada, tres pulsadores iluminados y rueda de volumen. Es una referencia estética, no un diseño industrial cerrado ni una garantía de que las dimensiones, materiales o componentes vayan a coincidir con el montaje final. La portada es un ejemplo visual.
+
 Un cuadro decorativo con pantalla a color, altavoz y reproducción autónoma por Wi-Fi. Puede colgarse en la pared o apoyarse en una estantería. El móvil permite configurar sus selecciones; para escuchar no es necesario mantener la web abierta ni utilizar el teléfono.
 
 La primera versión incluye tres selecciones independientes, cada una con una canción o una emisora. Las canciones se preparan previamente mediante un servicio externo y quedan almacenadas en Firebase. Las emisoras se escuchan directamente desde su streaming.

@@ -548,3 +548,8 @@ Se quitó el temporizador de consulta de `/maqueta` y `/tablet`: hacen una lectu
 El log aportado por Carlos mostraba dos fallos: `test_late_upload_completion_cannot_publish_after_cancel` y `test_progress_pipeline_only_commits_after_upload`. Ambas pruebas usaban respuestas HTTP simuladas con `audio.example`; al añadir la validación DNS contra destinos no públicos, el importador rechazaba el hostname de prueba antes de alcanzar la cancelación/publicación que esas pruebas cubren.
 
 Las dos pruebas aíslan ahora la resolución DNS mediante un mock del validador. Se añadieron pruebas del validador que simulan una IP pública y direcciones loopback/privadas, sin consultar DNS real. Esta validación local no usa RapidAPI, Firebase ni hardware. Verificación local en Python 3.12.15, con las variables Firebase heredadas retiradas: `49 passed, 1 warning` en `backend/tests` y `scripts/tests`; `compileall` y `git diff --check` también pasaron. La advertencia es la deprecación de Starlette/httpx indicada por FastAPI. No se ha vuelto a ejecutar GitHub Actions; la ejecución local usa los mismos pasos de backend.
+## Referencias visuales del objeto — 17 de noviembre de 2026
+
+Se incorporaron en `docs/imagenes/` dos ilustraciones WebP optimizadas: una representación exterior orientativa del resultado y una vista conceptual del montaje interno. Se enlazaron desde la definición y la guía de firmware, indicando que la segunda no es un esquema de conexiones comprobado. Las fuentes PNG proporcionadas se convirtieron localmente; no se validó ningún componente ni cableado físico.
+
+Comprobación: las dos imágenes se abren y se convirtieron desde los adjuntos locales. No se ejecutaron pruebas de software ni se revisó un montaje real.

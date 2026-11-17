@@ -2,6 +2,8 @@
 
 Esta entrega conserva el código del prototipo como punto de partida, con documentación nueva basada en la definición. No es una implementación terminada de todo el producto. Fecha de base: 13 de noviembre de 2026. Actualización documental: 16 de noviembre de 2026.
 
+Actualización: 17 de noviembre de 2026. Se añadieron dos referencias visuales orientativas: apariencia exterior con portada de ejemplo y croquis conceptual de disposición interna. No describen dimensiones finales ni verifican componentes, pines o cableado; hardware y firmware siguen pendientes. La vista de montaje se enlaza desde `firmware/README.md`.
+
 Actualización: 16 de noviembre de 2026. Carlos comunica manualmente que el backend funciona en Render con RapidAPI. Es un reporte del propietario, no una comprobación realizada por Codex ni validación del firmware. El código conserva yt-dlp para búsqueda y RapidAPI para descargar el resultado elegido, con `RAPIDAPI_KEY` y `RAPIDAPI_USERNAME` solo en backend. La web musical queda decidida en `https://sonoro.zeliuk.xyz`; el navegador llama a `https://cuadro-sonoro.onrender.com`. En el código `web/index.html` ya configura ese backend, pero aún no hemos comprobado la web publicada, HTTPS, CORS ni el recorrido integrado desde el dominio. Procedimiento RapidAPI en [PRUEBA_RAPIDAPI.md](PRUEBA_RAPIDAPI.md).
 
 | Área | Existe ahora | Pendiente para el producto |

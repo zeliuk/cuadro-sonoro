@@ -2,6 +2,12 @@
 
 Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web y escucharlas mediante botones físicos. Una pequeña pantalla muestra carátulas o una imagen decorativa. **Sonoro** es el nombre provisional de la interfaz.
 
+## Resultado final esperado
+
+![Representación orientativa del cuadro sonoro con la portada de Infrasoinuak](docs/imagenes/resultado-orientativo-infrasoinuak.webp)
+
+Imagen de referencia para presentar la propuesta estética; el diseño, las dimensiones y los materiales finales pueden cambiar. El hardware y el montaje siguen pendientes. Consulta la [definición del proyecto](docs/DEFINICION.md) y la [vista preliminar de montaje](firmware/README.md).
+
 **Estado:** Carlos confirma manualmente que el backend funciona en Render con RapidAPI. Codex no ha verificado el recorrido desde la web pública ni el hardware. La web estática está destinada a `https://sonoro.zeliuk.xyz` y llama a la API `https://cuadro-sonoro.onrender.com`; el despliegue web, HTTPS y CORS desde ese origen siguen pendientes de comprobación. La configuración RapidAPI y guías están en [estado](docs/ESTADO.md), [despliegue](docs/DESPLIEGUE.md) y [prueba](docs/PRUEBA_RAPIDAPI.md).
 
 ## Prueba la interfaz sin credenciales

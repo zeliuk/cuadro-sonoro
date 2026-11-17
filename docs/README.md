@@ -18,4 +18,6 @@
 | [PUBLICAR_GITHUB.md](PUBLICAR_GITHUB.md) | Preparación del repositorio público. |
 | [VALIDACION.md](VALIDACION.md) | Evidencias y limitaciones de las comprobaciones. |
 
+Referencias visuales: [resultado estético orientativo](imagenes/resultado-orientativo-infrasoinuak.webp) y [vista preliminar de montaje y conexiones](imagenes/vista-orientativa-montaje.webp), esta última explicada en la [guía de firmware](../firmware/README.md). Ambas ilustraciones son conceptuales; no sustituyen decisiones de hardware ni un esquema eléctrico.
+
 Guías de componente: [web](../web/README.md), [backend](../backend/README.md), [Firebase](../firebase/README.md) y [firmware](../firmware/README.md). Un comando nuevo o un endpoint modificado actualiza sus ejemplos en el mismo cambio.

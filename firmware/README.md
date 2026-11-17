@@ -1,5 +1,11 @@
 # Firmware ESP32 — fase pendiente
 
+## Referencia visual de conexiones y montaje
+
+![Vista orientativa del montaje interno y sus conexiones](../docs/imagenes/vista-orientativa-montaje.webp)
+
+La ilustración ayuda a imaginar la disposición general del controlador, pantalla, altavoz, rueda y pulsadores. Es un croquis visual preliminar: el fabricante y modelo de la placa, el controlador de pulsadores, la cantidad de conductores, conectores, pines, alimentación y cableado no están seleccionados ni verificados. Las etiquetas de la imagen no son instrucciones para cablear o energizar componentes. El esquema eléctrico y la lista de materiales se definirán después de elegir y comprobar el hardware.
+
 Todavía no hay firmware ejecutable, placa elegida ni comandos de compilación/carga. Se documentarán y probarán al elegir el entorno y el hardware; no copiar un pinout genérico como definitivo.
 
 Requisitos acordados: identificador fijo asignado al cuadro; tres botones iluminados; rueda de volumen; pantalla a color; streaming Wi-Fi con búfer, sin microSD; arranque silencioso; una canción termina y se detiene. El ESP32 consulta configuración/medios de Firebase y reproduce MP3 desde Storage o emisoras desde sus streams; no aloja la web musical. El portal local es independiente y configura Wi-Fi sin Internet, Render ni Firebase. En primera instalación, el dispositivo crea un punto de acceso temporal protegido con contraseña propia, muestra un QR de conexión y abre un asistente local; la contraseña doméstica solo se guarda en el ESP32. Distinguir conexión al router de disponibilidad de Internet, sin borrar credenciales por una caída de Internet. Con credenciales guardadas, los fallos temporales no abren solos el asistente.
