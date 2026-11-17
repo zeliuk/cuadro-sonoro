@@ -16,6 +16,10 @@ La primera versión incluye tres selecciones independientes, cada una con una ca
 
 La experiencia debe resultar sencilla para regalar el cuadro a una persona sin conocimientos técnicos. Esa persona podrá configurar la Wi-Fi con su móvil, sin instalar una aplicación ni programar el dispositivo.
 
+### Vista virtual para tablet
+
+La web incluye una ruta opcional `/tablet/` que presenta únicamente el cuadro virtual, ajustado a la ventana y sin mostrar el marco de la fotografía de referencia. El fondo, la pantalla y su distribución se dibujan en la página; las imágenes de los pulsadores y del mando de volumen se montan individualmente. Reutiliza la programación de la maqueta: consulta las selecciones publicadas, permite escucharlas localmente con los pulsadores y simula los gestos del objeto. No controla el ESP32 ni cambia la configuración. El identificador se recibe igual que en la maqueta, desde `#token=`; se puede solicitar pantalla completa desde el navegador.
+
 ## 2. Acceso por QR/NFC y primera instalación
 
 ### Acceso habitual

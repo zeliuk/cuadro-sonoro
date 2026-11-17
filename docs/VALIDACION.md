@@ -526,3 +526,19 @@ Se renombró el módulo a `qrcode.js` y se versionaron las URLs de módulo en HT
 La web principal dejó de consultar `/state` cada 1,5 s de forma permanente: sondea cada 2,5 s mientras detecta una tarea activa y cada 120 s cuando está en reposo. Pausa el temporizador con la pestaña oculta y consulta al volver; tras aceptar una canción reanuda el sondeo de progreso. La maqueta de solo lectura consulta cada 60 s y pausa en segundo plano. Esto reduce llamadas, aunque las consultas visibles en reposo siguen pudiendo mantener despierto el servicio gratuito de Render.
 
 Comprobaciones: `node --check web/app.js`, `node --check web/maqueta/maqueta.js` y `git diff --check`. No se ejecutaron pruebas automatizadas ni se consultaron Render, API, Firebase o hardware. Los intervalos se han comprobado en el código, no mediante una medición de red en navegador.
+
+## Vista de cuadro para tablet — 17 de noviembre de 2026
+
+Se creó `web/tablet/` para servir una vista inmersiva del cuadro. La implementación comparte la lógica `maqueta.js` y el generador QR. Dibuja un fondo cálido y una pantalla centrada; no presenta el marco de la fotografía. Las imágenes individuales del pulsador y del mando de volumen facilitadas por el usuario se convirtieron a WebP con transparencia. La solicitud de pantalla completa se vincula a una pulsación directa sobre el fondo para respetar el requisito de gesto del navegador.
+
+No se ejecutaron comprobaciones de sintaxis ni se abrió la página en un navegador durante esta fase. Quedan pendientes la comprobación visual en tablet portrait/landscape, el modo fullscreen según navegador, la carga desde API/Firebase y la publicación de `/tablet/`. No se consultaron servicios remotos ni hardware.
+
+El ajuste posterior igualó grosor, halo y estados inactivo/activo con las reglas de `/maqueta`. Se dejó quieta la imagen del mando de volumen y se conectó el giro de su indicador al valor local. Este ajuste visual no se ha revisado en navegador.
+
+El anillo superpuesto se redujo para alinearlo con el aro de luz del pulsador individual (aproximadamente 64 % del ancho de su imagen). Pendiente comprobar el encaje visual en navegador; no se ejecutaron pruebas.
+
+Se aumentó ligeramente el tamaño adaptable de los tres pulsadores. La revisión de encaje en tablet sigue pendiente.
+
+Se cambiaron pulsadores y rueda a tamaños porcentuales de la fila de controles, en lugar de límites en píxeles o unidades de ventana. Se ajustaron al 22 % y 24 % y se amplió la fila. Pendiente revisar su proporción en formatos de tablet distintos.
+
+Se quitó el temporizador de consulta de `/maqueta` y `/tablet`: hacen una lectura inicial y solicitan estado de nuevo ante pulsaciones cortas. Las URLs de medios se conservan en memoria por selección para mantener el inicio del audio desde el toque. No se ejecutaron pruebas ni mediciones de red; queda pendiente comprobar la cadencia real en navegador.

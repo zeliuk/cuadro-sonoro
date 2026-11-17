@@ -1,0 +1,261 @@
+:root {
+  color-scheme: light;
+  --tablet-canvas: #eee5da;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  background: var(--tablet-canvas);
+  overscroll-behavior: none;
+}
+
+.tablet-mode .layout {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.tablet-mode .connection-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tablet-mode .demo {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  display: grid;
+  place-items: center;
+}
+
+.tablet-mode .object-wrap {
+  --screen-size: min(62vw, 42dvh);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--tablet-canvas);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(28px, 6dvh, 76px);
+  touch-action: manipulation;
+}
+
+.tablet-mode .screen-content {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  flex: 0 0 auto;
+  width: var(--screen-size);
+  height: var(--screen-size);
+  padding: clamp(8px, 1.5vmin, 18px);
+  border: 0;
+  border-radius: clamp(8px, 1.3vmin, 16px);
+  background: linear-gradient(145deg, #393a34, #1b1c19);
+  box-shadow: 0 16px 42px #0003, inset 0 1px 1px #ffffff35, inset 0 -4px 7px #0005;
+}
+
+.tablet-mode .screen-content::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid #ffffff12;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tablet-mode .screen-content > img {
+  border-radius: 2px;
+}
+
+.tablet-mode .screen-idle {
+  font-size: clamp(13px, 2.3vmin, 27px);
+}
+
+.tablet-mode .screen-idle small {
+  font-size: clamp(8px, 1.15vmin, 13px);
+}
+
+.tablet-mode .device-qr {
+  gap: clamp(5px, 1vmin, 12px);
+}
+
+.tablet-mode .device-qr strong {
+  font-size: clamp(11px, 1.5vmin, 17px);
+}
+
+.tablet-mode .device-qr > span {
+  font-size: clamp(9px, 1.1vmin, 13px);
+}
+
+.tablet-mode .control-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(95vw, 90dvh);
+  height: 24%;
+}
+
+.tablet-mode .slot-button,
+.tablet-mode .knob {
+  position: relative;
+  left: auto;
+  top: auto;
+  transform: none;
+  justify-self: center;
+  flex: none;
+  width: 22%;
+  height: auto;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.tablet-mode .slot-button {
+  --glow: rgba(233, 128, 45, .28);
+}
+
+.tablet-mode .button-face,
+.tablet-mode .knob-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.tablet-mode .slot-button::before {
+  inset: 18%;
+  border: 2px solid rgba(241, 131, 44, .42);
+  box-shadow: 0 0 7px 2px var(--glow);
+  transition: box-shadow .25s, border-color .25s, transform .15s;
+  pointer-events: none;
+}
+
+.tablet-mode .slot-button:hover::before,
+.tablet-mode .slot-button:focus-visible::before {
+  border-color: #ffc66c;
+  box-shadow: 0 0 10px 4px rgba(255, 156, 34, .75), inset 0 0 7px rgba(255, 175, 62, .32);
+}
+
+.tablet-mode .slot-button.is-playing::before {
+  border-color: #ffad31;
+  box-shadow: 0 0 14px 5px rgba(255, 151, 18, .95), inset 0 0 8px rgba(255, 165, 35, .52);
+}
+
+.tablet-mode .slot-button.is-playing {
+  --glow: rgba(255, 151, 18, .7);
+}
+
+.tablet-mode .slot-button:active,
+.tablet-mode .knob:active {
+  transform: scale(.95);
+}
+
+.tablet-mode .knob {
+  width: 24%;
+  height: auto;
+  aspect-ratio: 1;
+  touch-action: none;
+}
+
+.tablet-mode .knob > span:not(.knob-value) {
+  position: absolute;
+  width: 2px;
+  height: 30%;
+  top: 7%;
+  left: 50%;
+  border-radius: 4px;
+  background: #a46037;
+  opacity: 0;
+  transform: translateX(-50%) rotate(var(--turn, 0deg));
+  transform-origin: 50% 150%;
+  transition: opacity .15s;
+  pointer-events: none;
+}
+
+.tablet-mode .knob:hover > span:not(.knob-value),
+.tablet-mode .knob:focus-visible > span:not(.knob-value) {
+  opacity: .8;
+}
+
+.tablet-mode .hold-meter {
+  z-index: 1;
+  inset: 0;
+  border-width: 3px;
+}
+
+.tablet-mode .knob-value {
+  z-index: 2;
+  position: absolute;
+  left: 50%;
+  top: -12%;
+  transform: translate(-50%, -100%);
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  background: #272824;
+  color: #f4f1e9;
+  opacity: 1;
+  font-size: clamp(10px, 1.5vmin, 16px);
+  padding: 6px 10px;
+  box-shadow: 0 2px 7px #0003;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tablet-mode .reset-overlay {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(12px, 1.4vw, 18px);
+  padding: 16px 22px;
+}
+
+.tablet-mode .reset-overlay strong {
+  font-size: 1.2em;
+}
+
+.tablet-mode .hotspot:focus-visible {
+  outline: 3px solid #fff2d5;
+  outline-offset: 5px;
+  box-shadow: 0 0 0 7px #8f653f;
+}
+
+@media (max-height: 480px) {
+  .tablet-mode .object-wrap {
+    --screen-size: min(48vw, 38dvh);
+    gap: clamp(14px, 3.5dvh, 28px);
+  }
+
+}

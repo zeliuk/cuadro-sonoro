@@ -16,6 +16,8 @@ Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración»
 
 La [maqueta interactiva del cuadro](web/maqueta/) tiene una página independiente: abre [http://127.0.0.1:5173/maqueta/#token=cuadro-demo](http://127.0.0.1:5173/maqueta/#token=cuadro-demo) con un ID de prueba. Consulta las selecciones publicadas y permite elegirlas con los pulsadores de la imagen; el audio se escucha en el navegador. El QR queda en pantalla si los tres huecos están vacíos. Consulta [web/README.md](web/README.md) para el funcionamiento y sus límites.
 
+La vista para tablet está en `/tablet/`: abre [http://127.0.0.1:5173/tablet/#token=cuadro-demo](http://127.0.0.1:5173/tablet/#token=cuadro-demo). Muestra solo el cuadro y reutiliza la programación de `/maqueta`. Consulta [web/README.md](web/README.md) para instrucciones y límites.
+
 ## Producto definido
 
 - Un identificador por cuadro relaciona su enlace QR/NFC, sus selecciones y el ESP32; no es una credencial.

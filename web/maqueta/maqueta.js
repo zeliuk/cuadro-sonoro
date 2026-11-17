@@ -18,7 +18,6 @@ let frameLoaded = false;
 let qrToken = '';
 let controller = null;
 let generation = 0;
-let pollTimer = null;
 let longPressTimer, comboTimer, comboClock, qrTimer, qrClock, resetHideTimer;
 let comboStarted = false, comboCompleted = false, comboStartedAt = 0;
 const imageCache = new Map();
@@ -140,8 +139,8 @@ async function syncFrame(currentGeneration = generation) {
     setStatus(`Datos cargados · ${filled} de 3 selecciones publicadas`, 'ok');
     render();
 
-    // Resolve Firebase media URLs before a tap so playback can begin directly
-    // from the user's gesture instead of waiting for another API request.
+    // Cache media once per published selection so playback can start from the
+    // user's tap without waiting for a media request.
     for (const index of [0, 1, 2]) {
       if (itemAt(index)) loadMedia(index, currentGeneration).catch(() => {});
     }
@@ -150,19 +149,8 @@ async function syncFrame(currentGeneration = generation) {
     if (error.name !== 'AbortError' && currentGeneration === generation) {
       setStatus(`No se pudo consultar el cuadro: ${error.message}`, 'error');
     }
-  } finally {
-    if (currentGeneration === generation && token && document.visibilityState === 'visible') pollTimer = setTimeout(() => syncFrame(currentGeneration), 60000);
   }
 }
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') {
-    clearTimeout(pollTimer);
-    pollTimer = null;
-  } else if (token) {
-    syncFrame();
-  }
-});
 
 async function loadMedia(index, currentGeneration = generation) {
   const item = itemAt(index);
@@ -190,7 +178,6 @@ function applyToken(value) {
   const nextToken = value.trim();
   if (!validToken(nextToken)) {
     generation += 1;
-    clearTimeout(pollTimer);
     controller?.abort();
     playbackRequest += 1;
     for (const requestController of mediaControllers.values()) requestController.abort();
@@ -210,7 +197,6 @@ function applyToken(value) {
     return;
   }
   generation += 1;
-  clearTimeout(pollTimer);
   controller?.abort();
   playbackRequest += 1;
   for (const requestController of mediaControllers.values()) requestController.abort();
@@ -247,6 +233,18 @@ function chooseSlot(index) {
   previewAudio.load();
   render();
   playSelection(index, request, generation);
+}
+
+function handleSlotClick(index) {
+  if (!token) {
+    setStatus('Abre esta página con el ID del cuadro para cargar sus selecciones.', 'error');
+    return;
+  }
+  if (frameLoaded) chooseSlot(index);
+  else setStatus('Cargando selecciones. Pulsa de nuevo cuando aparezcan.', '');
+  // Refresh only in response to a button press. Playback uses the current
+  // cached selection immediately to preserve the browser's audio gesture.
+  syncFrame(generation);
 }
 function stopBrowserAudio() {
   previewAudio.pause();
@@ -367,7 +365,7 @@ buttons.forEach((button, index) => {
       ignoredClicks.delete(index);
       return;
     }
-    chooseSlot(index);
+    handleSlotClick(index);
   });
 });
 $('preview-audio').addEventListener('playing', render);

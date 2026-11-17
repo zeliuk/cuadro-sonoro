@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#eee5da">
+  <meta name="sonoro-api-base" content="https://cuadro-sonoro.onrender.com">
+  <title>Cuadro virtual — Sonoro</title>
+  <link rel="stylesheet" href="../maqueta/maqueta.css">
+  <link rel="stylesheet" href="tablet.css?v=20261117-7">
+</head>
+<body class="tablet-mode">
+  <main class="layout" aria-label="Cuadro sonoro virtual">
+    <p id="connection-status" class="connection-status" role="status" aria-live="polite">Abre esta página desde un enlace con el ID del cuadro.</p>
+    <section class="demo" aria-label="Cuadro virtual interactivo">
+      <div class="object-wrap" id="object-wrap">
+        <div class="screen-content" id="screen-content" aria-live="polite" aria-label="Pantalla del cuadro">
+          <div class="screen-idle" id="screen-idle">SONORO<span>.</span><small id="screen-message">Conecta un cuadro para cargar su portada</small></div>
+          <img id="album-cover" alt="Portada de la selección activa" hidden>
+          <div class="device-qr" id="device-qr" hidden role="status" aria-live="polite">
+            <div class="qr-symbol" id="qr-symbol" aria-label="QR para abrir la configuración musical"></div>
+            <strong>Escanea para elegir tu música</strong>
+            <span id="qr-countdown" hidden>20 s</span>
+          </div>
+        </div>
+        <div class="control-row" aria-label="Controles del cuadro">
+          <button class="hotspot slot-button" data-slot="0" aria-label="Pulsador 1, selección uno" title="Pulsador 1 · mantener 2 s para mostrar el QR"><img class="button-face" src="assets/pulsador.webp" alt=""><span class="hold-meter" aria-hidden="true"></span></button>
+          <button class="hotspot slot-button" data-slot="1" aria-label="Pulsador 2, selección dos" title="Pulsador 2 · mantener junto al 3 para restablecer la Wi-Fi"><img class="button-face" src="assets/pulsador.webp" alt=""><span class="hold-meter" aria-hidden="true"></span></button>
+          <button class="hotspot slot-button" data-slot="2" aria-label="Pulsador 3, selección tres" title="Pulsador 3 · mantener junto al 2 para restablecer la Wi-Fi"><img class="button-face" src="assets/pulsador.webp" alt=""><span class="hold-meter" aria-hidden="true"></span></button>
+          <button class="hotspot knob" id="knob" aria-label="Rueda de volumen. Usa las flechas para ajustar" title="Rueda de volumen"><img class="knob-face" src="assets/mando-volumen.webp" alt=""><span aria-hidden="true"></span><span class="knob-value" id="knob-value" hidden>42%</span></button>
+        </div>
+        <div class="reset-overlay" id="reset-overlay" hidden role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+  <audio id="preview-audio" hidden preload="none"></audio>
+  <script type="module" src="../maqueta/maqueta.js?v=20261117-2"></script>
+  <script src="tablet.js?v=20261117-2" defer></script>
+</body>
+</html>
