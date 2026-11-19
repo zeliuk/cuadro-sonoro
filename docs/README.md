@@ -4,6 +4,7 @@
 |---|---|
 | [DEFINICION.md](DEFINICION.md) | Producto y decisiones acordadas. |
 | [ESTADO.md](ESTADO.md) | Qué existe y qué sigue pendiente. |
+| [HARDWARE.md](HARDWARE.md) | Componentes seleccionados para el primer prototipo, cableado propuesto y comprobaciones de banco pendientes. |
 | [INSTRUCCIONES_CHATGPT.md](INSTRUCCIONES_CHATGPT.md) | Texto versionado para copiar en las instrucciones del proyecto ChatGPT. |
 | [PRIMER_PASO_CODEX.md](PRIMER_PASO_CODEX.md) | Encargo inicial para VS Code. |
 | [PUESTA_EN_MARCHA.md](PUESTA_EN_MARCHA.md) | Inicio desde una carpeta limpia. |
@@ -18,6 +19,6 @@
 | [PUBLICAR_GITHUB.md](PUBLICAR_GITHUB.md) | Preparación del repositorio público. |
 | [VALIDACION.md](VALIDACION.md) | Evidencias y limitaciones de las comprobaciones. |
 
-Referencias visuales: [resultado estético orientativo](imagenes/resultado-orientativo-infrasoinuak.webp) y [vista preliminar de montaje y conexiones](imagenes/vista-orientativa-montaje.webp), esta última explicada en la [guía de firmware](../firmware/README.md). Ambas ilustraciones son conceptuales; no sustituyen decisiones de hardware ni un esquema eléctrico.
+Referencias visuales: [resultado estético orientativo](imagenes/resultado-orientativo-infrasoinuak.webp) y [croquis visual preliminar de montaje](imagenes/vista-orientativa-montaje.webp), conservado en la [guía de firmware](../firmware/README.md). El esquema propuesto y la lista de materiales de referencia única están en [HARDWARE.md](HARDWARE.md); el croquis no sustituye ese esquema ni acredita montaje físico.
 
 Guías de componente: [web](../web/README.md), [backend](../backend/README.md), [Firebase](../firebase/README.md) y [firmware](../firmware/README.md). Un comando nuevo o un endpoint modificado actualiza sus ejemplos en el mismo cambio.

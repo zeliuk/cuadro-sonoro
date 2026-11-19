@@ -2,6 +2,12 @@
 
 > Las entradas fechadas siguientes son antecedentes de sus respectivas fases. Decisiones antiguas sobre alojamiento de la web, APIs y proveedores quedaron sustituidas por las actualizaciones más recientes y no son instrucciones vigentes. Para el estado actual, consultar primero [ESTADO.md](ESTADO.md), [DEFINICION.md](DEFINICION.md) y [DESPLIEGUE.md](DESPLIEGUE.md).
 
+## Selección documental de hardware del primer prototipo — 19 de noviembre de 2026
+
+Se incorporó [HARDWARE.md](HARDWARE.md) como referencia única de materiales, esquema propuesto y comprobaciones de banco. Se seleccionaron la Waveshare ESP32-S3-Touch-LCD-4B (SKU 32052), AW9523B IO Expansion Board (SKU 22132), tres pulsadores RGB de ánodo común y 5 V, encoder DQLZV EC11, pomo, cableado, tiras de pines, termorretráctil y alimentación USB. Se enlazó desde la guía de firmware y el índice, manteniendo el croquis visual con una aclaración de que no es el esquema eléctrico. Definición, estado, arquitectura, plan e instrucciones ChatGPT distinguen la selección documental del montaje/validación pendientes.
+
+Revisión documental: el esquema oficial de la 4B y la ficha técnica Awinic AW9523B se consultaron; la página de Waveshare para el módulo AW9523B devolvió HTTP 403 a la consulta automatizada, por lo que su pinout y posibles componentes integrados deben confirmarse directamente en la guía y módulo recibidos. Se dejó explícito que AW9523B arranca con sus puertos configurados como salidas según AD0/AD1, y se marcó la rama 5 V de los aros como pendiente de medición. No se conectó ni energizó hardware, no se ejecutó firmware, no se hicieron mediciones ni pruebas físicas; no se ejecutaron pruebas de software. El esquema es una propuesta documental, no una validación eléctrica.
+
 ## Definición documental de Wi-Fi y controles físicos — 16 de noviembre de 2026
 
 Por instrucción de Carlos, se documentó la primera instalación offline: punto de acceso temporal identificable y protegido por contraseña propia, QR de conexión, portal cautivo con dirección local de respaldo aún por determinar, selección/actualización de redes y contraseña doméstica guardada únicamente en el ESP32. Se distinguió la conexión al router del acceso a Internet y se definió que las caídas de red no borran credenciales ni abren el asistente automáticamente. Tras configurar, el cuadro muestra el QR musical generado desde su identificador estable.

@@ -143,13 +143,15 @@ Para emisoras, la escucha en el navegador queda sujeta a que el stream permita r
 
 No se incluyen comandos remotos de reproducir, detener o volumen dirigidos al cuadro en esta versión. La web modifica configuración y permite escuchar localmente; los botones y la rueda gobiernan el dispositivo.
 
-## 7. Concepto físico y hardware pendiente
+## 7. Concepto físico y hardware del primer prototipo
 
 El objeto podrá colgarse o apoyarse. Se busca un frente decorativo de vidrio o metacrilato con la pantalla integrada y el sistema oculto detrás.
 
 Como concepto, una lámina, impresión o zona opaca oculta cables y componentes, dejando una ventana para la pantalla. Una pieza o franja inferior puede alojar los pulsadores y la rueda; sus cables pasan directamente a la carcasa trasera. No se pretende que todo el frontal sea transparente y deje la electrónica visible.
 
-Se aplazan medidas, material definitivo, alimentación, altavoz, amplificador, ESP32 concreto, pantalla, distribución de pines y construcción de la carcasa. Habrá que presupuestar conexiones para botones, iluminación, volumen, pantalla y audio antes de comprar componentes.
+Para el primer prototipo se seleccionaron la Waveshare ESP32-S3-Touch-LCD-4B, el expansor AW9523B, tres pulsadores RGB de 5 V y un encoder EC11; la lista completa, asignaciones y esquema propuesto están en [HARDWARE.md](HARDWARE.md), referencia única para materiales, cableado y comprobaciones de banco. Esta decisión documental no confirma las piezas recibidas ni que el circuito sea eléctricamente compatible. El pinout, la dirección I²C, corrientes, estados de arranque, alimentación de los aros y pull-ups deben comprobarse antes del montaje.
+
+Siguen pendientes la validación de banco, el montaje y su validación física; también medidas, material definitivo, alimentación final, comprobación del altavoz incluido, construcción de la carcasa y funcionamiento de pantalla, audio y controles. La selección de componentes no equivale a un prototipo montado ni a firmware implementado.
 
 ## 8. Pantalla e imágenes
 

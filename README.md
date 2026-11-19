@@ -6,7 +6,7 @@ Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web 
 
 ![Representación orientativa del cuadro sonoro con la portada de Infrasoinuak](docs/imagenes/resultado-orientativo-infrasoinuak.webp)
 
-Imagen de referencia para presentar la propuesta estética; el diseño, las dimensiones y los materiales finales pueden cambiar. El hardware y el montaje siguen pendientes. Consulta la [definición del proyecto](docs/DEFINICION.md) y la [vista preliminar de montaje](firmware/README.md).
+Imagen de referencia para presentar la propuesta estética; el diseño, las dimensiones y los materiales finales pueden cambiar. Los componentes del primer prototipo están seleccionados, pero el montaje y su validación física siguen pendientes. Consulta la [definición del proyecto](docs/DEFINICION.md), la [lista de materiales y esquema propuesto](docs/HARDWARE.md) y el [croquis preliminar de montaje](firmware/README.md).
 
 **Estado:** Carlos confirma manualmente que el backend funciona en Render con RapidAPI. Codex no ha verificado el recorrido desde la web pública ni el hardware. La web estática está destinada a `https://sonoro.zeliuk.xyz` y llama a la API `https://cuadro-sonoro.onrender.com`; el despliegue web, HTTPS y CORS desde ese origen siguen pendientes de comprobación. La configuración RapidAPI y guías están en [estado](docs/ESTADO.md), [despliegue](docs/DESPLIEGUE.md) y [prueba](docs/PRUEBA_RAPIDAPI.md).
 
@@ -46,7 +46,7 @@ La web pública decidida es `https://sonoro.zeliuk.xyz`; el QR/NFC usará `#toke
 | API e importador | Python/FastAPI en Render; búsqueda yt-dlp y descarga RapidAPI; RTDB/Storage en Firebase. Carlos comunica que funciona con RapidAPI; Codex no ha verificado la web pública ni hardware. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
-| Dispositivo | ESP32 con pantalla, audio y controles; hardware pendiente. |
+| Dispositivo | Componentes seleccionados para el primer prototipo; montaje, firmware y validación física pendientes. |
 
 La web se aloja fuera de Firebase Hosting y del ESP32. El ESP32 recibirá el audio directamente de Storage o de la emisora; hosting y backend no intervienen en cada reproducción de una canción ya preparada.
 

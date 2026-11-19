@@ -28,7 +28,7 @@ La web acepta el identificador en el fragmento, lo guarda en `sessionStorage` y 
 
 El acceso habitual usa `https://sonoro.zeliuk.xyz/#token=cuadro-demo`; web y cuadro pueden estar en redes distintas si el móvil tiene Internet. El navegador llama a `https://cuadro-sonoro.onrender.com`; CORS requiere el origen exacto `https://sonoro.zeliuk.xyz` en `ALLOWED_ORIGINS` (sin barra final). Esta variable existe en el backend, pero no se afirma que Render ya tenga el valor aplicado. La URL `meta[name="sonoro-api-base"]` del código aún apunta a Render. La búsqueda usa yt-dlp y RapidAPI descarga el ID seleccionado desde backend. Los fallos históricos HTTP 429/403 correspondían a descargas yt-dlp y son antecedentes, no bloqueo vigente de RapidAPI.
 
-Los scripts de servidor local/Bonjour se conservan como herramientas de desarrollo y sus pruebas como antecedentes, no como acceso de producto. El hardware y firmware no existen. No se conoce el proveedor o procedimiento de publicación del hosting de Carlos; la guía solo puede especificar publicar el contenido estático de `web/` por HTTPS sin inventar comandos ni rutas.
+Los scripts de servidor local/Bonjour se conservan como herramientas de desarrollo y sus pruebas como antecedentes, no como acceso de producto. Los componentes para el primer prototipo y el cableado propuesto están en [HARDWARE.md](HARDWARE.md); no hay montaje físicamente validado ni firmware ejecutable. No se conoce el proveedor o procedimiento de publicación del hosting de Carlos; la guía solo puede especificar publicar el contenido estático de `web/` por HTTPS sin inventar comandos ni rutas.
 
 ## Primera instalación y controles físicos acordados
 
