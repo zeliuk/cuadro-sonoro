@@ -119,13 +119,15 @@ Image load_station_art(const std::string& path) {
     return image;
 }
 
-Image load_jpeg(const std::string& path, int expected_width, int expected_height) {
+Image load_jpeg(const std::string& path, int expected_width, int expected_height,
+                bool allow_480_cover = false) {
     int info_width = 0, info_height = 0, info_channels = 0;
     if (!stbi_info(path.c_str(), &info_width, &info_height, &info_channels)) {
         throw std::runtime_error("No se pudo leer la cabecera JPEG: " + path);
     }
-    if ((expected_width && info_width != expected_width) ||
-        (expected_height && info_height != expected_height)) {
+    const bool expected_size = info_width == expected_width && info_height == expected_height;
+    const bool high_resolution_cover = allow_480_cover && info_width == 480 && info_height == 480;
+    if (!expected_size && !high_resolution_cover) {
         throw std::runtime_error("Dimensiones no esperadas en: " + path);
     }
 
@@ -222,7 +224,7 @@ int main(int argc, char** argv) {
                     songs[slot].cover = load_station_art(image_path == "-" ? "" : image_path);
                 } else {
                     if (image_path == "-") throw std::runtime_error("La canción no tiene carátula local.");
-                    songs[slot].cover = load_jpeg(image_path, 320, 320);
+                    songs[slot].cover = load_jpeg(image_path, 320, 320, true);
                 }
                 songs[slot].title = argv[arg + 3];
                 songs[slot].artist = argv[arg + 4];

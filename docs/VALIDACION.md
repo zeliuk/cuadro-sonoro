@@ -2,6 +2,12 @@
 
 > Las entradas fechadas siguientes son antecedentes de sus respectivas fases. Decisiones antiguas sobre alojamiento de la web, APIs y proveedores quedaron sustituidas por las actualizaciones más recientes y no son instrucciones vigentes. Para el estado actual, consultar primero [ESTADO.md](ESTADO.md), [DEFINICION.md](DEFINICION.md) y [DESPLIEGUE.md](DESPLIEGUE.md).
 
+## Compatibilidad de portadas en simulador Firebase — 20 de noviembre de 2026
+
+El lector Firebase rechazaba el nuevo formato de 480 × 480 porque el ejecutable solo aceptaba 320 × 320. Ahora permite ambos tamaños cuadrados para conservar compatibilidad con medios anteriores y mostrar portadas nuevas. Se actualizó la guía del simulador.
+
+Verificación posterior: aunque `cmake` no estaba disponible en el PATH, se recompiló el ejecutable existente con `make -C firmware/simulator/build-run cuadro-sonoro -j2`. La compilación terminó correctamente y `git diff --check` pasó. El flujo no se volvió a abrir contra Firebase.
+
 ## Fallback de calidad para portadas — 20 de noviembre de 2026
 
 El importador ahora busca miniaturas de YouTube en orden `maxresdefault`, `sddefault`, `hqdefault`, `mqdefault`, `default`, valida que cada respuesta sea una imagen con al menos las dimensiones esperadas y usa la primera válida. La imagen se recorta al centro y se optimiza como JPEG de 480 × 480, calidad 90. Si ninguna variante está disponible, la importación falla y conserva la selección anterior. Se actualizaron la guía del backend, la prueba RapidAPI, la definición y el estado.
