@@ -57,6 +57,8 @@ coverage.xml
 .coverage
 htmlcov/
 .pio/
+firmware/simulator/build/
+firmware/simulator/build-*/
 .vscode/*
 !.vscode/extensions.json
 *.zip

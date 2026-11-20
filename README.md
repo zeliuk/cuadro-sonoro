@@ -67,7 +67,7 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 | `web/` | Diseño aprobado y prototipo dinámico. |
 | `backend/` | API e importador iniciales; cada identificador válido deriva un ámbito aislado sin alta previa. |
 | `firebase/` | Reglas de lectura por URL conocida, sin escrituras/listados, y guía del cliente directo. |
-| `firmware/` | Alcance documentado; todavía sin firmware. |
+| `firmware/` | Guía y demo desktop C++/LVGL/SDL; firmware de placa pendiente. |
 | `docs/` | Definición, arquitectura, comandos, endpoints, fases y decisiones. |
 | `scripts/` | Preparación local y verificaciones. |
 
