@@ -81,7 +81,7 @@ void View::showSong(const lv_image_dsc_t* cover, const std::string& title, const
                lv_color_hex(0xe9b980), 24, 92, 432, 30);
 }
 
-void View::showQr() {
+void View::showQr(bool return_after_timeout) {
     clearScreen();
     mode_ = Mode::Qr;
     qr_layer_ = lv_obj_create(screen_);
@@ -125,12 +125,14 @@ void View::showQr() {
                lv_color_hex(0x272824), 24, start_y + actual_size + 16, 432, 32);
     make_label(qr_layer_, "QR del cuadro", artist_font_,
                lv_color_hex(0x777164), 24, start_y + actual_size + 52, 432, 24);
-    qr_timer_ = lv_timer_create([](lv_timer_t* timer) {
-        auto* self = static_cast<View*>(lv_timer_get_user_data(timer));
-        self->qr_timer_ = nullptr;
-        self->refresh();
-        lv_timer_delete(timer);
-    }, 20000, this);
+    if (return_after_timeout) {
+        qr_timer_ = lv_timer_create([](lv_timer_t* timer) {
+            auto* self = static_cast<View*>(lv_timer_get_user_data(timer));
+            self->qr_timer_ = nullptr;
+            self->refresh();
+            lv_timer_delete(timer);
+        }, 20000, this);
+    }
 }
 
 void View::refresh() {

@@ -38,7 +38,11 @@ struct Song {
     std::string artist;
 };
 
-void set_rgb_descriptor(Image& image, int width, int height) {
+void set_lvgl_rgb888_descriptor(Image& image, int width, int height) {
+    /* LVGL RGB888 consumes bytes as B, G, R; stb_image and our artwork use R, G, B. */
+    for (size_t index = 0; index < image.pixels.size(); index += 3) {
+        std::swap(image.pixels[index], image.pixels[index + 2]);
+    }
     image.descriptor.header.magic = LV_IMAGE_HEADER_MAGIC;
     image.descriptor.header.cf = LV_COLOR_FORMAT_RGB888;
     image.descriptor.header.w = width;
@@ -70,7 +74,7 @@ Image make_station_fallback() {
             image.pixels[index + 2] = color[2];
         }
     }
-    set_rgb_descriptor(image, size, size);
+    set_lvgl_rgb888_descriptor(image, size, size);
     return image;
 }
 
@@ -115,7 +119,7 @@ Image load_station_art(const std::string& path) {
         }
     }
     stbi_image_free(raw);
-    set_rgb_descriptor(image, size, size);
+    set_lvgl_rgb888_descriptor(image, size, size);
     return image;
 }
 
@@ -142,13 +146,7 @@ Image load_jpeg(const std::string& path, int expected_width, int expected_height
     Image image;
     image.pixels.assign(raw, raw + width * height * 3);
     stbi_image_free(raw);
-    image.descriptor.header.magic = LV_IMAGE_HEADER_MAGIC;
-    image.descriptor.header.cf = LV_COLOR_FORMAT_RGB888;
-    image.descriptor.header.w = width;
-    image.descriptor.header.h = height;
-    image.descriptor.header.stride = width * 3;
-    image.descriptor.data_size = image.pixels.size();
-    image.descriptor.data = image.pixels.data();
+    set_lvgl_rgb888_descriptor(image, width, height);
     return image;
 }
 
@@ -182,7 +180,8 @@ int SDLCALL watch_close_events(void* state, SDL_Event* event) {
 
 int main(int argc, char** argv) {
     try {
-        const bool firebase_data = argc >= 8 && std::string(argv[1]) == "--firebase-data" && (argc - 3) % 5 == 0;
+        const bool firebase_data = argc >= 3 && std::string(argv[1]) == "--firebase-data" &&
+            (argc == 3 || (argc >= 8 && (argc - 3) % 5 == 0));
         if (argc > 1 && !firebase_data &&
             !(argc == 3 && (std::string(argv[1]) == "--capture-song" || std::string(argv[1]) == "--verify-flow"))) {
             throw std::runtime_error("Argumentos internos de ejecución no válidos.");
@@ -235,6 +234,8 @@ int main(int argc, char** argv) {
             songs[0].title = "La canción que todavía recuerda el jardín después de la lluvia";
             songs[0].artist = "Artista de prueba · Edición de otoño";
         }
+        const bool all_slots_empty = std::none_of(songs.begin(), songs.end(),
+            [](const Song& song) { return song.available; });
         std::ifstream font_file(assets + "/NotoSans-Regular.ttf", std::ios::binary);
         if (!font_file) throw std::runtime_error("No se pudo abrir la fuente Noto Sans.");
         std::vector<uint8_t> font_data((std::istreambuf_iterator<char>(font_file)), std::istreambuf_iterator<char>());
@@ -249,9 +250,12 @@ int main(int argc, char** argv) {
         std::array<std::unique_ptr<sonoro::KeyInput>, 3> inputs;
         for (int slot = 0; slot < 3; ++slot) {
             inputs[slot] = std::make_unique<sonoro::KeyInput>(
-                [&view, &songs, &active_slot, &short_press_count, slot]() {
+                [&view, &songs, &active_slot, &short_press_count, &all_slots_empty, slot]() {
                     ++short_press_count;
-                    if (!songs[slot].available) return;
+                    if (!songs[slot].available) {
+                        view.showQr(!all_slots_empty);
+                        return;
+                    }
                     if (active_slot == slot) {
                         active_slot = -1;
                         view.showIdle();
@@ -260,14 +264,15 @@ int main(int argc, char** argv) {
                     active_slot = slot;
                     view.showSong(&songs[slot].cover.descriptor, songs[slot].title, songs[slot].artist);
                 },
-                [&view, &long_press_count, slot]() {
+                [&view, &long_press_count, &all_slots_empty, slot]() {
                     if (slot == 0) {
                         ++long_press_count;
-                        view.showQr();
+                        view.showQr(!all_slots_empty);
                     }
                 }
             );
         }
+        if (all_slots_empty) view.showQr(false);
 
         bool running = true;
         SDL_AddEventWatch(watch_close_events, &running);

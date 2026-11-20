@@ -2,6 +2,18 @@
 
 > Las entradas fechadas siguientes son antecedentes de sus respectivas fases. Decisiones antiguas sobre alojamiento de la web, APIs y proveedores quedaron sustituidas por las actualizaciones más recientes y no son instrucciones vigentes. Para el estado actual, consultar primero [ESTADO.md](ESTADO.md), [DEFINICION.md](DEFINICION.md) y [DESPLIEGUE.md](DESPLIEGUE.md).
 
+## Corrección del orden de canales en imágenes LVGL — 20 de noviembre de 2026
+
+La carga JPEG de `stb_image` entregaba RGB mientras que el renderer LVGL RGB888 consume el búfer con el rojo y el azul en orden inverso. Se añadió la conversión al preparar descriptores de imagen, de modo que cubre la imagen decorativa, carátulas, favicons y el arte de reserva de emisoras. La franja de texto y el QR monocromático no se modifican.
+
+Verificación: `make -C firmware/simulator/build-run cuadro-sonoro -j2` compiló correctamente. `cuadro-sonoro --capture-song /tmp/cuadro-sonoro-canal-corregido.bmp` generó una captura; se inspeccionó y se comprobó visualmente con tonos cálidos, sin el dominante azul anterior. No se probó con medios Firebase reales ni con la placa.
+
+## QR y notificación de cambios de huecos — 20 de noviembre de 2026
+
+El lanzador permite abrir el simulador aunque RTDB no tenga selecciones; con los tres huecos vacíos, muestra el QR persistente. Con estado parcial, pulsar un hueco sin contenido muestra el QR 20 segundos y luego restaura reposo o la selección activa. Se reemplazó la consulta periódica por un flujo Server-Sent Events (SSE) de Firebase RTDB sobre la ruta de los tres huecos. `put` y `patch` actualizan la copia local; al detectar un cambio se vuelven a preparar las portadas y reinicia la ventana SDL. Así, publicar la primera selección retira el QR persistente y vaciar el último hueco lo vuelve a mostrar. Si el flujo se corta o falla, el lector reconecta con espera incremental.
+
+Verificación de esta actualización: `python3 -m py_compile scripts/device_client.py firmware/simulator/scripts/launch_firebase.py` y `git diff --check` pasaron. No se recompiló C++ en esta actualización ni se conectó a Firebase real; el protocolo y el comportamiento en vivo quedan pendientes de validación integrada. No afecta al firmware de placa, aún pendiente.
+
 ## Compatibilidad de portadas en simulador Firebase — 20 de noviembre de 2026
 
 El lector Firebase rechazaba el nuevo formato de 480 × 480 porque el ejecutable solo aceptaba 320 × 320. Ahora permite ambos tamaños cuadrados para conservar compatibilidad con medios anteriores y mostrar portadas nuevas. Se actualizó la guía del simulador.

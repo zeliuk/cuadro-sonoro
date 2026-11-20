@@ -7,6 +7,7 @@ import os
 import socket
 import stat
 import sys
+from typing import Iterator
 from pathlib import Path
 from typing import Optional
 from urllib.error import HTTPError, URLError
@@ -100,6 +101,10 @@ def load_config(path: Path) -> dict:
 
 
 def read_slots(config: dict, identifier: str) -> dict:
+    return request_json(slots_url(config, identifier)) or {}
+
+
+def slots_url(config: dict, identifier: str) -> str:
     frame_key = frame_key_for(identifier)
     url = f"{config['database_url']}/frames/{frame_key}/slots.json"
     query = {}
@@ -107,7 +112,87 @@ def read_slots(config: dict, identifier: str) -> dict:
         query['ns'] = config['database_namespace']
     if query:
         url += '?' + urlencode(query)
-    return request_json(url) or {}
+    return url
+
+
+def _set_stream_path(root: dict, path: str, value, *, patch: bool = False) -> dict:
+    """Apply one RTDB SSE put/patch path to a cached slots object."""
+    segments = [part for part in path.split('/') if part]
+    if not segments:
+        return value if isinstance(value, dict) else {}
+
+    target = root
+    for segment in segments[:-1]:
+        child = target.get(segment)
+        if not isinstance(child, dict):
+            child = {}
+            target[segment] = child
+        target = child
+    key = segments[-1]
+    if value is None:
+        target.pop(key, None)
+    else:
+        target[key] = value
+    return root
+
+
+def iter_slot_updates(config: dict, identifier: str) -> Iterator[dict]:
+    """Yield complete slot snapshots from Firebase RTDB's REST SSE stream.
+
+    The caller owns reconnection policy. Firebase sends an initial `put`, then
+    `put`/`patch` events with paths relative to this slots endpoint.
+    """
+    request = Request(slots_url(config, identifier), headers={
+        'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'User-Agent': 'CuadroSonoro/0.1 (desktop simulator)',
+    })
+    snapshot = {}
+    try:
+        with urlopen(request, timeout=75) as response:
+            if not response.headers.get('Content-Type', '').lower().startswith('text/event-stream'):
+                raise RuntimeError('Firebase no abrió el flujo de eventos de RTDB.')
+            event = ''
+            data_lines = []
+            while True:
+                raw_line = response.readline()
+                if not raw_line:
+                    return
+                line = raw_line.decode('utf-8').rstrip('\r\n')
+                if not line:
+                    if event in ('put', 'patch') and data_lines:
+                        payload = json.loads('\n'.join(data_lines))
+                        path = payload.get('path', '/')
+                        data = payload.get('data')
+                        if event == 'put':
+                            snapshot = _set_stream_path(snapshot, path, data)
+                        elif isinstance(data, dict):
+                            for relative_path, item in data.items():
+                                patch_path = '/'.join(part for part in (path, relative_path) if part)
+                                snapshot = _set_stream_path(snapshot, patch_path, item, patch=True)
+                        yield json.loads(json.dumps(snapshot))
+                    elif event == 'cancel':
+                        raise RuntimeError('Firebase canceló la lectura en tiempo real de los huecos.')
+                    elif event == 'auth_revoked':
+                        raise RuntimeError('Firebase revocó el acceso al flujo de huecos.')
+                    event = ''
+                    data_lines = []
+                    continue
+                if line.startswith(':'):
+                    continue
+                field, separator, value = line.partition(':')
+                if not separator:
+                    value = ''
+                elif value.startswith(' '):
+                    value = value[1:]
+                if field == 'event':
+                    event = value
+                elif field == 'data':
+                    data_lines.append(value)
+    except HTTPError as error:
+        raise RuntimeError(f'Firebase RTDB devolvió HTTP {error.code} al abrir el flujo.') from None
+    except (URLError, TimeoutError, OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError('Se interrumpió el flujo de cambios de Firebase RTDB.') from error
 
 
 def media_url(config: dict, object_key: str) -> str:

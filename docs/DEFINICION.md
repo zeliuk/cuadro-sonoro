@@ -61,13 +61,15 @@ Cada hueco representa una única canción o emisora. No se incluyen listas de re
 | Pulsación corta en un hueco con contenido | Reproduce su selección. |
 | Pulsación corta en otro hueco | Cambia a la selección de ese hueco. |
 | Pulsación corta en el hueco activo | Detiene la reproducción y vuelve a la imagen decorativa. |
-| Pulsación corta en un hueco vacío | No inicia sonido. |
+| Pulsación corta en un hueco vacío | Muestra el QR musical sin iniciar sonido; si ya suena otro hueco, conserva su audio. |
 | Mantener botón 1 durante 2 segundos | Muestra durante 20 segundos el QR de la web musical, sin interrumpir el audio. |
 | Mantener botones 2 y 3 juntos durante 5 segundos | Completa una cuenta atrás y restablece únicamente la Wi-Fi; después abre el asistente local. |
 | Soltar cualquiera de los botones 2 o 3 antes de completar la cuenta atrás | Cancela el restablecimiento. |
 | Girar la rueda | Ajusta únicamente el volumen del cuadro. No requiere pulsación ni tiene funciones adicionales. |
 
 El QR musical se genera en el dispositivo a partir de su identificador estable; no se descarga desde Firebase ni cambia el identificador. Mantener el botón 1 para mostrarlo no inicia, cambia ni detiene el audio. Tras 20 segundos, la pantalla vuelve a lo que corresponda al estado actual: carátula o logo durante la reproducción, imagen decorativa en reposo.
+
+Cuando el estado del cuadro indica que los tres huecos están vacíos, la pantalla muestra únicamente el QR musical de forma persistente para facilitar la primera configuración. Si hay al menos una selección y se pulsa un hueco vacío, el QR aparece durante 20 segundos; después vuelve a la selección activa o a la imagen decorativa. Mostrar el QR nunca inicia ni detiene audio.
 
 El firmware debe tratar las pulsaciones largas y combinadas sin ejecutar también acciones cortas. La combinación 2+3 tiene prioridad sobre las acciones individuales; soltar tras una combinación no activa canciones y mantener pulsados los botones no repite continuamente la acción. Los tiempos de 2, 5 y 20 segundos son decisiones de producto pendientes de validar en hardware.
 

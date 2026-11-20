@@ -15,7 +15,7 @@ public:
     void showSong(const lv_image_dsc_t* cover, const std::string& title, const std::string& artist);
     void setQrUrl(const std::string& url) { qr_url_ = url; }
     void showIdle();
-    void showQr();
+    void showQr(bool return_after_timeout = true);
     void refresh();
     Mode mode() const { return mode_; }
 
