@@ -28,6 +28,8 @@ Mantén esa terminal abierta. Verás los logs ahí; `Ctrl+C` detiene el proceso.
 
 Cada importación emite líneas `import_checkpoint` en los logs del proceso. En Docker local consulta `docker compose logs -f api`; en Render usa el panel Logs. Busca etapas `source_download`, `audio_validation`, `cover_processing`, `firebase_upload` y `publish`. La clave RapidAPI no se registra ni se entrega al navegador. La limpieza puede fallar después de una importación completada sin revertir la publicación.
 
+La portada no viene en la respuesta RapidAPI: se obtiene desde `i.ytimg.com` usando el ID de vídeo. El backend prueba `maxresdefault`, `sddefault`, `hqdefault`, `mqdefault` y `default`, en ese orden, y descarta respuestas ausentes, inválidas o menores que la resolución esperada. La primera válida se recorta al centro a 480 × 480 y se guarda como JPEG con calidad 90; si no hay ninguna disponible, la importación falla y conserva la selección anterior.
+
 La tarjeta de la web seguirá mostrando un mensaje general para los fallos de importación. Usa el detalle de los logs del backend para localizar la etapa; no compartas capturas o registros sin revisar que no contengan datos privados.
 
 En otra terminal:

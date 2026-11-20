@@ -12,6 +12,45 @@ from .state import begin_execution, check_cancel, patch_job, store
 
 logger = logging.getLogger('uvicorn.error')
 URL_PATTERN = re.compile(r"(?:https?|gs)://[^\s'\"]+", re.IGNORECASE)
+THUMBNAIL_VARIANTS = (
+    ('maxresdefault', 1280, 720),
+    ('sddefault', 640, 480),
+    ('hqdefault', 480, 360),
+    ('mqdefault', 320, 180),
+    ('default', 120, 90),
+)
+
+
+def _download_cover(source_id, directory):
+    """Fetch the largest available YouTube thumbnail and normalize it for the display."""
+    from PIL import Image, ImageOps
+
+    image_path = directory / 'cover.jpg'
+    candidate_path = directory / 'thumbnail'
+    for variant, min_width, min_height in THUMBNAIL_VARIANTS:
+        url = f'https://i.ytimg.com/vi/{source_id}/{variant}.jpg'
+        try:
+            with rapidapi.open_public_media(url, timeout=20) as response:
+                rapidapi._public_https_url(response.geturl())
+                content = response.read(5 * 1024 * 1024 + 1)
+        except Exception:
+            # Thumbnail variants are optional; try the next smaller published size.
+            continue
+        if len(content) > 5 * 1024 * 1024:
+            raise RuntimeError('La portada supera el tamaño permitido.')
+        try:
+            candidate_path.write_bytes(content)
+            with Image.open(candidate_path) as image:
+                if image.width < min_width or image.height < min_height:
+                    continue
+                ImageOps.fit(image.convert('RGB'), (480, 480)).save(image_path, quality=90)
+            logger.info('import_checkpoint stage=cover_processing result=selected variant=%s', variant)
+            return image_path
+        except Exception:
+            # Thumbnail variants are optional; try the next smaller published size.
+            continue
+    logger.warning('import_checkpoint stage=cover_processing result=unavailable')
+    raise RuntimeError('No se pudo obtener una portada válida desde YouTube.')
 
 
 def _safe_error_detail(exc, source_id, temp_dir, frame_key, job_id, run_id):
@@ -75,10 +114,7 @@ def execute_import(frame_key, queued_job):
             expected_size = download_info.get('filesize')
             logger.info('import_checkpoint stage=%s result=complete bytes=%s expected_bytes=%s',
                         stage, downloaded, int(expected_size) if isinstance(expected_size, (int, float)) else 'unknown')
-            info = {
-                'duration': download_info.get('duration'),
-                'thumbnailFileUrl': 'https://i.ytimg.com/vi/' + job['source_id'] + '/mqdefault.jpg',
-            }
+            info = {'duration': download_info.get('duration')}
             stage = 'audio_validation'
             probe = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration,format_name', '-of', 'json', str(audio)], capture_output=True, text=True, timeout=20, check=True)
             measured = json.loads(probe.stdout).get('format', {})
@@ -98,18 +134,7 @@ def execute_import(frame_key, queued_job):
             logger.info('import_checkpoint stage=%s result=complete', stage)
             check_cancel(frame_key, job_id, run_id)
             stage = 'cover_processing'
-            image_path = None
-            if info.get('thumbnailFileUrl'):
-                from PIL import Image, ImageOps
-                image_path = base / 'cover.jpg'
-                thumbnail_path = base / 'thumbnail'
-                with rapidapi.open_public_media(info['thumbnailFileUrl'], timeout=20) as response:
-                    rapidapi._public_https_url(response.geturl())
-                    thumbnail_path.write_bytes(response.read(5 * 1024 * 1024 + 1))
-                if thumbnail_path.stat().st_size > 5 * 1024 * 1024:
-                    raise RuntimeError('La portada supera el tamaño permitido.')
-                with Image.open(thumbnail_path) as image:
-                    ImageOps.fit(image.convert('RGB'), (320, 320)).save(image_path, quality=85)
+            image_path = _download_cover(job['source_id'], base)
             logger.info('import_checkpoint stage=%s result=complete cover=%s', stage, bool(image_path))
             patch_job(frame_key, job_id, run_id, status='uploading', percent=0, message='Guardando en tu biblioteca')
             stage = 'firebase_upload'

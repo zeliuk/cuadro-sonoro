@@ -176,7 +176,7 @@ La pantalla será a color, sin necesidad de función táctil ni vídeo en la pri
 4. Se eliminan metadatos innecesarios, incluida ubicación GPS cuando exista.
 5. Se guarda la versión optimizada y se actualiza la configuración cuando esté lista.
 
-La resolución, formato, calidad y peso máximo se decidirán con la pantalla. No se conserva el original como archivo permanente. Carátulas y logos también se optimizan, con un tratamiento de encuadre adecuado para no cortar información relevante.
+La salida actual de carátula se adapta a 480 × 480 para la pantalla seleccionada. Para canciones, el backend intenta las miniaturas de YouTube de mayor a menor resolución y recorta al centro; el tratamiento final debe evitar perder información relevante. Formato, calidad y peso máximo definitivos se revisarán con la pantalla. No se conserva el original como archivo permanente. Carátulas y logos también se optimizan.
 
 La imagen anterior permanece hasta completar la nueva. Al terminar o detener el sonido se vuelve a la imagen decorativa. El detalle de su conservación local y la presentación en arranque sin red se resolverá al implementar el firmware, sin añadir almacenamiento de canciones completas.
 

@@ -2,6 +2,12 @@
 
 > Las entradas fechadas siguientes son antecedentes de sus respectivas fases. Decisiones antiguas sobre alojamiento de la web, APIs y proveedores quedaron sustituidas por las actualizaciones más recientes y no son instrucciones vigentes. Para el estado actual, consultar primero [ESTADO.md](ESTADO.md), [DEFINICION.md](DEFINICION.md) y [DESPLIEGUE.md](DESPLIEGUE.md).
 
+## Fallback de calidad para portadas — 20 de noviembre de 2026
+
+El importador ahora busca miniaturas de YouTube en orden `maxresdefault`, `sddefault`, `hqdefault`, `mqdefault`, `default`, valida que cada respuesta sea una imagen con al menos las dimensiones esperadas y usa la primera válida. La imagen se recorta al centro y se optimiza como JPEG de 480 × 480, calidad 90. Si ninguna variante está disponible, la importación falla y conserva la selección anterior. Se actualizaron la guía del backend, la prueba RapidAPI, la definición y el estado.
+
+No se ejecutaron pruebas automáticas ni llamadas a YouTube, RapidAPI, Firebase o Render; tampoco se desplegó el cambio. Pendiente validar variantes ausentes y disponibles con vídeos reales, revisar el recorte y desplegar por el procedimiento del propietario.
+
 ## Carga directa de Firebase en el simulador — 20 de noviembre de 2026
 
 Se añadió `firmware/simulator/scripts/launch_firebase.py`: pide el identificador sin mostrarlo y lee una vez los tres registros desde RTDB. Para canciones descarga hasta 2 MiB por JPEG desde Storage. Para radios obtiene el favicon desde la URL HTTPS publicada, valida el host público y cada redirección y limita la respuesta a 2 MiB; el decodificador stb_image ajusta formatos rasterizados a un lienzo cuadrado y genera un icono local si falta/no puede decodificar el logo. El simulador pasa imagen, título y artista a la misma vista LVGL. Las teclas `1`, `2` y `3` activan/cambian/detienen la selección de cada hueco; los huecos vacíos no afectan a la selección activa. El QR usa el identificador consultado. La lectura no pasa por Render, no descarga audio y no modifica Firebase. `scripts/device_client.py` comparte el lector de selección con su comando anterior de descarga de medios.
