@@ -144,6 +144,7 @@ def test_progress_pipeline_only_commits_after_upload():
     with patch.object(worker.rapidapi,'download_info',return_value={'link':'https://audio.example/a.mp3','filesize':10,'duration':30}), \
          patch.object(worker.rapidapi,'open_public_media',side_effect=check_progress), \
          patch.object(worker.rapidapi,'_public_https_url',side_effect=lambda url:url), \
+         patch.object(worker, '_download_cover', return_value=Path('cover.jpg')), \
          patch.object(worker.subprocess,'run',return_value=type('Probe',(),{'stdout':json.dumps({'format':{'duration':'30','format_name':'mp3'}})})()), \
          patch.object(worker,'persist_media') as upload:
         upload.return_value=(f'private/frames/{KEY_A}/pipeline/audio.mp3',None)

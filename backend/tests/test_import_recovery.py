@@ -87,6 +87,7 @@ def test_late_upload_completion_cannot_publish_after_cancel():
     with patch.object(importer.rapidapi,'download_info',return_value={'link':'https://audio.example/a.mp3','filesize':3,'duration':20}), \
          patch.object(importer.rapidapi,'open_public_media',side_effect=lambda *args,**kwargs:responses.pop(0)), \
          patch.object(importer.rapidapi,'_public_https_url',side_effect=lambda url:url), \
+         patch.object(importer, '_download_cover', return_value=Path('cover.jpg')), \
          patch.object(importer.subprocess,'run',return_value=type('Probe',(),{'stdout':json.dumps({'format':{'duration':'20','format_name':'mp3'}})})()), \
          patch.object(importer, 'persist_media') as upload:
         def finish_upload(*args, **kwargs):
