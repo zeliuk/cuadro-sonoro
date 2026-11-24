@@ -54,6 +54,22 @@ void View::showIdle() {
     lv_obj_center(image);
 }
 
+void View::showDiagnostic(const std::string& version) {
+    playing_ = false;
+    mode_ = Mode::Diagnostic;
+    clearScreen();
+    lv_obj_set_style_bg_color(screen_, lv_color_hex(0xeee5da), 0);
+    auto* name = make_label(screen_, "Sonoro", title_font_, lv_color_hex(0x272824),
+                            32, 176, 416, 56);
+    lv_obj_set_style_text_align(name, LV_TEXT_ALIGN_CENTER, 0);
+    auto* label = make_label(screen_, "DIAGNÓSTICO DE FIRMWARE", artist_font_,
+                             lv_color_hex(0x777164), 32, 238, 416, 36);
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+    auto* version_label = make_label(screen_, version.c_str(), artist_font_,
+                                     lv_color_hex(0x777164), 32, 282, 416, 32);
+    lv_obj_set_style_text_align(version_label, LV_TEXT_ALIGN_CENTER, 0);
+}
+
 void View::showSong(const lv_image_dsc_t* cover, const std::string& title, const std::string& artist) {
     playing_ = true;
     mode_ = Mode::Song;

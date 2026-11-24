@@ -4,7 +4,7 @@
 
 **Repositorio previsto:** `cuadro-sonoro`, público  
 **Nombre visible provisional:** Sonoro  
-**Estado:** decisiones de producto acordadas; implementación e integraciones por validar.
+**Estado:** decisiones de producto acordadas; implementación e integraciones por validar. Inicio aprobado del firmware real documentado como fase técnica de diagnóstico en `docs/ESTADO.md`; no modifica el comportamiento del producto definido aquí.
 
 Este documento consolida la definición acordada antes de reconstruir el repositorio. Describe el comportamiento que debe tener el producto, no certifica que ya esté implementado. Las propuestas del prototipo anterior deben revisarse contra esta definición; en caso de contradicción, prevalecen las decisiones recogidas aquí.
 
@@ -151,7 +151,7 @@ El objeto podrá colgarse o apoyarse. Se busca un frente decorativo de vidrio o 
 
 Como concepto, una lámina, impresión o zona opaca oculta cables y componentes, dejando una ventana para la pantalla. Una pieza o franja inferior puede alojar los pulsadores y la rueda; sus cables pasan directamente a la carcasa trasera. No se pretende que todo el frontal sea transparente y deje la electrónica visible.
 
-Para el primer prototipo se seleccionaron la Waveshare ESP32-S3-Touch-LCD-4B, el expansor AW9523B, tres pulsadores RGB de 5 V y un encoder EC11; la lista completa, asignaciones y esquema propuesto están en [HARDWARE.md](HARDWARE.md), referencia única para materiales, cableado y comprobaciones de banco. Esta decisión documental no confirma las piezas recibidas ni que el circuito sea eléctricamente compatible. El pinout, la dirección I²C, corrientes, estados de arranque, alimentación de los aros y pull-ups deben comprobarse antes del montaje.
+Para el primer prototipo se seleccionaron la Waveshare ESP32-S3-Touch-LCD-4B, el expansor AW9523B, tres pulsadores RGB de 5 V y un encoder EC11. Decisiones de desarrollo aprobadas: ESP-IDF 5.5.5, BSP Waveshare 2.0.0, LVGL 9.5.0 compartido entre escritorio y firmware, C++17, simulador SDL2, VS Code/Codex y transferencia inicial por USB; OTA queda como posibilidad futura no implementada. La lista completa, asignaciones y esquema propuesto están en [HARDWARE.md](HARDWARE.md), referencia única para materiales, cableado y comprobaciones de banco. Esta decisión documental no confirma las piezas recibidas ni que el circuito sea eléctricamente compatible. El pinout, la dirección I²C, corrientes, estados de arranque, alimentación de los aros y pull-ups deben comprobarse antes del montaje.
 
 Siguen pendientes la validación de banco, el montaje y su validación física; también medidas, material definitivo, alimentación final, comprobación del altavoz incluido, construcción de la carcasa y funcionamiento de pantalla, audio y controles. La selección de componentes no equivale a un prototipo montado ni a firmware implementado.
 
@@ -188,7 +188,7 @@ El modelo de producto es seleccionar el cuadro con el identificador que aparece 
 
 La decisión de Carlos es que la configuración musical publicada y los medios se pueden leer sin sesión para quien conozca sus URLs. RTDB permite GET solo en `frames/{sha256}/slots`; no permite leer el árbol de cuadros ni tareas. Storage permite GET de objetos por URL bajo `private/frames/{sha256}/`, pero no listar objetos. La API deriva la misma ruta SHA-256 del identificador y no comprueba una lista de autorización. Conocer o elegir un identificador permite cambiar su configuración mediante la API; SHA-256 separa rutas, no autoriza. Las credenciales administrativas permanecen solo en backend y herramientas privadas. No hay cuentas, contraseñas ni sesiones Firebase.
 
-Las credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32. Las reglas y una importación/reproducción se validaron en Firebase real con cambios manuales permitidos; el firmware sigue pendiente.
+Las credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32. Las reglas y una importación/reproducción se validaron en Firebase real con cambios manuales permitidos; el firmware de producto sigue pendiente. Existe un firmware v0.1 separado para diagnóstico de pantalla, sin validar físicamente todavía.
 
 ## 10. Datos, conservación y limpieza
 
@@ -213,7 +213,7 @@ Durante una sustitución pueden coexistir temporalmente la versión anterior y l
 | Backend externo | Docker; alojamiento público por decidir. En desarrollo local se usa Docker en el Mac. |
 | Datos | Firebase Realtime Database. |
 | Audio e imágenes | Firebase Storage. |
-| Firmware | C++; entorno y librerías por concretar con el hardware. |
+| Firmware | ESP-IDF 5.5.5, C++17, BSP Waveshare 2.0.0 y LVGL 9.5.0; la fase v0.1 es solo diagnóstico y no implementa todavía las funciones de producto. |
 
 La web será dinámica: búsquedas, resultados, formularios, progreso, actualización de huecos, imagen y escucha local funcionan sin recargas completas durante el uso normal. La interfaz separa estilos, componentes visuales, servicios de comunicación y lógica de estado.
 
@@ -258,7 +258,9 @@ Un único repositorio con esta separación:
 |---|---|
 | `web/` | Interfaz y modo demostración. |
 | `backend/` | API, importador, procesamiento y pruebas. |
-| `firmware/` | Código del ESP32 cuando se aborde esa fase. |
+| `firmware/common/` | Vistas LVGL, QR e imágenes que pueden compartir escritorio y firmware. |
+| `firmware/simulator/` | SDL2, teclado, acceso a archivos/red y modo Firebase de escritorio. |
+| `firmware/esp32/` | Proyecto ESP-IDF para la placa; actualmente modo diagnóstico v0.1. |
 | `firebase/` | Configuración y reglas versionables sin credenciales. |
 | `docs/` | Arquitectura, decisiones, configuración, despliegue y fases. |
 

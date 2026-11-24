@@ -16,3 +16,7 @@ Node se usa para la comprobación de sintaxis JS, no como servidor de producció
 El backend inicial usa SQLite solo como alternativa local sin Firebase; no es una nueva base de datos de producción. Sus rangos de dependencias vienen del prototipo y aún no tienen un lockfile reproducible por plataforma: Codex deberá fijar una estrategia de versiones al preparar el despliegue, evitando congelar rutas locales o artefactos específicos de esta máquina.
 
 Referencias: [FastAPI](https://fastapi.tiangolo.com/tutorial/first-steps/), [RapidAPI Hub](https://rapidapi.com/ytjar/api/youtube-mp36), [Radio Browser](https://docs.radio-browser.info/).
+
+## Firmware y simulador
+
+El firmware de placa usa ESP-IDF 5.5.5 y el BSP oficial Waveshare 2.0.0 para ESP32-S3-Touch-LCD-4B; LVGL 9.5.0 y vistas C++17 se comparten con el simulador SDL2. SDL2, teclado, archivos y acceso Firebase se limitan al simulador. El proyecto ESP-IDF tiene modo diagnóstico v0.1, sin conectividad ni audio. La guía de instalación/macOS/VS Code/compilación y transferencia USB está en [firmware/README.md](../firmware/README.md). No se ha validado el firmware en hardware.

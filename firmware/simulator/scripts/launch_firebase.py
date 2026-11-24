@@ -18,11 +18,13 @@ from scripts import device_client
 
 
 MAX_COVER_BYTES = 2 * 1024 * 1024
-DEFAULT_SIMULATOR = ROOT / 'firmware/simulator/build/cuadro-sonoro'
+DEFAULT_SIMULATOR = ROOT / 'firmware/simulator/build-lvgl95/cuadro-sonoro'
 if not DEFAULT_SIMULATOR.is_file():
-    alternate = ROOT / 'firmware/simulator/build-run/cuadro-sonoro'
-    if alternate.is_file():
-        DEFAULT_SIMULATOR = alternate
+    for alternate in (ROOT / 'firmware/simulator/build/cuadro-sonoro',
+                      ROOT / 'firmware/simulator/build-run/cuadro-sonoro'):
+        if alternate.is_file():
+            DEFAULT_SIMULATOR = alternate
+            break
 
 
 def prepare_snapshot(config: dict, identifier: str, slots: dict, temporary: Path,

@@ -12,10 +12,16 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 - Identificador por cuadro en el enlace; no requiere alta y no es una credencial. No confundirlo con una credencial administrativa de Firebase.
 - Tres selecciones, tres pulsadores iluminados y rueda física. La web configura y permite escuchar localmente; no envía órdenes de reproducción ni volumen al ESP32.
 - Sin microSD ni canciones permanentes en el dispositivo. No autoplay al arrancar; una canción termina y se detiene.
-- Imagen decorativa optimizada desde la web; primera configuración Wi-Fi mediante portal local sin Internet, con red temporal protegida por contraseña propia del dispositivo. Hardware y firmware siguen pendientes.
+- Firmware real en curso para Waveshare ESP32-S3-Touch-LCD-4B con ESP-IDF, LVGL y C++17; el modo diagnóstico v0.1 es independiente del comportamiento normal. La vista LVGL y los recursos de prueba viven en `firmware/common/`; SDL2/Firebase/teclado permanecen en el simulador. No presentar builds como pruebas físicas. Wi-Fi, portal, audio, controles externos y OTA siguen pendientes.
 - Botón 1 mantenido 2 s muestra durante 20 s el QR musical sin afectar al audio; botones 2+3 mantenidos juntos 5 s restablecen solo Wi-Fi, con cuenta atrás cancelable. Pulsaciones cortas controlan los tres huecos y la rueda solo el volumen. La definición completa está en `docs/DEFINICION.md`.
 - Una importación por cuadro; conservar selección anterior ante fallos. Cambiar configuración no interrumpe la reproducción activa.
 - Modo demo identificado, separado y sin uso de servicios reales.
+
+## Firmware
+
+- Versiones aprobadas para la primera fase: ESP-IDF 5.5.5, LVGL 9.5.0, BSP oficial Waveshare 2.0.0; mismo LVGL en simulador. Desarrollo VS Code/Codex, C/C++ y carga futura por USB; OTA solo como posibilidad posterior.
+- No incorporar Wi-Fi, Firebase en ESP32, audio, portal, botones externos, AW9523B, encoder ni OTA al diagnóstico.
+- Sigue siendo obligatorio revisar `docs/HARDWARE.md`; las pruebas físicas y eléctricas no se infieren de la compilación.
 
 ## Cómo avanzar
 

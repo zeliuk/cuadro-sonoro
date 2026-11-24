@@ -46,7 +46,7 @@ La web pública decidida es `https://sonoro.zeliuk.xyz`; el QR/NFC usará `#toke
 | API e importador | Python/FastAPI en Render; búsqueda yt-dlp y descarga RapidAPI; RTDB/Storage en Firebase. Carlos comunica que funciona con RapidAPI; Codex no ha verificado la web pública ni hardware. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
-| Dispositivo | Componentes seleccionados para el primer prototipo; montaje, firmware y validación física pendientes. |
+| Dispositivo | Componentes seleccionados; firmware de diagnóstico v0.1 iniciado. Montaje y validación física pendientes. |
 
 La web se aloja fuera de Firebase Hosting y del ESP32. El ESP32 recibirá el audio directamente de Storage o de la emisora; hosting y backend no intervienen en cada reproducción de una canción ya preparada.
 
@@ -67,7 +67,7 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 | `web/` | Diseño aprobado y prototipo dinámico. |
 | `backend/` | API e importador iniciales; cada identificador válido deriva un ámbito aislado sin alta previa. |
 | `firebase/` | Reglas de lectura por URL conocida, sin escrituras/listados, y guía del cliente directo. |
-| `firmware/` | Guía y demo desktop C++/LVGL/SDL; firmware de placa pendiente. |
+| `firmware/` | Código compartido LVGL, simulador SDL2 y diagnóstico ESP-IDF v0.1. |
 | `docs/` | Definición, arquitectura, comandos, endpoints, fases y decisiones. |
 | `scripts/` | Preparación local y verificaciones. |
 

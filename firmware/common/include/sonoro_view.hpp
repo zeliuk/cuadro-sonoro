@@ -9,12 +9,13 @@ namespace sonoro {
 
 class View {
 public:
-    enum class Mode { Idle, Song, Qr };
+    enum class Mode { Diagnostic, Idle, Song, Qr };
     View(const lv_image_dsc_t* decorative_image, const lv_image_dsc_t* album_cover,
          const lv_font_t* title_font, const lv_font_t* artist_font);
     void showSong(const lv_image_dsc_t* cover, const std::string& title, const std::string& artist);
     void setQrUrl(const std::string& url) { qr_url_ = url; }
     void showIdle();
+    void showDiagnostic(const std::string& version);
     void showQr(bool return_after_timeout = true);
     void refresh();
     Mode mode() const { return mode_; }

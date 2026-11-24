@@ -49,3 +49,7 @@ Conserva junto a él los orígenes exactos necesarios para desarrollo. `Authoriz
 La configuración versionada actual permite como orígenes de desarrollo `http://127.0.0.1:5173` y `http://localhost:5173`; `backend/.env.example` conserva además la regex `.local` para la herramienta macOS. Las variables son las existentes en el código. Los hostnames locales y Bonjour son desarrollo, no requisitos de producción. El procedimiento histórico sigue en [PRUEBA_WEB_LOCAL.md](PRUEBA_WEB_LOCAL.md).
 
 CORS solo permite que un navegador lea respuestas desde los orígenes indicados. No autentica al cuadro ni sustituye al identificador Bearer. El enlace público requiere Internet en el móvil; no depende de la LAN del ESP32. El portal local de Wi-Fi del dispositivo configura solo la conexión del cuadro y nunca envía su contraseña a web, Render o Firebase.
+
+## Firmware ESP32-S3 de diagnóstico
+
+El proyecto no usa secretos ni conectividad externa. Usa ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 con flash QIO 16 MB y PSRAM OPI 8 MB. La instalación de EIM, extensión oficial VS Code, compilación, puerto USB, monitor serie y bootloader está paso a paso en [firmware/README.md](../firmware/README.md). El firmware de esta fase solo muestra recursos locales y registra memoria; no necesita editar `.env` ni `device-config.json`.
