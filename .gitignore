@@ -59,6 +59,11 @@ htmlcov/
 .pio/
 firmware/simulator/build/
 firmware/simulator/build-*/
+firmware/esp32/build/
+firmware/esp32/managed_components/
+firmware/esp32/sdkconfig
+firmware/esp32/sdkconfig.old
+firmware/esp32/.vscode/*
 .vscode/*
 !.vscode/extensions.json
 *.zip

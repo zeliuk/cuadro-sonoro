@@ -18,9 +18,9 @@ Herramientas de desarrollo ya existentes: servidor local de `web/`, publicación
 
 ## Fase 4 — Hardware y firmware
 
-Código común iniciado: vista LVGL y QR en `firmware/common/`; adaptadores SDL2/Firebase y teclado en `firmware/simulator/`; proyecto ESP-IDF de diagnóstico en `firmware/esp32/`. Versiones seleccionadas: ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 en ambos destinos. El comportamiento Firebase y las acciones actuales del simulador se conservan. El firmware v0.1 de diagnóstico presenta cuatro vistas locales cada 5 s y queda separado del modo producto.
+Código común iniciado: vista LVGL y QR en `firmware/common/`; adaptadores SDL2/Firebase y teclado en `firmware/simulator/`; proyecto ESP-IDF de diagnóstico en `firmware/esp32/`. Versiones seleccionadas: ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 en ambos destinos. El comportamiento Firebase y las acciones actuales del simulador se conservan. El firmware v0.1 de diagnóstico presenta cuatro vistas locales cada 5 s, compila en macOS Intel y queda separado del modo producto. Sin placa, no se ha probado físicamente.
 
-Siguiente: compilar ambos entornos; probar el modo local y Firebase del simulador; instalar ESP-IDF en macOS Apple Silicon y construir `esp32s3`; transferir por USB y validar LCD, recursos, QR, memoria y logs cuando llegue la placa. Después completar pruebas eléctricas en banco antes de añadir periféricos. Wi-Fi, Firebase en ESP32, audio, portal, controles externos, AW9523B, encoder y OTA no forman parte de esta fase. La guía está en `firmware/README.md`; el hardware y sus límites en `docs/HARDWARE.md`.
+Siguiente: probar el simulador en Apple Silicon y revisar el modo Firebase con un identificador elegido por Carlos; compilar en Apple Silicon; cuando llegue la placa, transferir por USB y validar LCD, recursos, QR, memoria y logs. Después completar pruebas eléctricas en banco antes de añadir periféricos. Wi-Fi, Firebase en ESP32, audio, portal, controles externos, AW9523B, encoder y OTA no forman parte de esta fase. La guía está en `firmware/README.md`; el hardware y sus límites en `docs/HARDWARE.md`.
 
 ## Fase 5 — Montaje y despliegue final
 

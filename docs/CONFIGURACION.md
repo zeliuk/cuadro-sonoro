@@ -52,4 +52,4 @@ CORS solo permite que un navegador lea respuestas desde los orígenes indicados.
 
 ## Firmware ESP32-S3 de diagnóstico
 
-El proyecto no usa secretos ni conectividad externa. Usa ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 con flash QIO 16 MB y PSRAM OPI 8 MB. La instalación de EIM, extensión oficial VS Code, compilación, puerto USB, monitor serie y bootloader está paso a paso en [firmware/README.md](../firmware/README.md). El firmware de esta fase solo muestra recursos locales y registra memoria; no necesita editar `.env` ni `device-config.json`.
+El proyecto no usa secretos ni conectividad externa. Usa ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 con flash QIO 16 MB y PSRAM OPI 8 MB. La instalación manual fijada y shallow de ESP-IDF, la extensión oficial VS Code, compilación, puerto USB, monitor serie y bootloader están paso a paso en [firmware/README.md](../firmware/README.md). El firmware de esta fase solo muestra recursos locales y registra memoria; no necesita editar `.env` ni `device-config.json`.

@@ -4,7 +4,8 @@ El firmware de placa se desarrolla con ESP-IDF; el simulador conserva SDL2. Las 
 
 ## Versiones fijadas
 
-- ESP-IDF **v5.5.5**, objetivo `esp32s3` (macOS arm64).
+- ESP-IDF **v5.5.5**, objetivo `esp32s3` (instalación y compilación comprobadas en macOS Intel; Apple Silicon pendiente).
+- CMake **3.30.5**, Ninja **1.11.1.1** para el entorno validado.
 - Waveshare BSP `waveshare/esp32_s3_touch_lcd_4b` **2.0.0**.
 - LVGL **9.5.0** en simulador y firmware.
 - C++17 para las vistas compartidas.
@@ -36,28 +37,63 @@ python3 firmware/simulator/scripts/launch_firebase.py
 
 El programa solicita el identificador sin mostrarlo. Necesita la configuración pública local `firebase/device-config.json` y conectividad a Firebase. Para detener, cierra la ventana o pulsa Ctrl+C. Logs y errores salen por la terminal. La lectura remota de medios y el SSE son servicios reales, no mocks; se deben usar solo con un identificador elegido por el propietario. No hay variables de secretos para el modo local.
 
-## ESP-IDF en macOS Apple Silicon
+## ESP-IDF en macOS
 
-### 1. Instalar ESP-IDF
+### 1. Preparar e instalar ESP-IDF 5.5.5
 
-Instala Xcode Command Line Tools y Git: `xcode-select --install`. Descarga ESP-IDF Installation Manager (EIM) desde la [página oficial de Espressif](https://docs.espressif.com/projects/esp-idf/en/v5.5.5/esp32/get-started/macos-setup.html). En el instalador selecciona ESP-IDF **v5.5.5** y la instalación de herramientas para macOS arm64. Mantén la ruta que propone EIM. EIM instala Python, CMake, Ninja y el toolchain Xtensa; no uses herramientas de Arduino para este proyecto.
+Instala Xcode Command Line Tools y Git. Comprueba `xcode-select -p`, `git --version` y `python3 --version`. ESP-IDF **v5.5.5** admite el objetivo `esp32s3`; no uses herramientas de Arduino para este proyecto.
 
-Abre la terminal ESP-IDF creada por EIM o carga el entorno instalado. Verifica antes de compilar:
+Instala CMake y Ninja. En el Mac Intel de validación, Homebrew no tenía botellas para esta arquitectura y falló al compilar ambos; se instalaron binarios precompilados con pip:
+
+```bash
+python3 -m pip install --user 'cmake==3.30.5' 'ninja==1.11.1.1'
+export PATH="$(python3 -m site --user-base)/bin:$PATH"
+```
+
+Clona la etiqueta oficial fijada y solo el historial necesario para esta versión. `--depth 1` y `--shallow-submodules` reducen los datos descargados; no se necesita el historial Git completo para compilar:
+
+```bash
+mkdir -p ~/esp
+git clone --depth 1 --branch v5.5.5 --recursive --shallow-submodules https://github.com/espressif/esp-idf.git ~/esp/esp-idf
+cd ~/esp/esp-idf
+./install.sh esp32s3
+source ./export.sh
+```
+
+La instalación coloca el framework en `~/esp/esp-idf`, herramientas como compiladores y OpenOCD en `~/.espressif/tools`, y el entorno Python de IDF en `~/.espressif/python_env/`. Aunque el firmware de diagnóstico es pequeño, esos componentes de desarrollo ocupan varios GB. No se copian al repositorio.
+
+Comprueba las versiones:
 
 ```bash
 idf.py --version
-python3 --version
-xtensa-esp32s3-elf-gcc --version
+xtensa-esp-elf-gcc --version
+cmake --version
+ninja --version
 ```
 
-La ruta de instalación depende de la elección hecha en EIM. Si usas una terminal normal, activa el `export.sh` de esa instalación, por ejemplo `source ~/esp/esp-idf/export.sh` si EIM instaló ESP-IDF en `~/esp/esp-idf`.
+En Bash se puede añadir a `~/.bash_profile` el PATH de CMake/Ninja y este alias para activar ESP-IDF cuando se necesite:
+
+```bash
+export PATH="$(python3 -m site --user-base)/bin:$PATH"
+alias get_idf_5_5_5='source "$HOME/esp/esp-idf/export.sh"'
+```
+
+Abre una terminal nueva y ejecuta `get_idf_5_5_5`. No actives ESP-IDF en todas las terminales automáticamente.
 
 ### 2. Configurar VS Code
 
-1. Instala Visual Studio Code para Apple Silicon desde el sitio oficial.
-2. En Extensions, instala **ESP-IDF** de Espressif Systems (identificador `espressif.esp-idf-extension`).
-3. Ejecuta `ESP-IDF: Configure ESP-IDF extension` desde la paleta de comandos. Si EIM instaló ESP-IDF, elige **Use Existing Setup** y selecciona esa instalación y sus herramientas.
-4. Abre la carpeta raíz `cuadro-sonoro`, no solo `firmware/esp32`. La extensión permite invocar Build, Flash y Monitor desde `firmware/esp32`; la terminal ESP-IDF equivalente es la referencia reproducible.
+1. En Extensions, instala **ESP-IDF** de Espressif Systems (identificador `espressif.esp-idf-extension`). La instalación usada en macOS Intel fue la extensión 2.3.0.
+2. Abre `Preferences: Open User Settings (JSON)` y configura la instalación manual ya existente. La extensión admite `${env:HOME}` en estas rutas:
+
+   ```json
+   "idf.customExtraVars": {
+     "IDF_PATH": "${env:HOME}/esp/esp-idf",
+     "IDF_TOOLS_PATH": "${env:HOME}/.espressif",
+     "IDF_PYTHON_ENV_PATH": "${env:HOME}/.espressif/python_env/idf5.5_py3.9_env"
+   }
+   ```
+
+3. Abre `firmware/esp32/` en VS Code para que la extensión detecte el `CMakeLists.txt` del proyecto. Ejecuta `ESP-IDF: Doctor Command` desde la paleta para revisar la configuración. Para compilar también desde terminal, activa `get_idf_5_5_5` como en el paso anterior.
 
 ### 3. Compilar
 
@@ -70,7 +106,7 @@ idf.py reconfigure
 idf.py build
 ```
 
-La primera compilación descarga el BSP y LVGL desde el Component Registry. El BSP oficial se distribuye bajo Apache-2.0; no se ha copiado su código fuente al repositorio. `sdkconfig.defaults` selecciona flash QIO de 16 MB, PSRAM octal de 8 MB a 80 MHz, consola USB CDC, LVGL/FreeRTOS y partición de aplicación única. `build/` y `managed_components/` son generados y no se versionan. El ELF y los binarios aparecen en `firmware/esp32/build/`.
+La primera compilación descarga el BSP y LVGL desde el Component Registry y crea `dependencies.lock`, que fija las versiones y hashes de las dependencias transitivas; ese archivo sí se versiona. El BSP oficial se distribuye bajo Apache-2.0; no se ha copiado su código fuente al repositorio. `sdkconfig.defaults` selecciona flash QIO de 16 MB, PSRAM octal de 8 MB a 80 MHz, consola USB CDC, LVGL/FreeRTOS y partición de aplicación única. `build/`, `managed_components/`, `sdkconfig` y la configuración local de `.vscode/` no se versionan. El ELF y los binarios aparecen en `firmware/esp32/build/`.
 
 ### 4. Encontrar el puerto USB y transferir
 
