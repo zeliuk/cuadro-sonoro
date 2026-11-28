@@ -14,26 +14,50 @@ El firmware de placa se desarrolla con ESP-IDF; el simulador conserva SDL2. Las 
 
 La placa incorpora ESP32-S3-WROOM-1-N16R8, 16 MB Flash, 8 MB PSRAM OPI, LCD RGB 480 × 480 con ST7701 y táctil GT911. El BSP oficial realiza la inicialización eléctrica y del bus; esta fase no usa el táctil. LVGL y BSP se fijan en el manifiesto de componentes, y ESP-IDF en esta guía. OTA no está configurado. El firmware diagnóstico usa una tabla de particiones de aplicación única.
 
+La vista compartida entre simulador y placa utiliza fuentes Noto Sans de LVGL en 16 y 20 px con caracteres Latin-1 para acentos españoles. Las vistas cambian con un fundido de contenido de 280 ms sobre la pantalla activa. Las fuentes se generan sin compresión porque el LVGL del firmware no habilita `LV_USE_FONT_COMPRESSED`; el procedimiento está en [common/assets](common/assets/README.md).
+
 ## Prueba rápida de la placa por comandos
 
-Esta secuencia compila, carga y abre el monitor del firmware diagnóstico. Se ejecuta en macOS desde una terminal Bash; la placa se conecta únicamente por el puerto **USB TO UART** con un cable de datos. No conectes AW9523B, pulsadores, encoder, altavoz ni alimentación externa durante esta prueba. La instalación desde cero está explicada más abajo en [ESP-IDF en macOS](#esp-idf-en-macos).
+Esta secuencia compila, carga y abre el monitor del firmware diagnóstico. Se ejecuta en macOS desde una terminal Bash; la placa se conecta únicamente por el puerto **USB TO UART** con un cable de datos. No conectes AW9523B, pulsadores externos, encoder, altavoz ni alimentación externa durante esta prueba. Para seleccionar temporalmente las portadas se usan solo los botones integrados BOOT y PWR. La instalación desde cero está explicada más abajo en [ESP-IDF en macOS](#esp-idf-en-macos).
 
-Activa ESP-IDF 5.5.5. Si el alias `get_idf_5_5_5` intenta buscar un entorno Python 3.12 que no existe, fuerza el entorno Python 3.9 ya instalado para esta versión y carga el exportador directamente:
+### Terminal nueva: activar ESP-IDF
+
+No hace falta activar el entorno virtual Python del proyecto (`.venv`). Si el prompt muestra `(.venv)`, sal de él antes de instalar herramientas de ESP-IDF:
 
 ```bash
-export IDF_PYTHON_ENV_PATH="$HOME/.espressif/python_env/idf5.5_py3.9_env"
+deactivate
+```
+
+Ejecuta `deactivate` solo si ves `(.venv)` en el prompt. La instalación de herramientas y del entorno Python propio de ESP-IDF se hace una vez. En una terminal sin `(.venv)`:
+
+```bash
+cd ~/esp/esp-idf
+./install.sh esp32s3
+```
+
+Espera a que termine correctamente. No repitas `install.sh` en cada terminal. Cada vez que abras una terminal nueva, activa ESP-IDF así:
+
+```bash
 source "$HOME/esp/esp-idf/export.sh"
 idf.py --version
 ```
 
-La última orden debe mostrar `ESP-IDF v5.5.5`. Si no tienes ese entorno Python instalado, sigue los pasos de instalación completos de abajo en lugar de crear rutas manualmente.
+La última orden debe mostrar `ESP-IDF v5.5.5`. Si `export.sh` indica que falta el entorno Python `idf5.5_py3.12_env`, comprueba que no ves `(.venv)`, vuelve a ejecutar `cd ~/esp/esp-idf && ./install.sh esp32s3`, espera a que acabe y luego repite `source "$HOME/esp/esp-idf/export.sh"`. No escribas `idf.py` hasta que `export.sh` termine correctamente.
 
-Desde la raíz del repositorio, compila el objetivo ESP32-S3:
+### Compilar, cargar y abrir el monitor
+
+En una primera compilación del proyecto, selecciona el objetivo ESP32-S3 y reconfigura CMake:
 
 ```bash
 cd firmware/esp32
 idf.py set-target esp32s3
 idf.py reconfigure
+```
+
+Después, para recompilar desde una terminal nueva, activa ESP-IDF como se indica arriba y ejecuta:
+
+```bash
+cd ~/Documents/GitHub/cuadro-sonoro/firmware/esp32
 idf.py build
 ```
 
@@ -49,9 +73,13 @@ Usa el puerto que corresponda a la placa en lugar de `PORT` y carga el programa 
 idf.py -p PORT flash monitor
 ```
 
-El monitor se cierra con `Ctrl+]`. Si la transferencia no sincroniza, consulta [Si no conecta o no entra al bootloader](#5-si-no-conecta-o-no-entra-al-bootloader). No publiques el nombre del puerto: puede incluir un identificador de serie.
+Para cerrar el monitor, pulsa `Ctrl+C`. Si la transferencia no sincroniza, consulta [Si no conecta o no entra al bootloader](#5-si-no-conecta-o-no-entra-al-bootloader). No publiques el nombre del puerto: puede incluir un identificador de serie.
 
-La vista diagnóstica cambia cada 5 s entre la pantalla de diagnóstico, imagen decorativa, carátula de ejemplo y QR ficticio `cuadro-demo`. Dejarla funcionando 10 minutos permite observar estabilidad básica de LCD y arranque, pero no prueba Wi-Fi, audio, táctil, AW9523B ni controles externos. El diagnóstico no representa el arranque normal del producto: el asistente Wi-Fi prioritario cuando faltan credenciales sigue pendiente de implementación.
+El firmware de prueba `0.4.6-staged-screens` inicia el asistente si no hay Wi-Fi guardada. La pantalla muestra un QR que conecta el móvil a una red temporal `Sonoro-Config-XXXX`, su clave y la dirección local. El móvil y la placa deben permanecer conectados a esa red temporal durante la configuración. Si el portal no se abre solo, navega a `http://192.168.4.1`, selecciona la red doméstica y escribe su contraseña. El portal sirve escaneo y configuración solo desde el ESP32; la contraseña no se registra ni se envía a Firebase. La placa la guarda en NVS únicamente después de obtener conexión IP. Tras reiniciar, vuelve a conectarse a la red guardada; Carlos ya confirmó este comportamiento en la placa.
+
+Al conectarse a Internet, el firmware consulta RTDB por HTTPS y, si encuentra una canción con portada, descarga un único JPEG de Storage por HTTPS y muestra portada, título y artista. Solo acepta la ruta bajo el SHA-256 del identificador configurado; limita la descarga a 512 KiB y la imagen a 512 × 512 px. El decodificador `espressif/esp_jpeg` queda fijado en el manifiesto. La consulta y descarga son de solo lectura.
+
+La URL RTDB y el bucket de Storage se guardan en el `sdkconfig` ignorado. En una instalación nueva se configuran con `idf.py menuconfig`, menú **Cuadro Sonoro**, campos **URL pública de Firebase RTDB** y **Bucket público de Firebase Storage**; el **Identificador de cuadro para la prueba** queda en `charlie` por defecto. Ninguno de esos valores es una credencial de servicio. No se descarga audio ni se escribe en Firebase. Tras cargar las selecciones de RTDB, BOOT muestra el hueco 1 y PWR el hueco 2. Son pulsaciones cortas; PWR conserva su función de energía de la placa. Al pulsar, aparece un spinner con el número del hueco mientras se descarga la portada, y luego se sustituye por portada y metadatos o un mensaje de error. La v0.4.6 conserva doble framebuffer antidesgarro y modo directo. Cada pantalla se construye fuera de la pantalla activa y se muestra completa al terminar; queda comprobar el resultado en placa. Carlos ya confirmó que la v0.4.1 corrigió los colores de la portada.
 
 ## Simulador SDL2
 
@@ -117,7 +145,7 @@ export PATH="$(python3 -m site --user-base)/bin:$PATH"
 alias get_idf_5_5_5='source "$HOME/esp/esp-idf/export.sh"'
 ```
 
-Abre una terminal nueva y ejecuta `get_idf_5_5_5`. No actives ESP-IDF en todas las terminales automáticamente.
+Abre una terminal nueva y ejecuta `get_idf_5_5_5`. No actives ESP-IDF en todas las terminales automáticamente. Si ESP-IDF indica que no encuentra su entorno Python, consulta el paso [Terminal nueva: activar ESP-IDF](#terminal-nueva-activar-esp-idf) y completa la instalación una vez, fuera de `.venv`.
 
 ### 2. Configurar VS Code
 
@@ -170,7 +198,7 @@ O abre de una vez el monitor después de transferir:
 idf.py -p PORT flash monitor
 ```
 
-El monitor usa la velocidad configurada por ESP-IDF (115200 baudios por defecto). Sal con `Ctrl+]`. El firmware imprime arranque, estado de BSP, vista actual, heap libre, bloque libre mayor y PSRAM libre. La versión actual es de diagnóstico: recorre diagnóstico, imagen decorativa, carátula local con título/artista y QR local de prueba cada 5 segundos. No conecta Wi-Fi/Firebase, no reproduce audio y no activa controles externos.
+El monitor usa la velocidad configurada por ESP-IDF (115200 baudios por defecto). Ciérralo con `Ctrl+C`. El firmware informa el arranque, memoria y hueco seleccionado, pero no registra SSID, contraseña, identificador ni respuestas completas de Firebase.
 
 ### 5. Si no conecta o no entra al bootloader
 
@@ -182,15 +210,17 @@ El monitor usa la velocidad configurada por ESP-IDF (115200 baudios por defecto)
 - Si la compilación SDL dice que no encuentra headers C++ como `algorithm` o `string`, verifica Xcode Command Line Tools con `xcode-select -p`. En el host de validación fue necesario pasar el SDK explícitamente: `SDK=$(xcrun --sdk macosx --show-sdk-path); cmake -S firmware/simulator -B firmware/simulator/build-lvgl95 -DCMAKE_OSX_SYSROOT="$SDK" -DCMAKE_CXX_FLAGS="-stdlib=libc++ -isystem $SDK/usr/include/c++/v1"`.
 - La compilación no prueba pantalla, alimentación, USB ni arranque físico. No alimentar todavía accesorios externos; en esta fase solo se conecta la placa por USB.
 
-## Primeras pruebas al recibir la placa
+## Primera configuración y conexión de prueba
 
 1. Confirma el modelo de la placa y, si aparece, anota la revisión serigrafiada. Compárala con la documentación y el pinout de [HARDWARE.md](../docs/HARDWARE.md). No conectes todavía AW9523B, botones, encoder, fuente externa ni altavoz.
 2. Con USB de datos, identifica el puerto, transfiere `firmware/esp32/build/cuadro_sonoro_diagnostic.bin` mediante `idf.py -p PORT flash` y abre `idf.py -p PORT monitor`.
-3. Confirma por el monitor que arranca `0.1.0-diagnostico`, muestra resolución 480 × 480 y no registra error BSP.
-4. Observa el ciclo de 5 s y confirma visualmente diagnóstico, ilustración decorativa, portada con metadatos y QR. Escanea el QR con una cámara; es el valor ficticio `cuadro-demo`, no corresponde a un dispositivo asignado.
-5. Registra versión de placa, salida serie redactada, legibilidad, colores, orientación, estabilidad durante 10 minutos y fallos de memoria. No atribuyas problemas al panel sin repetir con un cable USB fiable y alimentación estable.
-6. Apaga y desconecta antes de empezar las verificaciones eléctricas y los periféricos de la siguiente fase de [HARDWARE.md](../docs/HARDWARE.md).
+3. Confirma por el monitor que arranca `0.4.6-staged-screens`, muestra resolución 480 × 480 y no registra error BSP.
+4. Escanea el QR Wi-Fi de la pantalla con iPhone o Android. Confirma en el móvil que quieres conectarte a la red `Sonoro-Config-XXXX`. No cambies manualmente a otra red antes de enviar la configuración.
+5. Si no aparece el portal automáticamente, abre `http://192.168.4.1`. Selecciona una Wi-Fi doméstica de **2,4 GHz** (el ESP32-S3 no admite 5 GHz), escribe su contraseña y pulsa **Conectar cuadro**. La contraseña se transmite por la red local WPA2 temporal y se almacena en NVS después de conectar; no se incluye en logs.
+6. Espera a que la pantalla confirme conexión a Firebase. Para la prueba, el firmware lee únicamente `slots` de `charlie`. Si encuentra canciones con portada publicada, descarga un JPEG de Storage y muestra la portada con título y artista. Pulsa BOOT para ver el hueco 1 y PWR para el hueco 2; aparece un spinner con el número mientras carga la portada, que luego muestra título y artista. PWR se pulsa brevemente. Si un hueco está vacío o falla una descarga, la pantalla lo informa. No descarga audio ni modifica datos.
+7. En la siguiente carga, la placa intenta reconectar la red guardada y vuelve a consultar Firebase; no crea de nuevo el portal mientras conserve las credenciales.
+8. Apaga y desconecta antes de empezar las verificaciones eléctricas y conectar periféricos de [HARDWARE.md](../docs/HARDWARE.md).
 
 ## Límites de esta fase
 
-El modo de diagnóstico está seleccionado explícitamente por el proyecto ESP-IDF y separado del modo de producto futuro. El simulador conserva su modo Firebase: el acceso a RTDB/Storage, descargas temporales, teclado y reinicio de ventana son específicos de escritorio. La vista LVGL y las imágenes decorativas/de prueba están compartidas; acceso a archivos, red y temporización de entrada no se comparte. La pantalla común no implica que la inicialización o el render en hardware estén verificados. No se han implementado Wi-Fi en firmware, Firebase en firmware, audio, portal, botones, AW9523B, encoder ni OTA.
+La versión 0.4.6 es una prueba acotada del portal Wi-Fi, lectura RTDB, descarga/visualización de portadas JPEG de Storage, selección visual temporal de los huecos 1 y 2 con los botones integrados, loader mientras se descarga una portada y doble framebuffer con sincronización antidesgarro del BSP, refresco directo de áreas modificadas y cambio atómico a pantallas preparadas fuera de la vista. El portal guarda credenciales Wi-Fi en NVS; no hay pantalla táctil implementada. Firebase usa HTTPS y lecturas públicas por URL conocida; no se escriben datos. La contraseña doméstica permanece en el ESP32. No se implementan audio, reproducción, sincronización de cambios publicados, controles finales, AW9523B, encoder, restablecimiento Wi-Fi con botones ni OTA. BOOT/PWR solo simulan visualmente la selección de los huecos 1 y 2; no son el control final. El modo directo y antidesgarro usa dos framebuffers RGB completos en PSRAM (unos 450 KiB adicionales para 480 × 480 RGB565). La compilación no verifica descargas, colores, dimensiones, ausencia de tearing o funcionamiento físico; hay que comprobarlos en la Waveshare. El modo Firebase de escritorio sigue separado; SDL2, sus descargas temporales y la gestión de teclado no se incorporan al ESP32.

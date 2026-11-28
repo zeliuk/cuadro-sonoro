@@ -1,0 +1,23 @@
+menu "Cuadro Sonoro"
+
+config SONORO_FIREBASE_DATABASE_URL
+    string "URL pública de Firebase RTDB"
+    default ""
+    help
+        URL pública de la base RTDB usada para la lectura del diagnóstico.
+        No es un secreto ni contiene credenciales de servicio.
+
+config SONORO_FIREBASE_STORAGE_BUCKET
+    string "Bucket público de Firebase Storage"
+    default ""
+    help
+        Bucket que contiene las portadas publicadas. Solo se descargan objetos
+        individuales bajo el ámbito SHA-256 del identificador de prueba.
+
+config SONORO_FRAME_TOKEN
+    string "Identificador de cuadro para la prueba"
+    default "charlie"
+    help
+        Identificador de prueba, no es una credencial.
+
+endmenu

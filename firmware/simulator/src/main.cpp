@@ -3,7 +3,6 @@
 
 #include "lvgl.h"
 #include "src/drivers/sdl/lv_sdl_window.h"
-#include "src/libs/tiny_ttf/lv_tiny_ttf.h"
 #include "stb_image.h"
 
 #include <SDL.h>
@@ -236,13 +235,8 @@ int main(int argc, char** argv) {
         }
         const bool all_slots_empty = std::none_of(songs.begin(), songs.end(),
             [](const Song& song) { return song.available; });
-        std::ifstream font_file(assets + "/NotoSans-Regular.ttf", std::ios::binary);
-        if (!font_file) throw std::runtime_error("No se pudo abrir la fuente Noto Sans.");
-        std::vector<uint8_t> font_data((std::istreambuf_iterator<char>(font_file)), std::istreambuf_iterator<char>());
-        lv_font_t* title_font = lv_tiny_ttf_create_data(font_data.data(), font_data.size(), 20);
-        lv_font_t* artist_font = lv_tiny_ttf_create_data(font_data.data(), font_data.size(), 16);
-        if (!title_font || !artist_font) throw std::runtime_error("No se pudo cargar Noto Sans con tildes.");
-        sonoro::View view(&decorative.descriptor, &songs[0].cover.descriptor, title_font, artist_font);
+        sonoro::View view(&decorative.descriptor, &songs[0].cover.descriptor,
+                          &sonoro_noto_sans_20, &sonoro_noto_sans_16);
         if (firebase_data) view.setQrUrl(qr_url);
         int active_slot = -1;
         int short_press_count = 0;

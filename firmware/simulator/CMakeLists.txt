@@ -34,6 +34,8 @@ target_include_directories(lvgl PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../common/in
 add_executable(cuadro-sonoro
   src/main.cpp
   ../common/src/sonoro_view.cpp
+  ../common/src/font_noto_sans_16.c
+  ../common/src/font_noto_sans_20.c
   ../common/third_party/qrcodegen.cpp
   src/key_input.cpp
   src/stb_image_impl.cpp

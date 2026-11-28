@@ -5,11 +5,16 @@
 #include <string>
 #include <vector>
 
+extern "C" {
+LV_FONT_DECLARE(sonoro_noto_sans_20);
+LV_FONT_DECLARE(sonoro_noto_sans_16);
+}
+
 namespace sonoro {
 
 class View {
 public:
-    enum class Mode { Diagnostic, Idle, Song, Qr };
+    enum class Mode { Diagnostic, Idle, Song, FirebaseLoading, FirebaseCover, Qr };
     View(const lv_image_dsc_t* decorative_image, const lv_image_dsc_t* album_cover,
          const lv_font_t* title_font, const lv_font_t* artist_font);
     void showSong(const lv_image_dsc_t* cover, const std::string& title, const std::string& artist);
@@ -17,12 +22,23 @@ public:
     void showIdle();
     void showDiagnostic(const std::string& version);
     void showQr(bool return_after_timeout = true);
+    void showWifiSetup(const std::string& ssid, const std::string& password,
+                       const std::string& status = "");
+    void showWifiConnecting(const std::string& ssid);
+    void showFirebaseStatus(const std::string& identifier, const std::string& status,
+                           bool connected);
+    void showFirebaseLoading(int slot_number);
+    void showFirebaseCover(const std::string& identifier, int slot_number, const std::string& title,
+                           const std::string& artist, const lv_image_dsc_t* cover);
     void refresh();
     Mode mode() const { return mode_; }
 
 private:
-    void clearScreen();
-    lv_obj_t* screen_;
+    void beginScreen();
+    void loadScreen();
+    int addQr(lv_obj_t* parent, const std::string& payload, int max_size, int x, int y);
+    lv_obj_t* pending_screen_ = nullptr;
+    lv_obj_t* content_ = nullptr;
     lv_obj_t* qr_layer_ = nullptr;
     lv_obj_t* song_overlay_ = nullptr;
     const lv_image_dsc_t* decorative_image_;

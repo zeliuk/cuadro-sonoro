@@ -12,15 +12,15 @@ Lee este archivo, `docs/PRIMER_PASO_CODEX.md`, `docs/DEFINICION.md`, `docs/ESTAD
 - Identificador por cuadro en el enlace; no requiere alta y no es una credencial. No confundirlo con una credencial administrativa de Firebase.
 - Tres selecciones, tres pulsadores iluminados y rueda física. La web configura y permite escuchar localmente; no envía órdenes de reproducción ni volumen al ESP32.
 - Sin microSD ni canciones permanentes en el dispositivo. No autoplay al arrancar; una canción termina y se detiene.
-- Firmware real en curso para Waveshare ESP32-S3-Touch-LCD-4B con ESP-IDF, LVGL y C++17; el modo diagnóstico v0.1 es independiente del comportamiento normal. La vista LVGL y los recursos de prueba viven en `firmware/common/`; SDL2/Firebase/teclado permanecen en el simulador. No presentar builds como pruebas físicas. Wi-Fi, portal, audio, controles externos y OTA siguen pendientes.
+- Firmware en curso para Waveshare ESP32-S3-Touch-LCD-4B con ESP-IDF, LVGL y C++17. La prueba v0.4 añade al portal Wi-Fi y lectura RTDB ya probados físicamente la descarga HTTPS y muestra de una portada JPEG de Storage para `charlie`; Carlos informó que v0.4.1 corrigió físicamente los colores RGB565. La v0.4.6 prepara las pantallas fuera de la activa y las cambia completas; mantiene doble framebuffer antidesgarro y refresco directo. Compila y está pendiente de prueba física. No es firmware de producto. La vista LVGL y recursos comunes viven en `firmware/common/`; SDL2/teclado y lectura remota multimedia siguen separados en el simulador. No presentar builds como pruebas físicas. Audio, controles externos y OTA siguen pendientes.
 - Botón 1 mantenido 2 s muestra durante 20 s el QR musical sin afectar al audio; botones 2+3 mantenidos juntos 5 s restablecen solo Wi-Fi, con cuenta atrás cancelable. Pulsaciones cortas controlan los tres huecos y la rueda solo el volumen. La definición completa está en `docs/DEFINICION.md`.
 - Una importación por cuadro; conservar selección anterior ante fallos. Cambiar configuración no interrumpe la reproducción activa.
 - Modo demo identificado, separado y sin uso de servicios reales.
 
 ## Firmware
 
-- Versiones aprobadas para la primera fase: ESP-IDF 5.5.5, LVGL 9.5.0, BSP oficial Waveshare 2.0.0; mismo LVGL en simulador. Desarrollo VS Code/Codex, C/C++ y carga futura por USB; OTA solo como posibilidad posterior.
-- No incorporar Wi-Fi, Firebase en ESP32, audio, portal, botones externos, AW9523B, encoder ni OTA al diagnóstico.
+- Versiones fijadas para esta fase: ESP-IDF 5.5.5, LVGL 9.5.0, BSP oficial Waveshare 2.0.0 y decodificador `espressif/esp_jpeg` 1.3.2; mismo LVGL en simulador. Desarrollo VS Code/Codex, C/C++ y carga por USB; OTA solo como posibilidad posterior.
+- La autorización de pruebas en placa cubre Wi-Fi/RTDB y lectura de portadas JPEG de Storage para `charlie`; no habilita Firebase Admin, escrituras, audio, portal musical, botones externos, AW9523B, encoder ni OTA. Sí permite probar selección visual de huecos 1 y 2 con BOOT/GPIO0 y PWR/TCA9554 EXIO4 integrados; PWR solo con pulsación corta. El identificador `charlie` solo es el valor de prueba local; no es una credencial.
 - Sigue siendo obligatorio revisar `docs/HARDWARE.md`; las pruebas físicas y eléctricas no se infieren de la compilación.
 
 ## Cómo avanzar

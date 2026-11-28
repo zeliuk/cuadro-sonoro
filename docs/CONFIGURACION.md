@@ -50,6 +50,6 @@ La configuración versionada actual permite como orígenes de desarrollo `http:/
 
 CORS solo permite que un navegador lea respuestas desde los orígenes indicados. No autentica al cuadro ni sustituye al identificador Bearer. El enlace público requiere Internet en el móvil; no depende de la LAN del ESP32. El portal local de Wi-Fi del dispositivo configura solo la conexión del cuadro y nunca envía su contraseña a web, Render o Firebase.
 
-## Firmware ESP32-S3 de diagnóstico
+## Firmware ESP32-S3 de prueba
 
-El proyecto no usa secretos ni conectividad externa. Usa ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 con flash QIO 16 MB y PSRAM OPI 8 MB. La instalación manual fijada y shallow de ESP-IDF, la extensión oficial VS Code, compilación, puerto USB, monitor serie y bootloader están paso a paso en [firmware/README.md](../firmware/README.md). El firmware de esta fase solo muestra recursos locales y registra memoria; no necesita editar `.env` ni `device-config.json`.
+El firmware 0.3 configura Wi-Fi mediante un AP local y hace una lectura HTTPS de solo lectura a RTDB con el ID de prueba `charlie`. No usa cuentas de servicio ni tokens Firebase. La URL pública de RTDB es una opción de `idf.py menuconfig` y queda en el `sdkconfig` local ignorado por Git; la contraseña doméstica se guarda en NVS del dispositivo después de conectar. Usa ESP-IDF 5.5.5, BSP Waveshare 2.0.0 y LVGL 9.5.0 con flash QIO 16 MB y PSRAM OPI 8 MB. La instalación manual fijada de ESP-IDF, la extensión oficial VS Code, compilación, configuración de RTDB, portal, monitor serie y transferencia están en [firmware/README.md](../firmware/README.md). No necesita editar `.env` ni `firebase/device-config.json` para el firmware.

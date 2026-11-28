@@ -49,6 +49,12 @@ flowchart LR
 
 La 4B comparte el bus I²C con periféricos de la propia placa. INT y RST del módulo AW9523B quedan sin cablear en esta primera prueba; se usará sondeo, siguiendo la guía del módulo. Verificar la dirección I²C según el estado de A0/A1.
 
+### Botones integrados de la placa (uso provisional de diagnóstico)
+
+La placa incluye `BOOT` y `PWR`; pueden simular temporalmente los huecos 1 y 2 en el diagnóstico mientras no estén los pulsadores externos. El esquema Waveshare conecta `BOOT` a GPIO0 (activo en bajo) y la señal de `PWR` a la entrada P4/EXIO4 del expansor **TCA9554 integrado en la propia Waveshare** (activo en alto). En el conector H3, EXIO4 corresponde al pin 14. El AW9523B externo no interviene en estas lecturas. PWR también forma parte del control de energía de la placa, por lo que para esta prueba solo se usan pulsaciones cortas. Estos botones no forman parte de los controles previstos en el producto final.
+
+Fuentes: [esquema oficial Waveshare ESP32-S3-Touch-LCD-4B](https://files.waveshare.com/wiki/ESP32-S3-Touch-LCD-4B/ESP32-S3-Touch-LCD-4B.pdf) y [documentación del fabricante](https://docs.waveshare.com/ESP32-S3-Touch-LCD-4B).
+
 ### Asignación de señales y conexiones propuestas
 
 | Elemento/origen | Pin o señal destino | Conexión y nota |

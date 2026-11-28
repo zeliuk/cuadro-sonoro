@@ -625,3 +625,80 @@ Comprobación: las dos imágenes se abren y se convirtieron desde los adjuntos l
 Carlos conectó la placa recibida por USB TO UART, compiló el firmware de diagnóstico v0.1 con ESP-IDF v5.5.5 (`idf.py set-target esp32s3`, `idf.py reconfigure`, `idf.py build`) y ejecutó `idf.py -p PORT flash monitor`. Confirmó que las vistas de diagnóstico, imagen decorativa, carátula de prueba y QR se muestran en pantalla y que el ciclo funcionó durante 10 minutos sin fallos visibles. El QR usa el valor ficticio `cuadro-demo`.
 
 Esta es una comprobación física reportada por el propietario: valida el arranque básico de esta unidad y la pantalla con el firmware de diagnóstico. No se conectaron AW9523B, pulsadores, encoder, altavoz ni alimentación externa; tampoco se probaron táctil, Wi-Fi, audio o controles. El modo de diagnóstico no es el arranque normal del producto. La guía reproducible por comandos está en [firmware/README.md](../firmware/README.md#prueba-rápida-de-la-placa-por-comandos). No se ejecutaron pruebas adicionales de software en esta actualización documental.
+
+### Diagnóstico provisional con botones integrados
+
+Se modificó el diagnóstico para detener el pase automático y permitir probar visualmente los huecos 1 y 2 con los botones integrados: BOOT/GPIO0 activa o detiene el hueco 1; PWR/TCA9554 EXIO4 activa o detiene el hueco 2. Mantener BOOT durante 2 s muestra el QR ficticio durante 20 s y no genera una acción corta al soltar. Se añadió antirrebote de 40 ms. Ambos huecos usan la carátula local de muestra, con metadatos distintos; no hay reproducción de audio. PWR solo debe pulsarse brevemente por su función de energía.
+
+La lectura PWR usa el TCA9554 integrado en la placa; no se conecta ni inicializa el AW9523 externo. GPIO0 y EXIO4 se revisaron contra el esquema oficial de Waveshare enlazado en [HARDWARE.md](HARDWARE.md). ESP-IDF v5.5.5 `idf.py build` terminó correctamente y generó el binario diagnóstico v0.2. Aún no se ha cargado esta versión ni comprobado la respuesta de botones en hardware; el siguiente paso es flashear y probar pulsaciones cortas de ambos botones y la pulsación larga de BOOT.
+
+### Tipografía y transiciones de pantalla
+
+Carlos cargó la v0.2.1 en la placa y comunicó que al arrancar veía la pantalla en blanco, habían desaparecido los textos y la transición no se había suavizado. La revisión del código encontró que `lv_font_conv` había generado mapas de glifos comprimidos (`bitmap_format = 1`) mientras `CONFIG_LV_USE_FONT_COMPRESSED` está desactivado en el firmware. Se regeneran las fuentes Noto Sans de 16/20 px con `--no-compress`, manteniendo ASCII y Latin-1.
+
+También se sustituyó la carga animada de pantallas nuevas por un fundido de entrada de 280 ms del contenido dentro de la pantalla activa. Esto evita borrar/cargar raíces de pantalla en LVGL durante el inicio y deja la resolución, el fondo y el ciclo de pantalla del BSP intactos. El firmware se identifica como `0.2.2-diagnostico-botones`. `idf.py build` completó con ESP-IDF 5.5.5; el simulador también compiló y `git diff --check` pasó. Carlos cargó v0.2.2 y confirmó que las tildes aparecen. La nueva transición y el arranque no se registraron por separado en esa comprobación; la siguiente v0.3 los reemplaza con las pantallas de red.
+
+### Portal Wi-Fi y lectura Firebase de placa
+
+Por instrucción de Carlos, la siguiente prueba de pantalla implementa el flujo Wi-Fi ya definido: AP temporal WPA2 con QR, portal HTTP local, listado de redes y envío local de credenciales. Se guardan en NVS solo después de obtener una dirección IP; no se imprimen en el log. Al conectarse, el firmware consulta `frames/{SHA-256(charlie)}/slots.json` mediante HTTPS y el certificado bundle de ESP-IDF. La consulta es de solo lectura y no usa Admin SDK, token Firebase, Storage ni Render. La URL RTDB local está en el `sdkconfig` ignorado por Git; el identificador es una configuración de compilación para esta prueba.
+
+Verificación de software: `idf.py build` terminó con ESP-IDF 5.5.5 y generó el binario `0.3.0-prueba-wifi-rtdb` (0x23ab90 bytes; 85 % de la partición de aplicación libre). La primera compilación encontró el nombre de función SHA256 distinto en Mbed TLS 3; se corrigió y la compilación final pasó. Por separado, se ejecutó un GET público y de solo lectura a RTDB desde el Mac con `charlie`: respondió correctamente con tres huecos publicados; no se imprimieron URL ni títulos.
+
+Carlos cargó v0.3 y confirmó desde un móvil que pudo configurar la conexión Wi-Fi y que la placa cargó los datos de Firebase. Tras reiniciar la placa, confirmó que conserva la configuración de conexión. Esta es una comprobación física reportada por el propietario. No se indicó el sistema operativo del móvil, así que no se atribuye esta prueba por separado a iPhone o Android. No se probaron portadas, audio, AW9523B ni controles externos; el firmware no registra la contraseña ni respuestas completas de Firebase.
+
+## Activación de ESP-IDF desde una terminal nueva — 28 de noviembre de 2026
+
+Se aclaró en la guía de firmware que `./install.sh esp32s3` instala una vez las herramientas y el entorno Python propio de ESP-IDF, y que debe ejecutarse fuera del `.venv` del proyecto. En cada terminal nueva basta con `source ~/esp/esp-idf/export.sh`; se comprueba con `idf.py --version` antes de compilar. Se documentó la recuperación si falta `idf5.5_py3.12_env` y se quitó el alias que fijaba una ruta Python 3.9. `git diff --check` pasó. No se ejecutó de nuevo la compilación porque solo cambió documentación; la compilación v0.3 ya está registrada arriba y el flasheo físico sigue pendiente.
+
+## Portada JPEG de Firebase en la placa — 28 de noviembre de 2026
+
+La prueba v0.4 añade lectura de `image_key` en RTDB y descarga HTTPS de un solo JPEG de Storage para mostrar portada, título y artista. La ruta debe pertenecer al SHA-256 del identificador de prueba; se limitan el archivo a 512 KiB y cada dimensión a 512 px. Se añadió `espressif/esp_jpeg` 1.3.2 fijado en el manifiesto. El bucket se configura en `menuconfig` y queda local en `sdkconfig`, ignorado por Git.
+
+Verificación: `idf.py build` completó en ESP-IDF 5.5.5; el binario v0.4 fue de 0x23c180 bytes, con 85 % de la partición libre. El simulador C++/LVGL compiló. Desde el Mac, un GET de solo lectura con `charlie` descargó una portada JPEG válida de 480 × 480 y 54 690 bytes; no se imprimieron URL, ruta ni título. Carlos cargó la v0.4: confirmó que aparecen la portada y los textos, pero informó que los colores de la imagen salen rotos. La compilación y GET desde Mac no verifican el renderizado físico. La v0.3 de portal Wi-Fi, lectura RTDB y reconexión tras reiniciar sí está probada en la placa por reporte de Carlos.
+
+### Corrección de bytes RGB565 de la portada — 28 de noviembre de 2026
+
+El decodificador de la portada se había configurado con `swap_color_bytes=1`. Eso intercambiaba los dos bytes de cada píxel, aunque la imagen LVGL `RGB565` de la vista espera los bytes en orden little-endian, igual que los recursos RGB565 ya generados para el firmware. Se cambió la opción a `0` y se identificó el build como `0.4.1-prueba-portada-rgb565`.
+
+Verificación de software: `idf.py build` pasó con ESP-IDF 5.5.5; binario v0.4.1 de 0x23c170 bytes, con 85 % de la partición libre. El renderizado de esta corrección no se ha probado aún en la placa. Siguiente: cargar v0.4.1 y comprobar colores, imagen, textos y estabilidad. No se cambiaron datos ni reglas de Firebase.
+
+
+### Colores confirmados y selección provisional de huecos — 28 de noviembre de 2026
+
+Carlos cargó v0.4.1 y confirmó que los colores de la portada ya se ven correctamente en la Waveshare. Queda registrada como comprobación visual física reportada por el propietario.
+
+La v0.4.2 añade selección visual de huecos 1 y 2 con los botones de la propia placa: BOOT/GPIO0 selecciona el hueco 1 y PWR lee EXIO4 mediante el TCA9554 integrado para seleccionar el hueco 2. Se usa antirrebote de 40 ms; PWR se pulsa brevemente por su función de energía. No se conecta ni se usa el AW9523B externo. Se muestra el número del hueco junto a los metadatos. El audio y los controles de producto no están implementados.
+
+Verificación de software: `source "$HOME/esp/esp-idf/export.sh"` e `idf.py build` completaron con ESP-IDF v5.5.5. El binario `0.4.2-prueba-seleccion-slots` mide 0x23cd10 bytes y deja 85 % de la partición de aplicación libre. El primer intento detectó una declaración global ausente, que se corrigió antes de la compilación final. No se ha flasheado ni probado físicamente la selección de botones; es el siguiente paso. `git diff --check` pasó. Se intentó compilar el simulador compartido, pero CMake tiene configurado `FETCHCONTENT_SOURCE_DIR_SDL2=/tmp/cuadro-sdl2` y esa carpeta ya no existe; no se reconstruyó el simulador en esta fase.
+
+
+### Loader de selección de hueco — 28 de noviembre de 2026
+
+La v0.4.3 muestra inmediatamente un spinner y el número del hueco tras detectar una pulsación corta de BOOT/PWR. La descarga de la portada ocurre después de presentar el loader; al completarse, aparece la portada con título y artista. Si falla o el hueco está vacío, se muestra el estado correspondiente. Si durante una descarga se pulsa el otro botón, se descarta el resultado anterior y se procesa la selección más reciente.
+
+Verificación de software: `idf.py build` completó con ESP-IDF v5.5.5; el binario v0.4.3 mide 0x23d000 bytes y deja 85 % de la partición libre. `git diff --check` pasó. No se ha comprobado todavía la animación del loader en pantalla real.
+
+
+### Diagnóstico de imagen descolocada y doble framebuffer — 28 de noviembre de 2026
+
+La foto aportada por Carlos muestra regiones de fotogramas y elementos de pantalla mezclados. La configuración efectiva del BSP era `CONFIG_BSP_LCD_RGB_BUFFER_NUMS=1` con `CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR` desactivado. Esto es consistente con tearing: LVGL actualiza el único framebuffer mientras el panel RGB lo lee para refrescar la pantalla.
+
+La v0.4.4 activa dos framebuffers RGB, `BSP_DISPLAY_LVGL_AVOID_TEAR` y el modo `FULL_REFRESH` que ofrece Waveshare BSP 2.0.0. El segundo framebuffer requiere unos 450 KiB adicionales de PSRAM a 480 × 480 RGB565. Se añadió esta configuración a `sdkconfig.defaults`; la compilación local usa también opciones equivalentes en el `sdkconfig` ignorado por Git.
+
+Verificación: `idf.py reconfigure` generó la configuración con los tres flags activos; `idf.py build` completó con ESP-IDF v5.5.5 y generó el binario `0.4.4-doble-buffer` de 0x23d010 bytes, con 85 % de la partición de aplicación libre. `git diff --check` pasó. El diagnóstico concuerda con la configuración y la imagen, pero solo la carga de v0.4.4 permitirá confirmar físicamente que desaparece el efecto.
+
+
+### Reducción de parpadeo del loader — 28 de noviembre de 2026
+
+Carlos confirmó que el parpadeo persistía en v0.4.4, especialmente al cargar. Esa versión usaba `FULL_REFRESH`: el spinner animado provocaba invalidaciones repetidas y el fundido de entrada variaba la opacidad de toda la pantalla. La revisión local confirmó que el BSP admite `DIRECT_MODE` junto con doble framebuffer y antidesgarro.
+
+La v0.4.5 conserva doble framebuffer y sincronización antidesgarro, cambia de `FULL_REFRESH` a `DIRECT_MODE` para refrescar las áreas modificadas y omite el fundido de entrada del loader. El spinner se conserva.
+
+Verificación: el `sdkconfig` efectivo y `build/config/sdkconfig.h` confirman `CONFIG_BSP_LCD_RGB_BUFFER_NUMS=2`, `CONFIG_BSP_DISPLAY_LVGL_AVOID_TEAR=y` y `CONFIG_BSP_DISPLAY_LVGL_DIRECT_MODE=y`; `FULL_REFRESH` está desactivado. `idf.py reconfigure` y la compilación completa con ESP-IDF v5.5.5 pasaron. Binario v0.4.5 de 0x23d010 bytes; queda 85 % de la partición de aplicación libre. `git diff --check` pasó. No se ha probado físicamente esta versión; falta comprobar el parpadeo en la Waveshare.
+
+
+### Cambio a pantallas preparadas fuera de la vista — 28 de noviembre de 2026
+
+Tras confirmar que el parpadeo era un artefacto de renderizado, se cambió la vista compartida: en vez de limpiar y construir contenido sobre la raíz activa, `View` crea una pantalla LVGL nueva, la prepara completa y solo después ejecuta un cambio inmediato con `lv_screen_load_anim(..., LV_SCREEN_LOAD_ANIM_NONE, 0, 0, true)`. LVGL elimina la pantalla anterior al completar el cambio. Así el loader se conserva visible mientras se prepara la carátula y no se presenta el montaje progresivo de sus objetos.
+
+La v0.4.6 incluye este cambio junto con el doble framebuffer antidesgarro y el modo directo de v0.4.5. Verificación: `idf.py build` completó con ESP-IDF v5.5.5; binario v0.4.6 de 0x23d580 bytes, 85 % de la partición de aplicación libre. `git diff --check` pasó. La transición preparada se compiló, pero falta comprobar su aspecto y estabilidad física en la Waveshare.

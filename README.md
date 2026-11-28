@@ -22,7 +22,7 @@ Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración»
 
 La [maqueta interactiva del cuadro](web/maqueta/) tiene una página independiente: abre [http://127.0.0.1:5173/maqueta/#token=cuadro-demo](http://127.0.0.1:5173/maqueta/#token=cuadro-demo) con un ID de prueba. Consulta las selecciones publicadas y permite elegirlas con los pulsadores de la imagen; el audio se escucha en el navegador. El QR queda en pantalla si los tres huecos están vacíos. Consulta [web/README.md](web/README.md) para el funcionamiento y sus límites.
 
-Para compilar, cargar y probar por USB el firmware diagnóstico Waveshare, sigue la [prueba rápida de la placa](firmware/README.md#prueba-rápida-de-la-placa-por-comandos). No requiere pulsadores ni AW9523 conectado.
+Para compilar, cargar y probar por USB el firmware Waveshare, sigue la [prueba rápida de la placa](firmware/README.md#prueba-rápida-de-la-placa-por-comandos). La prueba actual permite configurar Wi-Fi desde el móvil, consultar RTDB y cambiar visualmente entre los huecos 1 y 2 usando BOOT/PWR integrados; no requiere pulsadores externos ni AW9523 conectado.
 
 La vista para tablet está en `/tablet/`: abre [http://127.0.0.1:5173/tablet/#token=cuadro-demo](http://127.0.0.1:5173/tablet/#token=cuadro-demo). Muestra solo el cuadro y reutiliza la programación de `/maqueta`. Consulta [web/README.md](web/README.md) para instrucciones y límites.
 
@@ -48,7 +48,7 @@ La web pública decidida es `https://sonoro.zeliuk.xyz`; el QR/NFC usará `#toke
 | API e importador | Python/FastAPI en Render; búsqueda yt-dlp y descarga RapidAPI; RTDB/Storage en Firebase. Carlos comunica que funciona con RapidAPI; Codex no ha verificado la web pública ni hardware. |
 | Datos | Firebase Realtime Database. |
 | Archivos preparados | Firebase Storage. |
-| Dispositivo | Componentes seleccionados; firmware de diagnóstico v0.1 iniciado. Montaje y validación física pendientes. |
+| Dispositivo | Firmware v0.3 probado físicamente para portal Wi-Fi, persistencia de red y lectura RTDB. v0.4.1 corrigió los colores de portada, confirmado por Carlos. v0.4.6 prepara cada pantalla fuera de la vista y la cambia completa; pendiente verificar estabilidad visual en placa. Montaje y periféricos siguen pendientes. |
 
 La web se aloja fuera de Firebase Hosting y del ESP32. El ESP32 recibirá el audio directamente de Storage o de la emisora; hosting y backend no intervienen en cada reproducción de una canción ya preparada.
 
@@ -69,7 +69,7 @@ Las instrucciones compartidas de ChatGPT se mantienen en [docs/INSTRUCCIONES_CHA
 | `web/` | Diseño aprobado y prototipo dinámico. |
 | `backend/` | API e importador iniciales; cada identificador válido deriva un ámbito aislado sin alta previa. |
 | `firebase/` | Reglas de lectura por URL conocida, sin escrituras/listados, y guía del cliente directo. |
-| `firmware/` | Código compartido LVGL, simulador SDL2 y diagnóstico ESP-IDF v0.1. |
+| `firmware/` | Código compartido LVGL, simulador SDL2 y diagnóstico ESP-IDF provisional con botones integrados. |
 | `docs/` | Definición, arquitectura, comandos, endpoints, fases y decisiones. |
 | `scripts/` | Preparación local y verificaciones. |
 

@@ -12,7 +12,7 @@ La [definición](DEFINICION.md) fija el producto; [ESTADO.md](ESTADO.md) describ
 | Storage | Audio e imágenes preparados, con limpieza según referencias. |
 | `firmware/common/` | Implementación compartida de las vistas LVGL, presentación de QR y recursos de prueba portables. No accede a sistema de archivos, SDL, red ni periféricos. |
 | `firmware/simulator/` | Ventana SDL2, entrada de teclado, carga de imágenes locales, script de lectura RTDB/Storage y modo Firebase del simulador. |
-| `firmware/esp32/` | Arranque ESP-IDF, BSP oficial Waveshare, panel 480 × 480 y memoria de placa. El firmware v0.1 recorre cuatro vistas de diagnóstico; no implementa todavía funciones de producto. |
+| `firmware/esp32/` | Arranque ESP-IDF y BSP Waveshare, panel 480 × 480, portal de provisión Wi-Fi local y lector HTTPS de solo lectura para RTDB/una portada JPEG de Storage en la prueba v0.4. No implementa audio ni controles de producto. |
 
 El audio no atraviesa la API al reproducirse. No se añaden órdenes web de reproducir/detener ni volumen remoto. El estado configurado y la reproducción activa deben modelarse por separado para preservar un audio en uso durante una sustitución.
 

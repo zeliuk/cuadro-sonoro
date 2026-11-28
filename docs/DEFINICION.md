@@ -188,7 +188,7 @@ El modelo de producto es seleccionar el cuadro con el identificador que aparece 
 
 La decisión de Carlos es que la configuración musical publicada y los medios se pueden leer sin sesión para quien conozca sus URLs. RTDB permite GET solo en `frames/{sha256}/slots`; no permite leer el árbol de cuadros ni tareas. Storage permite GET de objetos por URL bajo `private/frames/{sha256}/`, pero no listar objetos. La API deriva la misma ruta SHA-256 del identificador y no comprueba una lista de autorización. Conocer o elegir un identificador permite cambiar su configuración mediante la API; SHA-256 separa rutas, no autoriza. Las credenciales administrativas permanecen solo en backend y herramientas privadas. No hay cuentas, contraseñas ni sesiones Firebase.
 
-Las credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32. Las reglas y una importación/reproducción se validaron en Firebase real con cambios manuales permitidos; el firmware de producto sigue pendiente. Existe un firmware v0.1 separado para diagnóstico de pantalla, sin validar físicamente todavía.
+Las credenciales administrativas, archivos de cuentas de servicio y claves privadas no se publican en GitHub, capturas, documentación de ejemplo o registros de diagnóstico. La contraseña doméstica se mantiene en el ESP32. Las reglas y una importación/reproducción se validaron en Firebase real con cambios manuales permitidos; el firmware de producto sigue pendiente. La prueba v0.3 de Wi-Fi/RTDB se validó en la placa, incluida la persistencia de la red tras reiniciar. La v0.4 descargó una portada JPEG, pero en la placa se vio con colores incorrectos. La v0.4.1 corrige el orden de bytes RGB565; está compilada y pendiente de verificación física. Esta prueba no incluye audio ni controles de producto.
 
 ## 10. Datos, conservación y limpieza
 
@@ -213,7 +213,7 @@ Durante una sustitución pueden coexistir temporalmente la versión anterior y l
 | Backend externo | Docker; alojamiento público por decidir. En desarrollo local se usa Docker en el Mac. |
 | Datos | Firebase Realtime Database. |
 | Audio e imágenes | Firebase Storage. |
-| Firmware | ESP-IDF 5.5.5, C++17, BSP Waveshare 2.0.0 y LVGL 9.5.0; la fase v0.1 es solo diagnóstico y no implementa todavía las funciones de producto. |
+| Firmware | ESP-IDF 5.5.5, C++17, BSP Waveshare 2.0.0 y LVGL 9.5.0; el v0.3 es una prueba parcial de Wi-Fi y lectura RTDB, no implementa todavía reproducción ni los controles de producto. |
 
 La web será dinámica: búsquedas, resultados, formularios, progreso, actualización de huecos, imagen y escucha local funcionan sin recargas completas durante el uso normal. La interfaz separa estilos, componentes visuales, servicios de comunicación y lógica de estado.
 
@@ -260,7 +260,7 @@ Un único repositorio con esta separación:
 | `backend/` | API, importador, procesamiento y pruebas. |
 | `firmware/common/` | Vistas LVGL, QR e imágenes que pueden compartir escritorio y firmware. |
 | `firmware/simulator/` | SDL2, teclado, acceso a archivos/red y modo Firebase de escritorio. |
-| `firmware/esp32/` | Proyecto ESP-IDF para la placa; actualmente modo diagnóstico v0.1. |
+| `firmware/esp32/` | Proyecto ESP-IDF para la placa; prueba v0.3 de portal Wi-Fi y lectura RTDB de solo lectura. |
 | `firebase/` | Configuración y reglas versionables sin credenciales. |
 | `docs/` | Arquitectura, decisiones, configuración, despliegue y fases. |
 
