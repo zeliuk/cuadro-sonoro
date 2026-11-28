@@ -14,6 +14,45 @@ El firmware de placa se desarrolla con ESP-IDF; el simulador conserva SDL2. Las 
 
 La placa incorpora ESP32-S3-WROOM-1-N16R8, 16 MB Flash, 8 MB PSRAM OPI, LCD RGB 480 × 480 con ST7701 y táctil GT911. El BSP oficial realiza la inicialización eléctrica y del bus; esta fase no usa el táctil. LVGL y BSP se fijan en el manifiesto de componentes, y ESP-IDF en esta guía. OTA no está configurado. El firmware diagnóstico usa una tabla de particiones de aplicación única.
 
+## Prueba rápida de la placa por comandos
+
+Esta secuencia compila, carga y abre el monitor del firmware diagnóstico. Se ejecuta en macOS desde una terminal Bash; la placa se conecta únicamente por el puerto **USB TO UART** con un cable de datos. No conectes AW9523B, pulsadores, encoder, altavoz ni alimentación externa durante esta prueba. La instalación desde cero está explicada más abajo en [ESP-IDF en macOS](#esp-idf-en-macos).
+
+Activa ESP-IDF 5.5.5. Si el alias `get_idf_5_5_5` intenta buscar un entorno Python 3.12 que no existe, fuerza el entorno Python 3.9 ya instalado para esta versión y carga el exportador directamente:
+
+```bash
+export IDF_PYTHON_ENV_PATH="$HOME/.espressif/python_env/idf5.5_py3.9_env"
+source "$HOME/esp/esp-idf/export.sh"
+idf.py --version
+```
+
+La última orden debe mostrar `ESP-IDF v5.5.5`. Si no tienes ese entorno Python instalado, sigue los pasos de instalación completos de abajo en lugar de crear rutas manualmente.
+
+Desde la raíz del repositorio, compila el objetivo ESP32-S3:
+
+```bash
+cd firmware/esp32
+idf.py set-target esp32s3
+idf.py reconfigure
+idf.py build
+```
+
+Para encontrar el puerto en macOS, conecta la placa por USB TO UART y ejecuta:
+
+```bash
+ls /dev/cu.usb* /dev/cu.wchusbserial* 2>/dev/null
+```
+
+Usa el puerto que corresponda a la placa en lugar de `PORT` y carga el programa abriendo el monitor:
+
+```bash
+idf.py -p PORT flash monitor
+```
+
+El monitor se cierra con `Ctrl+]`. Si la transferencia no sincroniza, consulta [Si no conecta o no entra al bootloader](#5-si-no-conecta-o-no-entra-al-bootloader). No publiques el nombre del puerto: puede incluir un identificador de serie.
+
+La vista diagnóstica cambia cada 5 s entre la pantalla de diagnóstico, imagen decorativa, carátula de ejemplo y QR ficticio `cuadro-demo`. Dejarla funcionando 10 minutos permite observar estabilidad básica de LCD y arranque, pero no prueba Wi-Fi, audio, táctil, AW9523B ni controles externos. El diagnóstico no representa el arranque normal del producto: el asistente Wi-Fi prioritario cuando faltan credenciales sigue pendiente de implementación.
+
 ## Simulador SDL2
 
 Requisitos: CMake 3.20+, Xcode Command Line Tools (macOS), compilador C/C++17 y conexión a Internet la primera vez. CMake descarga SDL2 2.32.10 y LVGL 9.5.0 desde tags fijados; no hace falta instalar SDL2 por separado. En macOS con Homebrew:
@@ -145,7 +184,7 @@ El monitor usa la velocidad configurada por ESP-IDF (115200 baudios por defecto)
 
 ## Primeras pruebas al recibir la placa
 
-1. Inspecciona la revisión serigrafiada y compara la placa con la documentación y el pinout de [HARDWARE.md](../docs/HARDWARE.md). No conectes todavía AW9523B, botones, encoder, fuente externa ni altavoz.
+1. Confirma el modelo de la placa y, si aparece, anota la revisión serigrafiada. Compárala con la documentación y el pinout de [HARDWARE.md](../docs/HARDWARE.md). No conectes todavía AW9523B, botones, encoder, fuente externa ni altavoz.
 2. Con USB de datos, identifica el puerto, transfiere `firmware/esp32/build/cuadro_sonoro_diagnostic.bin` mediante `idf.py -p PORT flash` y abre `idf.py -p PORT monitor`.
 3. Confirma por el monitor que arranca `0.1.0-diagnostico`, muestra resolución 480 × 480 y no registra error BSP.
 4. Observa el ciclo de 5 s y confirma visualmente diagnóstico, ilustración decorativa, portada con metadatos y QR. Escanea el QR con una cámara; es el valor ficticio `cuadro-demo`, no corresponde a un dispositivo asignado.

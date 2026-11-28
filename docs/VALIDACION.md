@@ -619,3 +619,9 @@ Un nuevo log de CI mostró que ambas pruebas fallaban en `cover_processing`: los
 Se incorporaron en `docs/imagenes/` dos ilustraciones WebP optimizadas: una representación exterior orientativa del resultado y una vista conceptual del montaje interno. Se enlazaron desde la definición y la guía de firmware, indicando que la segunda no es un esquema de conexiones comprobado. Las fuentes PNG proporcionadas se convirtieron localmente; no se validó ningún componente ni cableado físico.
 
 Comprobación: las dos imágenes se abren y se convirtieron desde los adjuntos locales. No se ejecutaron pruebas de software ni se revisó un montaje real.
+
+## Primera prueba física de Waveshare ESP32-S3-Touch-LCD-4B — 28 de noviembre de 2026
+
+Carlos conectó la placa recibida por USB TO UART, compiló el firmware de diagnóstico v0.1 con ESP-IDF v5.5.5 (`idf.py set-target esp32s3`, `idf.py reconfigure`, `idf.py build`) y ejecutó `idf.py -p PORT flash monitor`. Confirmó que las vistas de diagnóstico, imagen decorativa, carátula de prueba y QR se muestran en pantalla y que el ciclo funcionó durante 10 minutos sin fallos visibles. El QR usa el valor ficticio `cuadro-demo`.
+
+Esta es una comprobación física reportada por el propietario: valida el arranque básico de esta unidad y la pantalla con el firmware de diagnóstico. No se conectaron AW9523B, pulsadores, encoder, altavoz ni alimentación externa; tampoco se probaron táctil, Wi-Fi, audio o controles. El modo de diagnóstico no es el arranque normal del producto. La guía reproducible por comandos está en [firmware/README.md](../firmware/README.md#prueba-rápida-de-la-placa-por-comandos). No se ejecutaron pruebas adicionales de software en esta actualización documental.

@@ -8,7 +8,7 @@ Un cuadro decorativo que permite elegir tres canciones o emisoras desde una web 
 
 Imagen de referencia para presentar la propuesta estética; el diseño, las dimensiones y los materiales finales pueden cambiar. Los componentes del primer prototipo están seleccionados, pero el montaje y su validación física siguen pendientes. Consulta la [definición del proyecto](docs/DEFINICION.md), la [lista de materiales y esquema propuesto](docs/HARDWARE.md) y el [croquis preliminar de montaje](firmware/README.md).
 
-**Estado:** Carlos confirma manualmente que el backend funciona en Render con RapidAPI. Codex no ha verificado el recorrido desde la web pública ni el hardware. La web estática está destinada a `https://sonoro.zeliuk.xyz` y llama a la API `https://cuadro-sonoro.onrender.com`; el despliegue web, HTTPS y CORS desde ese origen siguen pendientes de comprobación. La configuración RapidAPI y guías están en [estado](docs/ESTADO.md), [despliegue](docs/DESPLIEGUE.md) y [prueba](docs/PRUEBA_RAPIDAPI.md).
+**Estado:** Carlos confirma manualmente que el backend funciona en Render con RapidAPI. En hardware, reportó que la placa Waveshare arrancó el firmware de diagnóstico y mantuvo el ciclo de pantalla durante 10 minutos; los periféricos y el comportamiento de producto siguen sin probar. Codex no ha verificado el recorrido desde la web pública. La web estática está destinada a `https://sonoro.zeliuk.xyz` y llama a la API `https://cuadro-sonoro.onrender.com`; el despliegue web, HTTPS y CORS desde ese origen siguen pendientes de comprobación. La configuración RapidAPI y guías están en [estado](docs/ESTADO.md), [despliegue](docs/DESPLIEGUE.md) y [prueba](docs/PRUEBA_RAPIDAPI.md).
 
 ## Prueba la interfaz sin credenciales
 
@@ -21,6 +21,8 @@ python3 -m http.server 5173 --bind 127.0.0.1 --directory web
 Abre [la interfaz local](http://127.0.0.1:5173) y pulsa «Probar demostración» para recorrerla sin backend. Para un cuadro real usa su enlace, que ya contiene el identificador; no hay que configurar una conexión desde la web. Se detiene con `Ctrl+C`. Los resultados y las barras son simulados y están identificados como demo; la demo actual todavía no reproduce audio de ejemplo.
 
 La [maqueta interactiva del cuadro](web/maqueta/) tiene una página independiente: abre [http://127.0.0.1:5173/maqueta/#token=cuadro-demo](http://127.0.0.1:5173/maqueta/#token=cuadro-demo) con un ID de prueba. Consulta las selecciones publicadas y permite elegirlas con los pulsadores de la imagen; el audio se escucha en el navegador. El QR queda en pantalla si los tres huecos están vacíos. Consulta [web/README.md](web/README.md) para el funcionamiento y sus límites.
+
+Para compilar, cargar y probar por USB el firmware diagnóstico Waveshare, sigue la [prueba rápida de la placa](firmware/README.md#prueba-rápida-de-la-placa-por-comandos). No requiere pulsadores ni AW9523 conectado.
 
 La vista para tablet está en `/tablet/`: abre [http://127.0.0.1:5173/tablet/#token=cuadro-demo](http://127.0.0.1:5173/tablet/#token=cuadro-demo). Muestra solo el cuadro y reutiliza la programación de `/maqueta`. Consulta [web/README.md](web/README.md) para instrucciones y límites.
 
